@@ -1,0 +1,100 @@
+Redesign the UI of the existing SHWAI application using the provided reference image as the primary visual reference.
+
+STRICT PRESERVATION RULES
+
+Keep the following EXACTLY as they currently are:
+
+- Header
+- Footer
+- Sidebar
+- Sidebar structure
+- Sidebar contents
+- Sidebar labels
+- Sidebar icons
+- Navigation
+- Routes
+- Existing pages
+- Existing functionality
+- Existing interactions
+- Existing feature set
+
+DO NOT:
+
+- Redesign the header
+- Redesign the footer
+- Redesign or restructure the sidebar
+- Remove any sidebar item
+- Rename any navigation item
+- Reorder navigation items
+- Remove existing pages
+- Add new product features
+- Change backend functionality
+- Change API behavior
+- Change routes
+- Change existing functionality
+
+MAIN CONTENT UI
+
+Only redesign the main content/page areas.
+
+Use the provided reference image as the primary visual direction and closely reproduce its:
+
+- Overall visual language
+- Layout structure
+- Spacing
+- Typography hierarchy
+- Card design
+- Border treatment
+- Shadows
+- Buttons
+- Tabs
+- Tables
+- Charts
+- Analytics presentation
+- Progress indicators
+- Statistics/KPI sections
+- Empty states
+- Form layouts
+- Interactive states
+- Responsive behavior
+
+Apply this design language consistently across the existing SHWAI pages.
+
+IMPORTANT:
+
+Do not simply redesign one page. Apply the visual system consistently to ALL existing main-content pages while preserving their existing functionality and information architecture.
+
+For data-heavy pages, make dashboards, analytics, statistics, graphs, tables, progress indicators, reports, and other existing data visually consistent with the reference image.
+
+AI CHAT
+
+Add the floating AI chat button/icon to the main interface if it does not already exist.
+
+- Position it appropriately based on the reference.
+- Make it visually native to SHWAI.
+- Do not make it look like a third-party widget.
+- Preserve any existing AI functionality if already implemented.
+- Do not invent backend functionality for the AI chat.
+
+TECHNICAL CONSTRAINTS
+
+- Frontend/UI changes only.
+- Do not modify the backend.
+- Do not modify database logic.
+- Do not change API contracts.
+- Do not remove existing functionality.
+- Preserve all existing routes and navigation behavior.
+- Reuse existing components and functionality wherever possible.
+- Make the UI responsive across desktop, tablet, and mobile.
+- Maintain consistent spacing, typography, borders, shadows, icons, and interactive states throughout the application.
+- Do not introduce unnecessary dependencies unless absolutely required.
+
+DESIGN PRINCIPLE
+
+The result should feel like the SAME SHWAI application with the SAME navigation, features, pages, and functionality — but with a substantially more polished and cohesive main-content UI inspired by the provided reference.
+
+Do not interpret the reference image as a request to copy its product structure or features. Copy its VISUAL DESIGN LANGUAGE only.
+
+Before making changes, inspect the existing application structure and identify which parts belong to the protected header, footer, sidebar, navigation, routes, and functionality. Leave those untouched.
+
+Then redesign only the main content UI.

@@ -7,27 +7,29 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { FloatingAI } from "@/components/feedback/floating-ai";
 
 export const Route = createFileRoute("/app/settings")({ component: Settings });
 
 function Settings() {
   const { school, year, locale, setLocale, offline, setOffline, user } = useAppState();
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">School, user, AI and data settings. All changes are demo-only.</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Control centre</p>
+        <h1 className="text-3xl font-extrabold tracking-tight">Settings</h1>
+        <p className="mt-2 text-sm text-muted-foreground">School, user, AI and data settings. All changes are demo-only.</p>
       </header>
 
       <Tabs defaultValue="school">
-        <TabsList className="flex-wrap">
+         <TabsList className="flex-wrap rounded-xl bg-card p-1 shadow-sm">
           <TabsTrigger value="school">School</TabsTrigger>
           <TabsTrigger value="user">User</TabsTrigger>
           <TabsTrigger value="ai">AI</TabsTrigger>
           <TabsTrigger value="data">Data & privacy</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="school" className="surface-panel mt-4 space-y-4 p-5">
+         <TabsContent value="school" className="surface-panel mt-4 space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="sname">School name</Label>
@@ -49,7 +51,7 @@ function Settings() {
           <Button onClick={() => toast.success("School settings saved (demo)")}>Save changes</Button>
         </TabsContent>
 
-        <TabsContent value="user" className="surface-panel mt-4 space-y-4 p-5">
+         <TabsContent value="user" className="surface-panel mt-4 space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="uname">Display name</Label>
@@ -81,7 +83,7 @@ function Settings() {
           <Button onClick={() => toast.success("Preferences saved (demo)")}>Save preferences</Button>
         </TabsContent>
 
-        <TabsContent value="ai" className="surface-panel mt-4 space-y-3 p-5">
+         <TabsContent value="ai" className="surface-panel mt-4 space-y-3 p-5 sm:p-6">
           {[
             ["Restrict AI answers to school-approved sources", true],
             ["Require teacher approval before publishing AI-generated assessments", true],
@@ -96,7 +98,7 @@ function Settings() {
           ))}
         </TabsContent>
 
-        <TabsContent value="data" className="surface-panel mt-4 space-y-3 p-5">
+         <TabsContent value="data" className="surface-panel mt-4 space-y-3 p-5 sm:p-6">
           {[
             ["Data retention", "Student records retained for 8 years after exit"],
             ["Data deletion workflow", "Two-step approval with 30-day recovery window"],
@@ -116,6 +118,7 @@ function Settings() {
           ))}
         </TabsContent>
       </Tabs>
+      <FloatingAI />
     </div>
   );
 }

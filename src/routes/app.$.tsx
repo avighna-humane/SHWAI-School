@@ -8,6 +8,7 @@ import { ROLE_LABEL } from "@/config/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { FloatingAI } from "@/components/feedback/floating-ai";
 
 export const Route = createFileRoute("/app/$")({ component: ModuleWorkspace });
 
@@ -29,35 +30,48 @@ function ModuleWorkspace() {
   if (item.plan && !planAllows(plan, item.plan)) return <FeatureLocked required={item.plan} current={plan} />;
 
   return (
-    <div className="space-y-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
+    <div className="relative space-y-6">
+      <header className="grid gap-5 sm:flex sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="truncate text-2xl font-bold tracking-tight">{item.label}</h1>
-            {item.badge ? <Badge className="shrink-0 bg-ai-soft text-ai">{item.badge}</Badge> : null}
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">SHWAI workspace</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+            <h1 className="truncate text-3xl font-extrabold tracking-tight">{item.label}</h1>
+            {item.badge ? <Badge className="rounded-full bg-ai-soft px-2.5 text-ai">{item.badge}</Badge> : null}
           </div>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{item.description}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{item.description}</p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.success("Export queued — mock file ready")}>
+          <Button variant="outline" size="sm" className="rounded-full" onClick={() => toast.success("Export queued — mock file ready")}>
             <Icons.Download className="size-4" aria-hidden /> Export
           </Button>
-          <Button size="sm" onClick={() => toast.success("Recorded in this frontend demo")}>
+          <Button size="sm" className="rounded-full" onClick={() => toast.success("Recorded in this frontend demo")}>
             <Icons.Plus className="size-4" aria-hidden /> New
           </Button>
         </div>
       </header>
 
-      <EmptyState
-        title={`${item.label} workspace is being wired up`}
-        description="Navigation, permissions, plan gating and mock data for this module are in place. The detailed screen for this module is part of the next build pass."
-        icon={<Icons.LayoutGrid className="size-6" aria-hidden />}
-        action={
-          <Badge variant="outline" className="text-xs">
-            Visible to: {item.roles.map((r) => ROLE_LABEL[r]).join(", ")}
-          </Badge>
-        }
-      />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <EmptyState
+          title={`${item.label} workspace is being wired up`}
+          description="Navigation, permissions, plan gating and mock data for this module are in place. The detailed screen for this module is part of the next build pass."
+          icon={<Icons.LayoutGrid className="size-6" aria-hidden />}
+          action={
+            <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+              Visible to: {item.roles.map((r) => ROLE_LABEL[r]).join(", ")}
+            </Badge>
+          }
+        />
+        <aside className="surface-panel hidden h-fit p-5 lg:block">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+            <Icons.Sparkles className="size-4" aria-hidden /> Quick context
+          </p>
+          <p className="mt-3 text-sm font-semibold">Your workspace is ready to explore.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Use the protected navigation to move between modules. Demo actions remain safely in your browser.
+          </p>
+        </aside>
+      </div>
+      <FloatingAI />
     </div>
   );
 }

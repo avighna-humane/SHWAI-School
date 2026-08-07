@@ -19,11 +19,11 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card px-6 py-14 text-center">
-      <div className="mb-4 grid size-12 place-items-center rounded-xl bg-primary-soft text-primary">
+    <div className="surface-panel flex min-h-[280px] flex-col items-center justify-center border-dashed px-6 py-14 text-center">
+      <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary shadow-sm">
         {icon ?? <Inbox className="size-6" aria-hidden />}
       </div>
-      <h3 className="text-base font-semibold">{title}</h3>
+      <h3 className="text-lg font-bold tracking-tight">{title}</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
@@ -32,7 +32,7 @@ export function EmptyState({
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-danger/30 bg-danger-soft px-6 py-12 text-center">
+    <div className="surface-panel flex flex-col items-center justify-center border-danger/30 bg-danger-soft px-6 py-12 text-center">
       <AlertTriangle className="mb-3 size-6 text-danger" aria-hidden />
       <h3 className="text-base font-semibold">Something went wrong</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -49,7 +49,7 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
 
 export function PermissionDenied({ role }: { role: string }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card px-6 py-14 text-center">
+    <div className="surface-panel flex flex-col items-center justify-center px-6 py-14 text-center">
       <ShieldAlert className="mb-3 size-6 text-warning" aria-hidden />
       <h3 className="text-base font-semibold">You do not have access to this module</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">

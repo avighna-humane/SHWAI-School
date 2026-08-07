@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { FloatingAI } from "@/components/feedback/floating-ai";
 
 export const Route = createFileRoute("/app/subscription")({ component: Subscription });
 
@@ -15,10 +16,11 @@ function Subscription() {
   const gated = ALL_NAV_ITEMS.filter((i) => i.plan);
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Subscription</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Plan & usage</p>
+        <h1 className="text-3xl font-extrabold tracking-tight">Subscription</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
           {school.name} · {school.students} students · switching plans here is a demo-only action.
         </p>
       </header>
@@ -27,10 +29,10 @@ function Subscription() {
         {PLANS.map((p) => {
           const active = p.id === plan;
           return (
-            <article key={p.id} className={`surface-panel flex flex-col p-6 ${active ? "ring-2 ring-primary" : ""}`}>
+            <article key={p.id} className={`surface-panel flex flex-col p-6 transition-transform hover:-translate-y-0.5 ${active ? "ring-2 ring-primary" : ""}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">{p.name}</h2>
-                {active ? <Badge className="bg-primary-soft text-primary">Current plan</Badge> : null}
+                 {active ? <Badge className="rounded-full bg-primary-soft text-primary">Current plan</Badge> : null}
               </div>
               <p className="text-xs text-muted-foreground">{p.versions}</p>
               <p className="mt-4 text-2xl font-extrabold text-numeric">₹{p.priceMin}–{p.priceMax}</p>
@@ -92,6 +94,7 @@ function Subscription() {
           })}
         </ul>
       </section>
+      <FloatingAI />
     </div>
   );
 }

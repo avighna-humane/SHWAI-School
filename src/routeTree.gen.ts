@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
 
@@ -42,6 +43,11 @@ const AppSplatRoute = AppSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
@@ -87,18 +96,26 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/pricing' | '/app/$' | '/app/settings' | '/app/subscription' | '/app'
+    | '/'
+    | '/pricing'
+    | '/app/$'
+    | '/app/notifications'
+    | '/app/settings'
+    | '/app/subscription'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
@@ -147,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -166,6 +190,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -173,6 +198,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,

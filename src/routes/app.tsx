@@ -280,7 +280,7 @@ function Shell() {
 }
 
 function SchoolYearSelectors() {
-  const { school, year, setSchoolId, setYearId, locale, setLocale, plan } = useAppState();
+  const { school, year, setSchoolId, setYearId, locale, setLocale, plan, setPlan } = useAppState();
   return (
     <div className="hidden items-center gap-1.5 md:flex">
       <DropdownMenu>
@@ -343,7 +343,7 @@ function SchoolYearSelectors() {
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Plan (demo)</DropdownMenuLabel>
           {PLANS.map((p) => (
-            <DropdownMenuItem key={p.id} onClick={() => useAppStatePlanSwitch(p.id)}>
+            <DropdownMenuItem key={p.id} onClick={() => setPlan(p.id)}>
               {p.name}
               {plan === p.id ? <Icons.Check className="ml-auto size-4" aria-hidden /> : null}
             </DropdownMenuItem>
@@ -352,12 +352,6 @@ function SchoolYearSelectors() {
       </DropdownMenu>
     </div>
   );
-}
-
-// Small helper kept outside the render tree for the plan switch action.
-let planSwitcher: ((p: "starter" | "professional" | "enterprise") => void) | null = null;
-function useAppStatePlanSwitch(p: "starter" | "professional" | "enterprise") {
-  planSwitcher?.(p);
 }
 
 function NotificationsMenu() {
@@ -417,8 +411,7 @@ function NotificationsMenu() {
 }
 
 function ProfileMenu() {
-  const { user, role, setRole, plan, setPlan } = useAppState();
-  planSwitcher = setPlan;
+  const { user, role, setRole, plan } = useAppState();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

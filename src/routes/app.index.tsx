@@ -23,6 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { FloatingAI } from "@/components/feedback/floating-ai";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
 
@@ -72,48 +73,78 @@ function Dashboard() {
   const alerts = NOTIFICATIONS.filter((n) => n.roles.includes(role)).slice(0, 4);
 
   return (
-    <div className="space-y-6">
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">{ROLE_LABEL[role]} dashboard</p>
-          <h1 className="mt-1 truncate text-2xl font-bold tracking-tight">Good morning, {user.name.split(" ")[0]}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {school.name} · {school.board} · Academic year {year.label} · {plan === "enterprise" ? "Enterprise AI" : plan} plan
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.success("Export queued — mock CSV ready")}>
-            <Icons.Download className="size-4" aria-hidden /> Export
-          </Button>
-          <Button size="sm" onClick={() => toast.success("Quick action recorded in this demo")}>
-            <Icons.Plus className="size-4" aria-hidden /> Quick action
-          </Button>
-        </div>
+    <div className="relative space-y-6">
+      <header className="dashboard-hero p-6 sm:p-8">
+        <div className="pointer-events-none absolute -right-14 -top-24 size-64 rounded-full border-[26px] border-white/10" />
+        <div className="pointer-events-none absolute -right-2 top-20 size-32 rounded-full border-[18px] border-white/10" />
+        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/75">
+              <span className="size-1.5 rounded-full bg-emerald-300" /> Tuesday, September 24, 2026
+            </p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Good morning, {user.name.split(" ")[0]}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-white/80">
+              Here is the clearest view of {school.name}. You have {alerts.length} items that may need your attention today.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              onClick={() => toast.success("Quick action recorded in this demo")}
+            >
+              <Icons.Plus className="size-4" aria-hidden /> Quick action
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-full bg-white text-primary shadow-none hover:bg-white/90"
+              onClick={() => toast.success("Export queued — mock CSV ready")}
+            >
+              <Icons.Download className="size-4" aria-hidden /> Export
+            </Button>
+           </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key metrics">
         {metrics.map((m) => {
           const I = (Icons as unknown as Record<string, Icons.LucideIcon>)[m.icon] ?? Icons.Circle;
           return (
-            <article key={m.label} className="surface-panel p-5">
+            <article key={m.label} className="metric-panel p-5">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{m.label}</p>
-                <I className="size-4 text-primary" aria-hidden />
+                <p className="text-xs font-semibold text-muted-foreground">{m.label}</p>
+                <span className="grid size-9 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <I className="size-4" aria-hidden />
+                </span>
               </div>
-              <p className="mt-3 text-2xl font-bold text-numeric">{m.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{m.delta}</p>
+              <p className="mt-4 text-3xl font-extrabold tracking-tight text-numeric">{m.value}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                <span className="mr-1.5 inline-flex rounded-full bg-success-soft px-1.5 py-0.5 font-semibold text-success">↗</span>
+                {m.delta}
+              </p>
             </article>
           );
         })}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="surface-panel p-5 lg:col-span-2">
-          <h2 className="text-sm font-semibold">
+        <section className="surface-panel p-5 sm:p-6 lg:col-span-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold">School pulse</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Enrollment and daily attendance · September 2026</p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary" /> Enrollment</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-sky-400" /> Attendance</span>
+            </div>
+          </div>
+          <h2 className="sr-only">
             {role === "student" || role === "parent" ? "Attendance & homework trend" : "School performance trend"}
-          </h2>
-          <p className="text-xs text-muted-foreground">Last six months · mock data</p>
-          <div className="mt-4 h-64">
+           </h2>
+          <div className="mt-5 h-64">
             <ResponsiveContainer width="100%" height="100%">
               {role === "owner" ? (
                 <AreaChart data={FEE_COLLECTION_TREND}>
@@ -151,37 +182,61 @@ function Dashboard() {
           </div>
         </section>
 
-        <section className="surface-panel p-5">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold">
-            <Icons.Sparkles className="size-4 text-ai" aria-hidden /> AI insights
-          </h2>
-          <ul className="mt-3 space-y-3">
-            {recs.length === 0 && <li className="text-sm text-muted-foreground">No AI insights for this role today.</li>}
-            {recs.map((r) => (
-              <li key={r.id} className="rounded-lg border border-border bg-ai-soft/40 p-3">
-                <p className="text-sm font-semibold">{r.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{r.body}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="text-[10px]">Confidence {Math.round(r.confidence * 100)}%</Badge>
-                  <Badge variant="outline" className="text-[10px] capitalize">{r.impact} impact</Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
+        <section className="surface-panel bg-gradient-to-br from-card via-card to-ai-soft/45 p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="flex items-center gap-1.5 text-base font-bold">
+              <span className="grid size-8 place-items-center rounded-xl bg-ai-soft text-ai"><Icons.Sparkles className="size-4" aria-hidden /></span>
+              AI briefing
+            </h2>
+            <Badge variant="outline" className="rounded-full border-ai/20 text-[10px] text-ai">Today</Badge>
+          </div>
+          <p className="mt-4 text-sm font-semibold">A thoughtful nudge from SHWAI</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Your role-based signals are ready for a quick review.</p>
+          <h3 className="mt-5 text-sm font-semibold">{recs[0]?.title ?? "No AI insights for this role today."}</h3>
+          {recs[0] ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{recs[0].body}</p> : null}
+          <Button size="sm" className="mt-4 rounded-full bg-ai text-ai-foreground hover:bg-ai/90" onClick={() => toast.success("AI review opened in this demo")}>
+            Review pattern <Icons.ArrowRight className="size-3.5" aria-hidden />
+          </Button>
+          <div className="mt-5 border-t border-border/70 pt-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Other signals</p>
+            <ul className="mt-3 space-y-3">
+              {recs.length === 0 && <li className="text-sm text-muted-foreground">No AI insights for this role today.</li>}
+              {recs.slice(1).map((r) => (
+                <li key={r.id} className="rounded-lg border border-border bg-ai-soft/40 p-3">
+                  <p className="text-sm font-semibold">{r.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{r.body}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px]">Confidence {Math.round(r.confidence * 100)}%</Badge>
+                    <Badge variant="outline" className="text-[10px] capitalize">{r.impact} impact</Badge>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          </div>
         </section>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className="surface-panel p-5">
-          <h2 className="text-sm font-semibold">Needs attention</h2>
+        <section className="surface-panel p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold">Needs attention</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Signals from across your school</p>
+            </div>
+            <Badge variant="outline" className="rounded-full text-[10px]">{alerts.length} open</Badge>
+          </div>
           <ul className="mt-3 space-y-3">
             {alerts.map((a) => (
-              <li key={a.id} className="flex gap-2.5">
-                <span className={`mt-1.5 size-2 shrink-0 rounded-full ${a.severity === "critical" ? "bg-danger" : a.severity === "warning" ? "bg-warning" : "bg-primary"}`} />
+              <li key={a.id} className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted">
+                <span className={`grid size-8 shrink-0 place-items-center rounded-xl ${a.severity === "critical" ? "bg-danger-soft text-danger" : a.severity === "warning" ? "bg-warning-soft text-warning" : "bg-primary-soft text-primary"}`}>
+                  <Icons.Bell className="size-4" aria-hidden />
+                </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.createdAt}</p>
+                  <p className="truncate text-sm font-semibold">{a.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{a.createdAt}</p>
                 </div>
+                <Icons.ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" aria-hidden />
               </li>
             ))}
           </ul>
@@ -261,6 +316,7 @@ function Dashboard() {
           </ul>
         </section>
       </div>
+      <FloatingAI />
     </div>
   );
 }

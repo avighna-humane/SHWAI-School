@@ -105,7 +105,8 @@ function Dashboard() {
             >
               <Icons.Download className="size-4" aria-hidden /> Export
             </Button>
-           </div>
+          </div>
+        </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Key metrics">
@@ -212,7 +213,6 @@ function Dashboard() {
                 </li>
               ))}
             </ul>
-          </div>
           </div>
         </section>
       </div>

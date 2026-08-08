@@ -1,0 +1,156 @@
+Make ONLY a cost-efficient implementation of scroll-triggered reveal animations on the SHWAI LANDING PAGE.
+
+IMPORTANT — COST / SCOPE CONTROL:
+
+- Modify ONLY the landing page and the minimum CSS required.
+- Do NOT inspect or modify the backend.
+- Do NOT inspect the database.
+- Do NOT modify authentication.
+- Do NOT modify the actual dashboard.
+- Do NOT modify pricing.
+- Do NOT modify other routes.
+- Do NOT install any new packages.
+- Do NOT redesign the page.
+- Do NOT rewrite existing components unnecessarily.
+- Reuse the existing animation utilities/classes if they already exist.
+- Before changing anything, inspect ONLY the landing-page component and its directly relevant stylesheet.
+- Make the smallest possible code change.
+
+## ANIMATION
+
+Add scroll-triggered reveal animations so landing-page sections appear as the visitor scrolls.
+
+Before entering the viewport:
+
+opacity: 0
+transform: translateY(24px)
+
+When entering the viewport:
+
+opacity: 1
+transform: translateY(0)
+
+Use approximately:
+- 500–700ms duration
+- ease-out timing
+- subtle movement
+
+Use the browser's native IntersectionObserver.
+
+Do NOT add an animation library.
+
+## STAGGERING
+
+For groups of cards, use a small stagger:
+
+- 50–100ms between cards
+- Maximum stagger: approximately 400ms
+
+Apply only to major groups such as:
+
+- Feature cards
+- Student/Teacher/Parent/School sections
+- Workflow steps
+- Dashboard cards
+- Analytics cards
+- Final CTA
+
+Do NOT individually animate every piece of text.
+
+## HERO
+
+Keep the existing hero animation if one already exists.
+
+Only improve it if necessary.
+
+Do not create duplicate animations.
+
+## DASHBOARD
+
+When the landing-page dashboard enters the viewport:
+
+- Fade/slide the dashboard into view.
+- Let existing dashboard animations continue to work.
+- Do not rewrite the dashboard.
+- Do not add expensive JavaScript animations.
+
+## HOVER
+
+Keep hover effects lightweight:
+
+- transform
+- opacity
+- box-shadow
+- border/background transitions
+
+Do not add continuous animations.
+
+## SCROLL-UP
+
+When scrolling back upward, elements should reveal naturally when they enter the viewport.
+
+Use IntersectionObserver efficiently.
+
+Do not create a separate observer for every individual element.
+
+Prefer one reusable reveal mechanism.
+
+Avoid unnecessary state updates and re-renders.
+
+## PERFORMANCE
+
+Use ONLY GPU-friendly properties:
+
+- opacity
+- transform
+
+Avoid animating:
+
+- width
+- height
+- top
+- left
+- margin
+- padding
+
+Do not use scroll event listeners for the reveal system.
+
+Do not calculate positions continuously during scrolling.
+
+Do not use requestAnimationFrame for simple reveal animations.
+
+IntersectionObserver should handle viewport detection.
+
+## REDUCED MOTION
+
+Respect:
+
+prefers-reduced-motion: reduce
+
+When reduced motion is enabled, make all content immediately visible and disable movement.
+
+## FAILSAFE
+
+The page must never hide content permanently.
+
+If JavaScript fails or the observer does not initialize:
+
+- Content must remain accessible/visible.
+- No layout shifts.
+- No broken sections.
+
+## VERIFICATION
+
+After making the change:
+
+1. Run the existing build command.
+2. Check only for errors caused by this change.
+3. Test desktop and mobile.
+4. Scroll down and confirm sections reveal smoothly.
+5. Scroll back up and confirm they behave correctly.
+6. Confirm no content is permanently hidden.
+7. Confirm existing buttons, links, and dashboard interactions still work.
+
+DO NOT make any other changes.
+
+The goal is a lightweight, polished scroll-reveal effect with minimal code and minimal AI/tool usage.

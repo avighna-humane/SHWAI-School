@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -355,6 +355,33 @@ function Landing() {
     navigate({ to: "/app" });
   };
 
+  // Scroll-triggered reveal — one shared IntersectionObserver for all .reveal elements.
+  // JS adds .js-hide so content is always visible if this effect never runs.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    if (!els.length) return;
+    els.forEach((el) => el.classList.add("js-hide"));
+    if (!("IntersectionObserver" in window)) {
+      // Fallback: reveal everything immediately
+      els.forEach((el) => { el.classList.remove("js-hide"); el.classList.add("revealed"); });
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add("revealed");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground scroll-smooth">
       {/* Header */}
@@ -412,7 +439,7 @@ function Landing() {
       {/* Core Concept Section */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border">
         <div className="grid gap-10 md:grid-cols-2 items-center">
-          <div>
+          <div className="reveal">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Connecting classrooms and administration</h2>
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
               When school workflows are isolated, communication breaks down and workloads increase. SHWAI is designed to bridge these gaps by connecting daily administrative duties with academic feedback. 
@@ -421,20 +448,20 @@ function Landing() {
               This unified design helps school leaders coordinate enrollments, enables teachers to organize resources, assists parents in staying informed, and provides students with supportive learning pathways.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+          <div className="grid gap-4 sm:grid-cols-2 reveal-group">
+            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm reveal">
               <h3 className="text-sm font-bold">Academics & Operations</h3>
               <p className="mt-1 text-xs text-muted-foreground">Manage timetables, homework assignments, and exams in one place.</p>
             </div>
-            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm reveal">
               <h3 className="text-sm font-bold">Structured Learning</h3>
               <p className="mt-1 text-xs text-muted-foreground">Support students inside and outside the classroom with step-by-step guidance.</p>
             </div>
-            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm reveal">
               <h3 className="text-sm font-bold">School Insights</h3>
               <p className="mt-1 text-xs text-muted-foreground">Keep track of school attendance trends, progress, and workload metrics.</p>
             </div>
-            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm">
+            <div className="surface-panel p-5 bg-card/50 transition-all duration-300 hover:border-primary/20 hover:shadow-sm reveal">
               <h3 className="text-sm font-bold">Clear Coordination</h3>
               <p className="mt-1 text-xs text-muted-foreground">Maintain open communication between parents, teachers, and coordinators.</p>
             </div>
@@ -444,7 +471,7 @@ function Landing() {
 
       {/* Stakeholders Section — Refactored to Role Entry Selection */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border" id="role-selection">
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 reveal">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">Platform Access</span>
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl mt-1">Select your workspace to enter</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
@@ -593,7 +620,7 @@ function Landing() {
       {/* AI-Assisted Learning & Teacher Productivity */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border">
         <div className="grid gap-10 md:grid-cols-2 items-center">
-          <div className="space-y-4">
+          <div className="space-y-4 reveal">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary">Classroom Support</span>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Supporting teaching prep and student learning</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -616,7 +643,7 @@ function Landing() {
           </div>
           
 
-          <div className="space-y-4">
+          <div className="space-y-4 reveal">
             {/* Visual preview of Socratic Tutor interaction */}
             <div className="surface-panel p-5 bg-card/60 border border-border shadow-sm transition-all duration-300 hover:shadow-elevated">
               <p className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground mb-3">Tutor Interaction Preview</p>
@@ -636,7 +663,7 @@ function Landing() {
 
       {/* Visual Workflow Section */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border">
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 reveal">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">Connected System</span>
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Designed to bring school workflows together</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
@@ -645,23 +672,23 @@ function Landing() {
         </div>
 
         {/* Visual Progress Steps */}
-        <div className="grid gap-6 md:grid-cols-4">
-          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group">
+        <div className="grid gap-6 md:grid-cols-4 reveal-group">
+          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group reveal">
             <div className="text-lg font-bold text-primary font-mono mb-2 transition-transform duration-300 group-hover:scale-110">01</div>
             <h4 className="text-sm font-bold">Operational Setup</h4>
             <p className="mt-1 text-xs text-muted-foreground">Administrators set up class cohorts, configure registers, and schedule timetables.</p>
           </div>
-          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group">
+          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group reveal">
             <div className="text-lg font-bold text-primary font-mono mb-2 transition-transform duration-300 group-hover:scale-110">02</div>
             <h4 className="text-sm font-bold">Classroom Instruction</h4>
             <p className="mt-1 text-xs text-muted-foreground">Teachers mark attendance, assign homework, and record test grades in the gradebook.</p>
           </div>
-          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group">
+          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group reveal">
             <div className="text-lg font-bold text-primary font-mono mb-2 transition-transform duration-300 group-hover:scale-110">03</div>
             <h4 className="text-sm font-bold">Student Progress</h4>
             <p className="mt-1 text-xs text-muted-foreground">Students view timetables, submit homework, and receive learning hints.</p>
           </div>
-          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group">
+          <div className="relative p-5 border border-border rounded-xl bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-card group reveal">
             <div className="text-lg font-bold text-primary font-mono mb-2 transition-transform duration-300 group-hover:scale-110">04</div>
             <h4 className="text-sm font-bold">Insight & Support</h4>
             <p className="mt-1 text-xs text-muted-foreground">Teachers track grades and notice when a student requires targeted academic support.</p>
@@ -673,7 +700,7 @@ function Landing() {
       <section className="bg-muted/40 border-b border-border py-16">
         <div className="mx-auto max-w-6xl px-5">
           <div className="grid gap-10 lg:grid-cols-12 items-center">
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-5 reveal">
               <span className="text-xs font-semibold uppercase tracking-wider text-primary">Academic Insights</span>
               <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Visualizing student growth and needs</h2>
               <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
@@ -691,7 +718,7 @@ function Landing() {
               </div>
             </div>
             
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-7 reveal">
               {/* Illustrative Mockup Container */}
               <div className="surface-panel p-5 bg-card shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-elevated">
                 <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
@@ -756,7 +783,7 @@ function Landing() {
 
       {/* SHWAI Roadmap Section */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 reveal">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary">Future Vision</span>
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl mt-1">SHWAI Product Roadmap</h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -774,7 +801,7 @@ function Landing() {
 
           <div className="space-y-12 relative">
             {/* Phase 1: V1–V2 — Starter */}
-            <div className="grid gap-6 md:grid-cols-2 md:items-start relative">
+            <div className="grid gap-6 md:grid-cols-2 md:items-start relative reveal">
               {/* Point Indicator */}
               <div className="absolute left-1/2 -translate-x-1/2 top-4 size-4 rounded-full bg-primary border-4 border-background hidden md:block z-10" />
               
@@ -802,7 +829,7 @@ function Landing() {
             </div>
 
             {/* Phase 2: V3–V4 — Professional */}
-            <div className="grid gap-6 md:grid-cols-2 md:items-start relative">
+            <div className="grid gap-6 md:grid-cols-2 md:items-start relative reveal">
               {/* Point Indicator */}
               <div className="absolute left-1/2 -translate-x-1/2 top-4 size-4 rounded-full bg-primary border-4 border-background hidden md:block z-10" />
               
@@ -830,7 +857,7 @@ function Landing() {
             </div>
 
             {/* Phase 3: V5–V6 — Enterprise AI */}
-            <div className="grid gap-6 md:grid-cols-2 md:items-start relative">
+            <div className="grid gap-6 md:grid-cols-2 md:items-start relative reveal">
               {/* Point Indicator */}
               <div className="absolute left-1/2 -translate-x-1/2 top-4 size-4 rounded-full bg-primary border-4 border-background hidden md:block z-10" />
               
@@ -864,36 +891,36 @@ function Landing() {
       
       {/* Modules Grid */}
       <section className="mx-auto max-w-6xl px-5 py-16 border-b border-border">
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 reveal">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Major platform modules</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
             A comprehensive set of tools mapped to core school requirements.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 reveal-group">
+          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75 reveal">
             <LayoutDashboard className="size-5 text-primary mt-0.5 shrink-0" />
             <div>
               <h4 className="text-sm font-bold">Role Dashboards</h4>
               <p className="mt-1 text-xs text-muted-foreground">Tailored interfaces showing schedule summaries and notifications.</p>
             </div>
           </div>
-          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75">
+          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75 reveal">
             <NotebookPen className="size-5 text-primary mt-0.5 shrink-0" />
             <div>
               <h4 className="text-sm font-bold">Academics & Homework</h4>
               <p className="mt-1 text-xs text-muted-foreground">Build assignments, check progress, and log gradebook marks.</p>
             </div>
           </div>
-          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75">
+          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75 reveal">
             <Calendar className="size-5 text-primary mt-0.5 shrink-0" />
             <div>
               <h4 className="text-sm font-bold">Timetables & Registers</h4>
               <p className="mt-1 text-xs text-muted-foreground">Daily attendance logs, cohort rosters, and timetable calendars.</p>
             </div>
           </div>
-          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75">
+          <div className="p-4 border border-border rounded-lg bg-card/30 flex items-start gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card/75 reveal">
             <ShieldCheck className="size-5 text-primary mt-0.5 shrink-0" />
             <div>
               <h4 className="text-sm font-bold">Portal Access Controls</h4>
@@ -906,16 +933,16 @@ function Landing() {
       {/* Pricing Overview */}
       <section className="bg-muted/30 py-16">
         <div className="mx-auto max-w-6xl px-5">
-          <div className="text-center mb-10">
+          <div className="text-center mb-10 reveal">
             <h2 className="text-2xl font-bold tracking-tight">Flexible plans for school growth</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Review SHWAI's available pricing tiers and plan options.
             </p>
           </div>
           
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3 reveal-group">
             {PLANS.map((p) => (
-              <article key={p.id} className="surface-panel flex flex-col p-6 justify-between bg-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-elevated">
+              <article key={p.id} className="surface-panel flex flex-col p-6 justify-between bg-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-elevated reveal">
                 <div>
                   <p className="text-sm font-semibold text-primary">{p.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{p.versions}</p>
@@ -935,7 +962,7 @@ function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="mx-auto max-w-4xl px-5 py-16 text-center">
+      <section className="mx-auto max-w-4xl px-5 py-16 text-center reveal">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to simplify your school's workflows?</h2>
         <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground leading-relaxed">
           Explore the SHWAI platform demo to see how we bring administration, class grading, student learning, and parent updates together.

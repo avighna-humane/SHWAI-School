@@ -347,6 +347,29 @@
   animation-delay: 800ms !important;
 }
 
+/* ── Scroll Reveal ─────────────────────────────────────────────────────────
+   Base state is VISIBLE. JS adds .js-hide so content is never permanently
+   hidden if the script fails or IntersectionObserver is unavailable.
+   ────────────────────────────────────────────────────────────────────────── */
+.reveal {
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+}
+.reveal.js-hide {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal.revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Stagger delays for card groups (parent gets .reveal-group) */
+.reveal-group > .reveal:nth-child(2) { transition-delay: 75ms; }
+.reveal-group > .reveal:nth-child(3) { transition-delay: 150ms; }
+.reveal-group > .reveal:nth-child(4) { transition-delay: 225ms; }
+.reveal-group > .reveal:nth-child(5) { transition-delay: 300ms; }
+.reveal-group > .reveal:nth-child(6) { transition-delay: 375ms; }
+
 /* Accessibility: Respect user prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -375,5 +398,13 @@
   .animate-svg-draw {
     stroke-dashoffset: 0 !important;
     animation: none !important;
+  }
+
+  /* Scroll reveal: always visible under reduced motion */
+  .reveal,
+  .reveal.js-hide {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

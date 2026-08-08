@@ -2,9 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS } from "@/data/mock/platform";
-import { DEMO_USER } from "@/config/roles";
+import { DEMO_PRINCIPAL_ACTOR, DEMO_USER } from "@/config/roles";
 import { DEMO_CLASS_STUDENTS, DEMO_STUDENT, DEMO_TEACHER, TEACHERS } from "@/data/mock/people";
-import { PRINCIPAL_ACTOR } from "@/server/auth-context";
 
 const STORAGE_KEY = "shwai.demo.state";
 
@@ -111,7 +110,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               const t = ACTABLE_TEACHERS.find((x) => x.id === state.teacherId) ?? DEMO_TEACHER;
               return { id: t.id, name: t.name, schoolId: "sch-1" };
             })()
-          : { id: PRINCIPAL_ACTOR.id, name: PRINCIPAL_ACTOR.name, schoolId: "sch-1" };
+          : { id: DEMO_PRINCIPAL_ACTOR.id, name: DEMO_PRINCIPAL_ACTOR.name, schoolId: "sch-1" };
 
     return {
       ...state,

@@ -12,7 +12,7 @@ import { FloatingAI } from "@/components/feedback/floating-ai";
 export const Route = createFileRoute("/app/settings")({ component: Settings });
 
 function Settings() {
-  const { school, year, locale, setLocale, offline, setOffline, user } = useAppState();
+  const { locale, setLocale, offline, setOffline } = useAppState();
   return (
     <div className="relative space-y-6">
       <header>
@@ -29,33 +29,20 @@ function Settings() {
           <TabsTrigger value="data">Data & privacy</TabsTrigger>
         </TabsList>
 
-         <TabsContent value="school" className="surface-panel mt-4 space-y-4 p-5 sm:p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="sname">School name</Label>
-              <Input id="sname" defaultValue={school.name} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="scode">School code</Label>
-              <Input id="scode" defaultValue={school.code} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sboard">Board</Label>
-              <Input id="sboard" defaultValue={school.board} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="syear">Active academic year</Label>
-              <Input id="syear" defaultValue={year.label} readOnly />
-            </div>
-          </div>
-          <Button onClick={() => toast.success("School settings saved (demo)")}>Save changes</Button>
+         <TabsContent value="school" className="surface-panel mt-4 p-5 sm:p-6">
+           <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
+             <p className="text-sm font-semibold">No school connected yet</p>
+             <p className="mt-1 max-w-md text-sm text-muted-foreground">
+               School profile and academic-year settings will appear here after a verified school connection is configured.
+             </p>
+           </div>
         </TabsContent>
 
          <TabsContent value="user" className="surface-panel mt-4 space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="uname">Display name</Label>
-              <Input id="uname" defaultValue={user.name} />
+               <Label htmlFor="uname">Display name</Label>
+               <Input id="uname" placeholder="Not connected" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ulang">Language preference</Label>
@@ -98,24 +85,13 @@ function Settings() {
           ))}
         </TabsContent>
 
-         <TabsContent value="data" className="surface-panel mt-4 space-y-3 p-5 sm:p-6">
-          {[
-            ["Data retention", "Student records retained for 8 years after exit"],
-            ["Data deletion workflow", "Two-step approval with 30-day recovery window"],
-            ["Parent consent controls", "Consent required for context passport entries"],
-            ["Data access requests", "3 open requests · 5 working day SLA"],
-            ["Data export", "Standard CSV and JSON export available"],
-          ].map(([t, d]) => (
-            <div key={t} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{t}</p>
-                <p className="text-xs text-muted-foreground">{d}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => toast.success("Opened (demo)")}>
-                Manage
-              </Button>
-            </div>
-          ))}
+          <TabsContent value="data" className="surface-panel mt-4 p-5 sm:p-6">
+           <div className="flex min-h-[220px] flex-col items-center justify-center text-center">
+             <p className="text-sm font-semibold">No connected data controls yet</p>
+             <p className="mt-1 max-w-md text-sm text-muted-foreground">
+               Retention, consent, deletion, and export controls will appear here when a school data connection is configured.
+             </p>
+           </div>
         </TabsContent>
       </Tabs>
       <FloatingAI />

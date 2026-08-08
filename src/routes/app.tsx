@@ -3,8 +3,8 @@ import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-r
 import * as Icons from "lucide-react";
 import { AppStateProvider, useAppState } from "@/app/providers/app-state";
 import { MOBILE_NAV, NAV_GROUPS, findNavItem, navForRole } from "@/config/navigation";
-import { ROLES, ROLE_LABEL } from "@/config/roles";
-import { PLANS, PLAN_BY_ID, planAllows } from "@/config/plans";
+import { ROLE_LABEL } from "@/config/roles";
+import { planAllows } from "@/config/plans";
 import { ACADEMIC_YEARS } from "@/data/mock/core";
 import { SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS, SYSTEM_STATUS } from "@/data/mock/platform";
@@ -290,7 +290,7 @@ function Shell() {
 }
 
 function SchoolYearSelectors() {
-  const { school, year, setSchoolId, setYearId, locale, setLocale, plan, setPlan } = useAppState();
+  const { school, year, setSchoolId, setYearId, locale, setLocale } = useAppState();
   return (
     <div className="hidden items-center gap-1.5 md:flex">
       <DropdownMenu>
@@ -310,18 +310,15 @@ function SchoolYearSelectors() {
               <span className="grid size-6 place-items-center rounded bg-muted text-[10px] font-bold">{s.logoInitials}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">{s.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {s.board} · {s.city} · {s.students} students
-                </span>
+              <span className="block truncate text-xs text-muted-foreground">{s.board} · {s.city}</span>
               </span>
-              <Badge variant="secondary" className="shrink-0 text-[10px]">{PLAN_BY_ID[s.plan].name}</Badge>
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Campuses</DropdownMenuLabel>
           {school.campuses.map((c) => (
             <DropdownMenuItem key={c.id} className="text-sm">
-              {c.name} <span className="ml-auto text-xs text-muted-foreground">{c.students}</span>
+              {c.name}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -348,14 +345,6 @@ function SchoolYearSelectors() {
             <DropdownMenuItem key={l.id} onClick={() => setLocale(l.id)}>
               {l.native}
               {locale === l.id ? <Icons.Check className="ml-auto size-4" aria-hidden /> : null}
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Plan (demo)</DropdownMenuLabel>
-          {PLANS.map((p) => (
-            <DropdownMenuItem key={p.id} onClick={() => setPlan(p.id)}>
-              {p.name}
-              {plan === p.id ? <Icons.Check className="ml-auto size-4" aria-hidden /> : null}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -421,16 +410,16 @@ function NotificationsMenu() {
 }
 
 function ProfileMenu() {
-  const { user, role, setRole, plan } = useAppState();
+  const { role } = useAppState();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-9 gap-2 px-1.5" aria-label="Account and role menu">
-          <span className="grid size-7 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
-            {user.initials}
+          <span className="grid size-7 place-items-center rounded-full bg-primary-soft text-primary">
+            <Icons.UserRound className="size-4" aria-hidden />
           </span>
           <span className="hidden text-left sm:block">
-            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">{user.name}</span>
+            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">Account</span>
             <span className="block text-[10px] leading-tight text-muted-foreground">{ROLE_LABEL[role]}</span>
           </span>
           <Icons.ChevronDown className="size-3.5" aria-hidden />
@@ -438,35 +427,27 @@ function ProfileMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>
-          <p className="text-sm">{user.name}</p>
-          <p className="text-xs font-normal text-muted-foreground">{user.sub}</p>
+          <p className="text-sm">Account</p>
+          <p className="text-xs font-normal text-muted-foreground">Authenticated workspace access</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs">Switch role (demo only)</DropdownMenuLabel>
-        {ROLES.map((r) => (
-          <DropdownMenuItem
-            key={r.id}
-            onClick={() => {
-              setRole(r.id as Role);
-              toast.success(`Now viewing as ${r.label}`);
-            }}
-          >
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm">{r.label}</span>
-              <span className="block truncate text-xs text-muted-foreground">{r.description}</span>
-            </span>
-            {role === r.id ? <Icons.Check className="size-4 shrink-0" aria-hidden /> : null}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuLabel>
+          <p className="text-xs font-normal text-muted-foreground">Current role</p>
+          <p className="text-sm font-medium">{ROLE_LABEL[role]}</p>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/app/settings">Settings</Link>
         </DropdownMenuItem>
+        {role === "owner" ? (
+          <DropdownMenuItem asChild>
+            <Link to="/app/subscription">Subscription</Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
-          <Link to="/app/subscription">Subscription · {PLAN_BY_ID[plan].name}</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/">Exit demo</Link>
+          <Link to="/" onClick={() => localStorage.removeItem("shwai.demo.state")}>
+            Log out
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

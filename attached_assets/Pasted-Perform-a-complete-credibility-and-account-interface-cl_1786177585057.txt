@@ -1,0 +1,181 @@
+Perform a complete credibility and account-interface cleanup across the SHWAI application.
+
+IMPORTANT:
+Do not redesign the application. Do not change unrelated functionality. Make only the changes described below.
+
+## 1. REMOVE ALL FABRICATED DATA
+
+Audit the entire user-facing application and remove any hardcoded or fabricated information that could be mistaken for real school data.
+
+Remove or replace things such as:
+
+- Fake fee collection amounts
+- Fake revenue/financial figures
+- Fake student/teacher counts
+- Fake attendance percentages
+- Fake academic performance statistics
+- Fake reports
+- Fake analytics
+- Fake rankings
+- Fake payment records
+- Fake activity history
+- Fake intervention/alert statistics
+- Fake growth/improvement percentages
+- Fake school-wide KPIs
+- Fake charts based on invented real-world data
+- Any other information that implies SHWAI already has real school data when it does not
+
+Do NOT simply replace fake numbers with other fake numbers.
+
+For areas where real data does not exist:
+- Show a clean empty state, OR
+- Use clearly labeled "Sample Data" / "Illustrative Data" if example data is genuinely needed to demonstrate the UI.
+
+Never make sample data look like real school data.
+
+Examples of appropriate empty states:
+
+"No data available yet"
+"Add records to begin viewing insights."
+"Reports will appear here once sufficient data is available."
+
+Preserve existing functionality that actually works.
+
+## 2. REMOVE ROLE SWITCHING
+
+Completely remove the role-switching functionality/dropdown from the authenticated dashboard.
+
+A logged-in user must NOT be able to switch roles from inside the dashboard.
+
+Do not show:
+- Switch role
+- Change role
+- Switch account type
+- Role selector
+- Administrator/Principal switching
+- Student/Parent switching
+
+The user's dashboard and permissions should be determined by their authenticated account/role.
+
+The only place where a user chooses their role should be during the initial login/entry flow.
+
+The user-facing role structure is:
+
+SCHOOL
+- Principal
+- Teacher
+- Owner
+
+STUDENT
+- Student
+- Parent
+
+Do NOT show Administrator as a separate user-facing role. Principal represents the school administration role.
+
+## 3. SIBLING / MULTI-CHILD SUPPORT
+
+Do NOT interpret the removal of role switching as removing legitimate sibling/child account functionality.
+
+Parents may have multiple children/siblings associated with their parent account.
+
+If the existing application supports multiple children:
+- Keep that functionality.
+- Allow the parent to select/view their different children where appropriate.
+- This is NOT role switching.
+- Keep the parent logged in as Parent while changing which child they are viewing.
+
+Do not create unnecessary duplicate parent accounts.
+
+## 4. ACCOUNT MENU
+
+After removing role switching, the account/profile menu should contain only relevant account actions.
+
+At minimum, show:
+
+- Current Role
+- Logout
+
+Example:
+
+Current role
+Parent
+
+Log out
+
+Do NOT include:
+- Switch role
+- Change role
+- Administrator
+- Fake account information
+- Unnecessary account-type selectors
+
+The current role should be informational, not editable.
+
+## 5. SCHOOL OWNER SUBSCRIPTION
+
+For users with the SCHOOL OWNER role, display their subscription information clearly in the appropriate account/settings area.
+
+For example:
+
+Subscription
+Professional
+
+or, if the actual subscription information is available:
+
+Subscription
+[Actual Plan]
+
+If no subscription exists yet, show:
+
+Subscription
+No active subscription
+
+Do NOT fabricate a subscription, payment status, price, renewal date, or billing history.
+
+Only display billing/subscription information that actually exists in the application.
+
+The subscription section should be visible specifically to School Owners because the Owner is responsible for the school's subscription.
+
+Do not unnecessarily display school subscription controls to students, parents, or teachers.
+
+## 6. DO NOT BREAK EXISTING FUNCTIONALITY
+
+Preserve:
+
+- Authentication
+- Login/signup
+- Existing routes
+- Existing dashboards
+- Parent → child/sibling selection
+- Existing permissions
+- Existing navigation
+- Existing backend functionality
+- Existing database functionality
+
+Do not modify the database schema unless absolutely necessary.
+
+Do not add email verification.
+
+Do not add new packages.
+
+Do not redesign unrelated pages.
+
+## 7. FINAL CHECK
+
+Before finishing, verify:
+
+- No fabricated financial figures remain.
+- No fabricated analytics remain.
+- No fabricated school statistics remain.
+- No fake reports remain.
+- No fake performance claims remain.
+- No role-switching dropdown remains.
+- Administrator is not presented as a separate user-facing role.
+- Current role is displayed.
+- Logout is available.
+- Parent sibling/child functionality still works.
+- School Owners can see their subscription information.
+- Subscription information is never fabricated.
+- Existing authentication and navigation still work.
+
+Make the smallest necessary changes and do not modify unrelated files.

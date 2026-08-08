@@ -53,8 +53,8 @@ export function PermissionDenied({ role }: { role: string }) {
       <ShieldAlert className="mb-3 size-6 text-warning" aria-hidden />
       <h3 className="text-base font-semibold">You do not have access to this module</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        The <span className="font-medium text-foreground">{role}</span> role cannot open this page. Switch role from the
-        top bar to explore it in the demo.
+        The <span className="font-medium text-foreground">{role}</span> role cannot open this page. Contact a workspace
+        administrator if you need access.
       </p>
     </div>
   );

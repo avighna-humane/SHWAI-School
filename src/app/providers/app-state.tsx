@@ -54,7 +54,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setState({ ...DEFAULTS, ...(JSON.parse(raw) as PersistedState) });
+      if (raw) {
+        const stored = JSON.parse(raw) as PersistedState;
+        setState({ ...DEFAULTS, ...stored, role: stored.role === "admin" ? "principal" : stored.role });
+      }
     } catch {
       /* demo-only persistence */
     }
@@ -78,7 +81,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const readSet = new Set(state.readIds);
     return {
       ...state,
-      user: DEMO_USER[state.role],
+       user: DEMO_USER[state.role],
       school,
       year,
       setRole: (role) => update({ role }),

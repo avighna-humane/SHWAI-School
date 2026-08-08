@@ -395,7 +395,7 @@ function NotificationsMenu() {
 }
 
 function ProfileMenu() {
-  const { role } = useAppState();
+  const { role, actor } = useAppState();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -404,7 +404,7 @@ function ProfileMenu() {
             <Icons.UserRound className="size-4" aria-hidden />
           </span>
           <span className="hidden text-left sm:block">
-            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">Account</span>
+            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">{actor.name}</span>
             <span className="block text-[10px] leading-tight text-muted-foreground">{ROLE_LABEL[role]}</span>
           </span>
           <Icons.ChevronDown className="size-3.5" aria-hidden />
@@ -412,8 +412,8 @@ function ProfileMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>
-          <p className="text-sm">Account</p>
-          <p className="text-xs font-normal text-muted-foreground">Authenticated workspace access</p>
+          <p className="text-sm">{actor.name}</p>
+          <p className="text-xs font-normal text-muted-foreground">Acting as this identity for testing</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>

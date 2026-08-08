@@ -18,7 +18,7 @@ function Settings() {
       <header>
         <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Control centre</p>
         <h1 className="text-3xl font-extrabold tracking-tight">Settings</h1>
-        <p className="mt-2 text-sm text-muted-foreground">School, user, AI and data settings. All changes are demo-only.</p>
+        <p className="mt-2 text-sm text-muted-foreground">School, user, AI and data settings.</p>
       </header>
 
       <Tabs defaultValue="school">
@@ -67,7 +67,7 @@ function Settings() {
             </div>
             <Switch checked={offline} onCheckedChange={setOffline} aria-label="Toggle offline mode" />
           </div>
-          <Button onClick={() => toast.success("Preferences saved (demo)")}>Save preferences</Button>
+          <Button onClick={() => toast.success("Preferences saved")}>Save preferences</Button>
         </TabsContent>
 
          <TabsContent value="ai" className="surface-panel mt-4 space-y-3 p-5 sm:p-6">

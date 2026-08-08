@@ -36,7 +36,7 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
       <AlertTriangle className="mb-3 size-6 text-danger" aria-hidden />
       <h3 className="text-base font-semibold">Something went wrong</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        {message ?? "We could not load this data. This is a simulated failure for demo purposes."}
+        {message ?? "We could not load this data. Please try again."}
       </p>
       {onRetry ? (
         <Button variant="outline" size="sm" className="mt-5" onClick={onRetry}>

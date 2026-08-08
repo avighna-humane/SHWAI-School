@@ -907,7 +907,7 @@ function Landing() {
           <div className="space-y-4 reveal">
             {/* Visual preview of Socratic Tutor interaction */}
             <div className="surface-panel p-5 bg-card/60 border border-border shadow-sm transition-all duration-300 hover:shadow-elevated">
-              <p className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground mb-3">Tutor Interaction Preview</p>
+              <p className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground mb-3">Tutor Interaction</p>
               <div className="space-y-2">
                 <div className="rounded bg-muted/30 p-2.5 text-xs text-[#334155] border border-border/40">
                   <span className="font-semibold text-[#0f172a]">Student:</span> I'm stuck on finding the area of this sector.
@@ -1222,11 +1222,11 @@ function Landing() {
       <section className="mx-auto max-w-4xl px-5 py-16 text-center reveal">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to simplify your school's workflows?</h2>
         <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground leading-relaxed">
-          Explore the SHWAI platform demo to see how we bring administration, class grading, student learning, and parent updates together.
+          Explore the SHWAI platform to see how we bring administration, class grading, student learning, and parent updates together.
         </p>
         <div className="mt-8 flex justify-center gap-3">
           <Button asChild size="lg" className="transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[0_8px_16px_rgba(0,0,0,0.08)]">
-            <a href="#role-selection">Explore the Platform Demo</a>
+            <a href="#role-selection">Explore the Platform</a>
           </Button>
           <Button asChild size="lg" variant="outline" className="transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 hover:bg-accent/20">
             <Link to="/pricing">Compare Plan Features</Link>

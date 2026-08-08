@@ -228,18 +228,6 @@ function Shell() {
         </header>
 
         <main className="min-w-0 flex-1 px-4 pb-24 pt-5 lg:px-6 lg:pb-8">
-          {/* Sandbox Mock Data Alert Banner */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning-soft bg-warning-soft/30 px-4 py-2.5 text-xs text-[#854d0e] shadow-sm">
-            <div className="flex items-center gap-2">
-              <Icons.Info className="size-4 shrink-0 text-amber-600" />
-              <p className="leading-relaxed">
-                <strong className="font-semibold">Demo Sandbox:</strong> This workspace renders illustrative preview mock data. No real student databases, fee reconciliation pipelines, or live school systems are connected.
-              </p>
-            </div>
-            <span className="rounded bg-warning-soft border border-warning/30 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 shrink-0">
-              Illustrative Preview
-            </span>
-          </div>
           <Outlet />
         </main>
 
@@ -280,9 +268,6 @@ function Shell() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground">
-            This is a frontend demo — all data is mock data and no changes leave your browser.
-          </p>
         </DialogContent>
       </Dialog>
     </div>

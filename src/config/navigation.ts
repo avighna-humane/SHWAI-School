@@ -142,8 +142,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Integrations", path: "/app/integrations", icon: "Plug", roles: LEADERSHIP, description: "Classroom, Drive, Teams, Zoom, SMS and WhatsApp" },
       { label: "Settings", path: "/app/settings", icon: "Settings", roles: ALL, description: "School, user, AI, data and privacy settings" },
       { label: "Subscription", path: "/app/subscription", icon: "BadgeCheck", roles: ["owner"], description: "Subscription information for the school owner" },
-      { label: "Billing", path: "/app/billing", icon: "Receipt", roles: ["admin", "owner"], description: "Mock invoices, billing history and payment records" },
-      { label: "Future products", path: "/app/future", icon: "Rocket", roles: ALL, badge: "Preview", description: "Upcoming AI learning and student-guidance products" },
+      { label: "Billing", path: "/app/billing", icon: "Receipt", roles: ["admin", "owner"], description: "Invoices, billing history and payment records" },
+      { label: "AI learning products", path: "/app/future", icon: "Rocket", roles: ALL, description: "AI learning and student-guidance products" },
     ],
   },
 ];

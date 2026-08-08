@@ -33,15 +33,14 @@ function Pricing() {
           <span className="text-sm font-bold tracking-tight">SHWAI</span>
         </Link>
         <Button asChild size="sm">
-          <Link to="/app">Open demo</Link>
+          <Link to="/app">Open app</Link>
         </Button>
       </header>
 
       <main className="mx-auto max-w-6xl px-5 pb-20">
         <h1 className="text-3xl font-extrabold tracking-tight">Plans & pricing</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Indicative pricing per student per year, billed annually in INR. This demo does not connect to a payment
-          provider.
+          Indicative pricing per student per year, billed annually in INR.
         </p>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-3">

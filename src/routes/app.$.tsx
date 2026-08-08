@@ -42,7 +42,7 @@ function ModuleWorkspace() {
 
       <EmptyState
         title="No data available yet"
-        description="Add or connect records to begin using this workspace. SHWAI does not display fabricated school data."
+        description="Add or connect records to begin using this workspace."
         icon={<Icons.Database className="size-6" aria-hidden />}
         action={
           <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">

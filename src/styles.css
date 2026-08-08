@@ -239,3 +239,141 @@
     linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
   background-size: 56px 56px;
 }
+
+/* Animation Keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressFill {
+  from {
+    width: 0%;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Plain CSS Animation Classes */
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-progress {
+  animation: progressFill 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up-fade {
+  opacity: 0;
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Chart & SVG Keyframes */
+@keyframes scaleYUp {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes svgDraw {
+  from {
+    stroke-dashoffset: 350;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-bar-scale {
+  transform-origin: bottom;
+  animation: scaleYUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-svg-draw {
+  stroke-dasharray: 350;
+  stroke-dashoffset: 350;
+  animation: svgDraw 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom Animation Delay Classes */
+.delay-100 {
+  animation-delay: 100ms !important;
+}
+
+.delay-200 {
+  animation-delay: 200ms !important;
+}
+
+.delay-300 {
+  animation-delay: 300ms !important;
+}
+
+.delay-400 {
+  animation-delay: 400ms !important;
+}
+
+.delay-500 {
+  animation-delay: 500ms !important;
+}
+
+.delay-600 {
+  animation-delay: 600ms !important;
+}
+
+.delay-700 {
+  animation-delay: 700ms !important;
+}
+
+.delay-800 {
+  animation-delay: 800ms !important;
+}
+
+/* Accessibility: Respect user prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+
+  .animate-fade-in-up,
+  .animate-slide-up-fade {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .animate-bar-scale {
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .animate-svg-draw {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
+  }
+}

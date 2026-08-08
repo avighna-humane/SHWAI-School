@@ -29,7 +29,7 @@ function Pricing() {
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">SH</div>
+          <img src="/logo-mark.png" alt="SHWAI Logo" className="size-9 object-contain" />
           <span className="text-sm font-bold tracking-tight">SHWAI</span>
         </Link>
         <Button asChild size="sm">

@@ -18,7 +18,7 @@ interface PersistedState {
 }
 
 const DEFAULTS: PersistedState = {
-  role: "admin",
+  role: "principal",
   schoolId: "sch-1",
   campusId: "cmp-1",
   yearId: "ay-2025",

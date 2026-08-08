@@ -75,9 +75,7 @@ function Shell() {
         )}
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-            SH
-          </div>
+          <img src="/logo-mark.png" alt="SHWAI Logo" className="size-9 shrink-0 object-contain" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-bold tracking-tight">SHWAI</p>
@@ -230,6 +228,18 @@ function Shell() {
         </header>
 
         <main className="min-w-0 flex-1 px-4 pb-24 pt-5 lg:px-6 lg:pb-8">
+          {/* Sandbox Mock Data Alert Banner */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning-soft bg-warning-soft/30 px-4 py-2.5 text-xs text-[#854d0e] shadow-sm">
+            <div className="flex items-center gap-2">
+              <Icons.Info className="size-4 shrink-0 text-amber-600" />
+              <p className="leading-relaxed">
+                <strong className="font-semibold">Demo Sandbox:</strong> This workspace renders illustrative preview mock data. No real student databases, fee reconciliation pipelines, or live school systems are connected.
+              </p>
+            </div>
+            <span className="rounded bg-warning-soft border border-warning/30 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 shrink-0">
+              Illustrative Preview
+            </span>
+          </div>
           <Outlet />
         </main>
 

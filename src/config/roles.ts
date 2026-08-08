@@ -20,12 +20,6 @@ export const ROLES: { id: Role; label: string; description: string; homePath: st
     homePath: "/app",
   },
   {
-    id: "admin",
-    label: "Administrator",
-    description: "School administration and operations",
-    homePath: "/app",
-  },
-  {
     id: "principal",
     label: "Principal",
     description: "School intelligence, staff, governance",
@@ -43,7 +37,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   student: "Student",
   teacher: "Teacher",
   parent: "Parent",
-  admin: "Administrator",
+  admin: "Principal",
   principal: "Principal",
   owner: "School Owner",
 };
@@ -52,7 +46,7 @@ export const DEMO_USER: Record<Role, { name: string; sub: string; initials: stri
   student: { name: "Aarav Sharma", sub: "Grade 9 · Section A", initials: "AS" },
   teacher: { name: "Meera Iyer", sub: "Mathematics · Class Teacher 9A", initials: "MI" },
   parent: { name: "Rajesh Sharma", sub: "Parent of Aarav & Ananya", initials: "RS" },
-  admin: { name: "Sunita Deshpande", sub: "Administrator · Sunrise Public School", initials: "SD" },
+  admin: { name: "Sunita Deshpande", sub: "Principal · Sunrise Public School", initials: "SD" },
   principal: { name: "Dr. Vikram Nair", sub: "Principal · Sunrise Public School", initials: "VN" },
   owner: { name: "Harish Agarwal", sub: "Trustee · Sunrise Education Group", initials: "HA" },
 };

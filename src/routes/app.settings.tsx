@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAppState } from "@/app/providers/app-state";
+import { ACTABLE_STUDENTS, ACTABLE_TEACHERS, useAppState } from "@/app/providers/app-state";
 import { LANGUAGES } from "@/data/mock/core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { FloatingAI } from "@/components/feedback/floating-ai";
 export const Route = createFileRoute("/app/settings")({ component: Settings });
 
 function Settings() {
-  const { locale, setLocale, offline, setOffline } = useAppState();
+  const { role, locale, setLocale, offline, setOffline, studentId, teacherId, setStudentId, setTeacherId, actor } = useAppState();
   return (
     <div className="relative space-y-6">
       <header>
@@ -40,10 +40,48 @@ function Settings() {
 
          <TabsContent value="user" className="surface-panel mt-4 space-y-4 p-5 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-               <Label htmlFor="uname">Display name</Label>
-               <Input id="uname" placeholder="Not connected" />
-            </div>
+            {role === "student" ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="acting-as-student">Acting as (demo identity)</Label>
+                <select
+                  id="acting-as-student"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {ACTABLE_STUDENTS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — Grade {s.grade} {s.section}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Switch between students to test independent homework, submissions, notices and chat.
+                </p>
+              </div>
+            ) : role === "teacher" ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="acting-as-teacher">Acting as (demo identity)</Label>
+                <select
+                  id="acting-as-teacher"
+                  value={teacherId}
+                  onChange={(e) => setTeacherId(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {ACTABLE_TEACHERS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} — {t.subjects[0]}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Teachers assigned to Grade 9 — A, for testing homework and student management.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="uname">Display name</Label>
+                <Input id="uname" value={actor.name} disabled />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="ulang">Language preference</Label>
               <select

@@ -678,3 +678,151 @@ export interface FutureProduct {
   stage: "preview" | "in-design" | "planned";
   eta: string;
 }
+
+// ── Real, DB-backed SHWAI workflows (notices, homework, submissions, chat) ──
+// These mirror the Supabase rows (see src/server/*) and intentionally stay
+// separate from the mock Assignment/Submission types above, which power the
+// unrelated gradebook/exam mock UI.
+
+export type NoticeAudienceType =
+  | "all_students"
+  | "class"
+  | "all_teachers"
+  | "specific_teachers"
+  | "specific_students"
+  | "parents"
+  | "school";
+
+export interface FileMeta {
+  id: string;
+  filePath: string;
+  fileName: string;
+  sizeBytes: number;
+  mimeType: string;
+}
+
+export interface Notice {
+  id: string;
+  schoolId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: "teacher" | "principal";
+  title: string;
+  body: string;
+  audienceType: NoticeAudienceType;
+  audienceClassIds: string[];
+  audienceTeacherIds: string[];
+  audienceStudentIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  attachments: FileMeta[];
+  /** Populated only in viewer-scoped lists (student/teacher own status). */
+  viewerHasViewed?: boolean;
+  /** Populated only in author-scoped "my notices" lists. */
+  recipientCount?: number;
+  viewedCount?: number;
+}
+
+export interface NoticeActivityRow {
+  viewerId: string;
+  viewerName: string;
+  viewed: boolean;
+  firstViewedAt: string | null;
+  lastViewedAt: string | null;
+  viewCount: number;
+}
+
+export interface NoticeActivity {
+  recipientCount: number;
+  viewedCount: number;
+  rows: NoticeActivityRow[];
+}
+
+export type HomeworkStatus = "draft" | "published" | "closed";
+export type SubmissionStatus = "submitted" | "late" | "graded";
+
+export interface HomeworkItem {
+  id: string;
+  schoolId: string;
+  teacherId: string;
+  teacherName: string;
+  subject: string;
+  classId: string;
+  classLabel: string;
+  title: string;
+  description: string;
+  dueAt: string;
+  totalMarks: number | null;
+  allowResubmission: boolean;
+  status: HomeworkStatus;
+  createdAt: string;
+  attachments: FileMeta[];
+  /** Populated only for the student viewer. */
+  viewerHasViewed?: boolean;
+  viewerSubmission?: SubmissionRecord | null;
+  /** Populated only for the teacher/principal viewer (activity rollup). */
+  assignedCount?: number;
+  viewedCount?: number;
+  submittedCount?: number;
+  lateCount?: number;
+}
+
+export interface HomeworkActivityRow {
+  studentId: string;
+  studentName: string;
+  viewed: boolean;
+  firstViewedAt: string | null;
+  submitted: boolean;
+  submissionStatus: SubmissionStatus | null;
+  submittedAt: string | null;
+}
+
+export interface HomeworkActivity {
+  assignedCount: number;
+  viewedCount: number;
+  notViewedCount: number;
+  submittedCount: number;
+  notSubmittedCount: number;
+  lateCount: number;
+  rows: HomeworkActivityRow[];
+}
+
+export interface SubmissionRecord {
+  id: string;
+  homeworkId: string;
+  homeworkTitle?: string;
+  studentId: string;
+  studentName: string;
+  comment: string | null;
+  status: SubmissionStatus;
+  submittedAt: string;
+  marks: number | null;
+  feedback: string | null;
+  reviewedAt: string | null;
+  files: FileMeta[];
+}
+
+export interface Conversation {
+  id: string;
+  schoolId: string;
+  teacherId: string;
+  studentId: string;
+  otherId: string;
+  otherName: string;
+  lastMessageBody?: string;
+  lastMessageAt?: string;
+  unreadCount: number;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderType: "teacher" | "student";
+  senderId: string;
+  body: string;
+  createdAt: string;
+  readByTeacherAt: string | null;
+  readByStudentAt: string | null;
+  attachment?: FileMeta;
+}

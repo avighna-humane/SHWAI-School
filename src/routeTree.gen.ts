@@ -14,9 +14,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
+import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as AppHomeworkHomeworkIdRouteImport } from './routes/app.homework.$homeworkId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +45,11 @@ const AppSplatRoute = AppSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHomeworkRoute = AppHomeworkRouteImport.update({
+  id: '/homework',
+  path: '/homework',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -58,25 +65,34 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   path: '/subscription',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHomeworkHomeworkIdRoute = AppHomeworkHomeworkIdRouteImport.update({
+  id: '/$homeworkId',
+  path: '/$homeworkId',
+  getParentRoute: () => AppHomeworkRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
+  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,10 +100,12 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,29 +114,35 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
+    | '/app/homework/$homeworkId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pricing'
     | '/app/$'
+    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app'
+    | '/app/homework/$homeworkId'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
+    | '/app/homework/$homeworkId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/homework': {
+      id: '/app/homework'
+      path: '/homework'
+      fullPath: '/app/homework'
+      preLoaderRoute: typeof AppHomeworkRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
@@ -185,11 +216,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/homework/$homeworkId': {
+      id: '/app/homework/$homeworkId'
+      path: '/$homeworkId'
+      fullPath: '/app/homework/$homeworkId'
+      preLoaderRoute: typeof AppHomeworkHomeworkIdRouteImport
+      parentRoute: typeof AppHomeworkRoute
+    }
   }
 }
 
+interface AppHomeworkRouteChildren {
+  AppHomeworkHomeworkIdRoute: typeof AppHomeworkHomeworkIdRoute
+}
+
+const AppHomeworkRouteChildren: AppHomeworkRouteChildren = {
+  AppHomeworkHomeworkIdRoute: AppHomeworkHomeworkIdRoute,
+}
+
+const AppHomeworkRouteWithChildren = AppHomeworkRoute._addFileChildren(
+  AppHomeworkRouteChildren,
+)
+
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppHomeworkRoute: typeof AppHomeworkRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
@@ -198,6 +249,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppHomeworkRoute: AppHomeworkRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,

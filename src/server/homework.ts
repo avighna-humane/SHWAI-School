@@ -266,6 +266,78 @@ export const createHomework = createServerFn({ method: "POST" })
     return { id: inserted.id as string };
   });
 
+/** Teacher edits their own homework. Class/subject stay fixed so roster + activity rollups stay consistent. */
+export const updateHomework = createServerFn({ method: "POST" })
+  .validator((data: FormData) => data)
+  .handler(async ({ data }) => {
+    const role = data.get("role") as ActorRole;
+    const actorId = (data.get("actorId") as string) || undefined;
+    const actor = resolveActor({ role, actorId });
+    if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can edit homework.");
+
+    const homeworkId = String(data.get("homeworkId") ?? "");
+    const { data: hw, error: hwError } = await supabaseAdmin.from("homework").select("id, teacher_id").eq("id", homeworkId).is("deleted_at", null).single();
+    if (hwError || !hw) throw new NotFoundError("Homework not found.");
+    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only edit homework you created.");
+
+    const title = String(data.get("title") ?? "").trim();
+    const subject = String(data.get("subject") ?? "").trim();
+    const description = String(data.get("description") ?? "").trim();
+    const dueAt = String(data.get("dueAt") ?? "");
+    if (!title || !subject || !description || !dueAt) throw new Error("Title, subject, description and due date are required.");
+
+    const totalMarksRaw = data.get("totalMarks");
+    const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : null;
+    const allowResubmission = data.get("allowResubmission") === "true";
+
+    const { error } = await supabaseAdmin
+      .from("homework")
+      .update({ title, subject, description, due_at: dueAt, total_marks: totalMarks, allow_resubmission: allowResubmission })
+      .eq("id", homeworkId);
+    if (error) throw new Error(error.message);
+
+    const files = data.getAll("attachments").filter((f): f is File => f instanceof File && f.size > 0);
+    for (const file of files) {
+      assertValidFile(file);
+      const meta = await uploadToBucket(`homework/${homeworkId}`, file);
+      const { error: attError } = await supabaseAdmin.from("homework_attachments").insert({ homework_id: homeworkId, ...meta });
+      if (attError) throw new Error(attError.message);
+    }
+
+    return { id: homeworkId };
+  });
+
+/** Teacher removes an attachment they added while editing homework (before or after publish). */
+export const deleteHomeworkAttachment = createServerFn({ method: "POST" })
+  .validator((data: { role: ActorRole; actorId?: string; homeworkId: string; attachmentId: string; filePath: string }) => data)
+  .handler(async ({ data }) => {
+    const actor = resolveActor(data);
+    if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can edit homework.");
+    const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
+    if (error || !hw) throw new NotFoundError("Homework not found.");
+    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only edit homework you created.");
+
+    await supabaseAdmin.storage.from("shwai-files").remove([data.filePath]);
+    const { error: delError } = await supabaseAdmin.from("homework_attachments").delete().eq("id", data.attachmentId);
+    if (delError) throw new Error(delError.message);
+    return { ok: true };
+  });
+
+/** Soft delete — teacher's own homework only. Filtered out of every list/detail query via deleted_at. */
+export const deleteHomework = createServerFn({ method: "POST" })
+  .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)
+  .handler(async ({ data }) => {
+    const actor = resolveActor(data);
+    if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can delete homework.");
+    const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
+    if (error || !hw) throw new NotFoundError("Homework not found.");
+    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only delete homework you created.");
+
+    const { error: delError } = await supabaseAdmin.from("homework").update({ deleted_at: new Date().toISOString() }).eq("id", data.homeworkId);
+    if (delError) throw new Error(delError.message);
+    return { ok: true };
+  });
+
 /** Idempotent per (homework, student) — repeat opens bump view_count, never inflate the "viewed" count. */
 export const recordHomeworkView = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)

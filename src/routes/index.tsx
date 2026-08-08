@@ -27,6 +27,19 @@ import { Button } from "@/components/ui/button";
 import { PLANS } from "@/config/plans";
 
 function DashboardPreview() {
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "schedule" | "students" | "attendance" | "academics" | "all"
+  >("overview");
+
+  const tabs = [
+    { id: "overview" as const, label: "Overview" },
+    { id: "schedule" as const, label: "Schedule" },
+    { id: "students" as const, label: "Students" },
+    { id: "attendance" as const, label: "Attendance" },
+    { id: "academics" as const, label: "Academics" },
+    { id: "all" as const, label: "All" },
+  ];
+
   return (
     <div className="w-full text-left rounded-2xl border border-border bg-[#f8fafc] p-4 sm:p-6 shadow-elevated">
       {/* Brand Header */}
@@ -52,273 +65,521 @@ function DashboardPreview() {
       </div>
 
       {/* Navigation Tab Bar */}
-      <div className="flex items-center gap-6 border-b border-border/60 pb-3 mb-6 overflow-x-auto scrollbar-none">
-        <span className="text-sm font-bold text-[#0f172a] border-b-2 border-[#0f172a] pb-3 -mb-3 whitespace-nowrap">Dashboard</span>
-        <span className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors pb-3 -mb-3 cursor-pointer whitespace-nowrap">Schedule</span>
-        <span className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors pb-3 -mb-3 cursor-pointer whitespace-nowrap">Students</span>
-        <span className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors pb-3 -mb-3 cursor-pointer whitespace-nowrap">Faculty</span>
-        <span className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors pb-3 -mb-3 cursor-pointer whitespace-nowrap">Grades</span>
-        <span className="text-sm text-[#64748b] hover:text-[#0f172a] transition-colors pb-3 -mb-3 cursor-pointer whitespace-nowrap">Analytics</span>
+      <div className="flex items-center gap-0 border-b border-border/60 mb-6 overflow-x-auto scrollbar-none">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`text-sm px-4 pb-3 -mb-px whitespace-nowrap transition-colors border-b-2 ${
+              activeTab === tab.id
+                ? "font-bold text-[#0f172a] border-[#0f172a]"
+                : "font-medium text-[#64748b] border-transparent hover:text-[#0f172a] hover:border-[#cbd5e1]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Grid Layout */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Column 1: Today's Class Schedule */}
-        <div className="bg-card rounded-xl border border-border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-          <div>
-            <div className="flex items-center justify-between mb-4">
+      {/* Tab Content — key forces remount so animate-slide-up-fade retriggers */}
+      <div key={activeTab} className="animate-slide-up-fade">
+
+        {/* ── OVERVIEW ──────────────────────────────────────────── */}
+        {activeTab === "overview" && (
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Col 1: Schedule */}
+            <div className="bg-card rounded-xl border border-border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
               <div>
-                <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Today's Class Schedule</h4>
-                <p className="text-[11px] text-[#64748b] mt-0.5">October 26, 2023</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Today's Class Schedule</h4>
+                    <p className="text-[11px] text-[#64748b] mt-0.5">October 26, 2023</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-primary-soft text-primary"><Calendar className="size-4" /></div>
+                </div>
+                <p className="text-xs font-semibold text-[#475569] mb-4">08:00 – 15:30</p>
+                <div className="relative pl-6 border-l border-border/80 space-y-4 py-1">
+                  {[
+                    { time: "08:30 Mathematics", room: "Room 201", teacher: "Mr. J. Davis" },
+                    { time: "09:45 Physics",     room: "Lab 3",    teacher: "Ms. E. Smith" },
+                    { time: "11:00 History",      room: "Room 104", teacher: "Mr. R. Garcia" },
+                    { time: "13:30 English Lit.", room: "Room 302", teacher: "Mrs. A. Patel" },
+                  ].map((c) => (
+                    <div key={c.time} className="relative">
+                      <span className="absolute -left-[29px] top-1.5 size-2 rounded-full bg-primary border-4 border-card" />
+                      <div className="bg-[#f8fafc] border border-border/80 rounded-lg p-3 text-xs flex flex-col gap-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary-soft/10">
+                        <div className="flex items-center justify-between font-bold text-[#0f172a]">
+                          <span>{c.time}</span>
+                          <span className="text-[10px] text-[#64748b] font-normal">{c.room}</span>
+                        </div>
+                        <span className="text-[#64748b]">{c.teacher}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="p-2 rounded-lg bg-primary-soft text-primary">
-                <Calendar className="size-4" />
+              <button className="mt-5 w-full py-2 border border-border hover:bg-muted text-[#475569] font-medium text-xs rounded-lg transition-colors">
+                View Full Schedule
+              </button>
+            </div>
+
+            {/* Col 2: Attendance */}
+            <div className="bg-card rounded-xl border border-border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20 relative overflow-hidden">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Student Attendance Trends</h4>
+                    <p className="text-[11px] text-[#64748b] mt-0.5">Overall Weekly Attendance</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-primary-soft text-primary"><BarChart3 className="size-4" /></div>
+                </div>
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-xs font-semibold text-[#475569]">Week 42</span>
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] text-white text-[10px] font-semibold cursor-pointer transition-colors shadow-sm">
+                    Week 42 <ChevronDown className="size-3" />
+                  </span>
+                </div>
+                <div className="relative h-44 flex items-end justify-between border-b border-border/80 pb-2 mt-4 px-2">
+                  <div className="absolute inset-x-0 top-0    border-t border-border/30 h-0 w-full" />
+                  <div className="absolute inset-x-0 top-[25%] border-t border-border/30 h-0 w-full" />
+                  <div className="absolute inset-x-0 top-[50%] border-t border-border/30 h-0 w-full" />
+                  <div className="absolute inset-x-0 top-[75%] border-t border-border/30 h-0 w-full" />
+                  {[
+                    { h: 110, label: "Oct 21", pct: "94.2%", hi: false },
+                    { h: 104, label: "Oct 22", pct: "92.8%", hi: false },
+                    { h: 116, label: "Oct 23", pct: "96.1%", hi: false },
+                    { h: 100, label: "Oct 24", pct: "89.7%", hi: false },
+                    { h: 110, label: "Oct 25", pct: "94.2%", hi: true  },
+                  ].map((b, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 w-[14%] z-10">
+                      <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">{b.pct}</span>
+                      <div
+                        className={`w-full rounded-t-[3px] transition-colors animate-bar-scale ${b.hi ? "bg-[#0f52ba]/80 hover:bg-[#0f52ba]" : "bg-[#1e293b] hover:bg-[#0f172a]"}`}
+                        style={{ height: `${b.h}px`, animationDelay: `${i * 100}ms` }}
+                      />
+                      <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">{b.label}</span>
+                    </div>
+                  ))}
+                  <svg className="absolute inset-0 h-44 w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 10 38 L 30 40 L 50 34 L 70 44 L 90 38" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-svg-draw" />
+                  </svg>
+                  {[10, 30, 50, 70, 90].map((l) => (
+                    <div key={l} className="absolute bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" style={{ left: `${l}%` }} />
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-4 text-[9px] mt-4">
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#1e293b]" /> Present</span>
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#ef4444]" /> Absent</span>
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#f59e0b]" /> Late</span>
+                </div>
+              </div>
+              <div className="mt-5 p-3 rounded-lg bg-[#eff6ff] border border-[#bfdbfe]/40 text-[#1e40af] text-[11px] flex items-start gap-2">
+                <Info className="size-4 shrink-0 mt-0.5 text-blue-500" />
+                <p>Overall attendance is stable at <strong>94.2%</strong> this week.</p>
               </div>
             </div>
-            
-            <p className="text-xs font-semibold text-[#475569] mb-4">08:00 - 15:30</p>
-            
-            {/* Timeline */}
-            <div className="relative pl-6 border-l border-border/80 space-y-4 py-1">
-              {/* Mathematics */}
-              <div className="relative">
-                <span className="absolute -left-[29px] top-1.5 size-2 rounded-full bg-primary border-4 border-card" />
-                <div className="bg-[#f8fafc] border border-border/80 rounded-lg p-3 text-xs flex flex-col gap-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary-soft/10">
-                  <div className="flex items-center justify-between font-bold text-[#0f172a]">
-                    <span>08:30 Mathematics</span>
-                    <span className="text-[10px] text-[#64748b] font-normal">Room 201</span>
-                  </div>
-                  <span className="text-[#64748b]">Mr. J. Davis</span>
-                </div>
-              </div>
 
-              {/* Physics */}
-              <div className="relative">
-                <span className="absolute -left-[29px] top-1.5 size-2 rounded-full bg-primary border-4 border-card" />
-                <div className="bg-[#f8fafc] border border-border/80 rounded-lg p-3 text-xs flex flex-col gap-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary-soft/10">
-                  <div className="flex items-center justify-between font-bold text-[#0f172a]">
-                    <span>09:45 Physics</span>
-                    <span className="text-[10px] text-[#64748b] font-normal">Lab 3</span>
-                  </div>
-                  <span className="text-[#64748b]">Ms. E. Smith</span>
+            {/* Col 3: Academic Progress */}
+            <div className="bg-card rounded-xl border border-border p-5 flex flex-col shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Academic Progress</h4>
+                  <p className="text-[11px] text-[#64748b] mt-0.5">Student Progress Cards</p>
                 </div>
+                <div className="p-2 rounded-lg bg-primary-soft text-primary"><GraduationCap className="size-4" /></div>
               </div>
-
-              {/* History */}
-              <div className="relative">
-                <span className="absolute -left-[29px] top-1.5 size-2 rounded-full bg-primary border-4 border-card" />
-                <div className="bg-[#f8fafc] border border-border/80 rounded-lg p-3 text-xs flex flex-col gap-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary-soft/10">
-                  <div className="flex items-center justify-between font-bold text-[#0f172a]">
-                    <span>11:00 History</span>
-                    <span className="text-[10px] text-[#64748b] font-normal">Room 104</span>
+              <div className="space-y-4">
+                {[
+                  { initials: "EC", bg: "bg-[#bfdbfe] text-blue-800 border-blue-200",   name: "Emily Chen",    grade: "Grade 10 • GPA 3.9", subjects: "Math A | Sci A-",    pct: 96, delay: "" },
+                  { initials: "LW", bg: "bg-[#fed7aa] text-orange-800 border-orange-200", name: "Liam Wilson",   grade: "Grade 9 • GPA 3.4",  subjects: "Eng B+ | Hist B",   pct: 82, delay: "delay-100" },
+                  { initials: "SM", bg: "bg-[#fbcfe8] text-pink-800 border-pink-200",    name: "Sophia Miller", grade: "Grade 11 • GPA 4.0", subjects: "Math A+ | Phys A+", pct: 99, delay: "delay-200" },
+                ].map((s, i) => (
+                  <div key={s.name} className={`flex items-center justify-between ${i < 2 ? "border-b border-border/40 pb-3" : ""}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`size-9 rounded-full ${s.bg} font-bold text-xs flex items-center justify-center border`}>{s.initials}</div>
+                      <div>
+                        <h5 className="text-xs font-bold text-[#0f172a]">{s.name}</h5>
+                        <p className="text-[9px] text-[#64748b]">{s.grade}</p>
+                        <p className="text-[9px] text-primary font-medium mt-0.5">{s.subjects}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-[#0f172a] font-mono">{s.pct}%</span>
+                      <div className="h-1.5 w-20 rounded-full bg-[#f1f5f9] overflow-hidden mt-1.5">
+                        <div className={`h-full bg-[#0f52ba]/80 rounded-full animate-progress ${s.delay}`} style={{ width: `${s.pct}%` }} />
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[#64748b]">Mr. R. Garcia</span>
-                </div>
-              </div>
-
-              {/* English Lit. */}
-              <div className="relative">
-                <span className="absolute -left-[29px] top-1.5 size-2 rounded-full bg-primary border-4 border-card" />
-                <div className="bg-[#f8fafc] border border-border/80 rounded-lg p-3 text-xs flex flex-col gap-1 transition-all duration-200 hover:border-primary/30 hover:bg-primary-soft/10">
-                  <div className="flex items-center justify-between font-bold text-[#0f172a]">
-                    <span>13:30 English Lit.</span>
-                    <span className="text-[10px] text-[#64748b] font-normal">Room 302</span>
-                  </div>
-                  <span className="text-[#64748b]">Mrs. A. Patel</span>
-                </div>
+                ))}
               </div>
             </div>
           </div>
-          
-          <button className="mt-5 w-full py-2 border border-border hover:bg-muted text-[#475569] font-medium text-xs rounded-lg transition-colors">
-            View Full Schedule
-          </button>
-        </div>
+        )}
 
-        {/* Column 2: Student Attendance Trends */}
-        <div className="bg-card rounded-xl border border-border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20 relative overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between mb-4">
+        {/* ── SCHEDULE ──────────────────────────────────────────── */}
+        {activeTab === "schedule" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Student Attendance Trends</h4>
-                <p className="text-[11px] text-[#64748b] mt-0.5">Overall Weekly Attendance</p>
+                <h4 className="text-sm font-bold text-[#0f172a]">Today's Schedule</h4>
+                <p className="text-[11px] text-[#64748b]">Thursday, October 26, 2023</p>
               </div>
-              <div className="p-2 rounded-lg bg-primary-soft text-primary">
-                <BarChart3 className="size-4" />
-              </div>
+              <span className="text-[11px] font-mono bg-primary-soft text-primary px-2.5 py-1 rounded-md font-semibold">08:00 – 15:30</span>
             </div>
-
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-xs font-semibold text-[#475569]">Week 42</span>
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#0f172a] hover:bg-[#1e293b] text-white text-[10px] font-semibold cursor-pointer transition-colors shadow-sm">
-                Week 42 <ChevronDown className="size-3" />
-              </span>
-            </div>
-
-            {/* Attendance Bar Chart with Trend line */}
-            <div className="relative h-44 flex items-end justify-between border-b border-border/80 pb-2 mt-4 px-2">
-              {/* Y Axis Grid Lines */}
-              <div className="absolute inset-x-0 top-0 border-t border-border/30 h-0 w-full" />
-              <div className="absolute inset-x-0 top-[25%] border-t border-border/30 h-0 w-full" />
-              <div className="absolute inset-x-0 top-[50%] border-t border-border/30 h-0 w-full" />
-              <div className="absolute inset-x-0 top-[75%] border-t border-border/30 h-0 w-full" />
-
-              {/* Bar 1 */}
-              <div className="flex flex-col items-center gap-1 w-[14%] z-10">
-                <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">94.2%</span>
-                <div className="w-full bg-[#1e293b] hover:bg-[#0f172a] rounded-t-[3px] transition-colors animate-bar-scale" style={{ height: "110px" }} />
-                <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">Oct 21-25</span>
-              </div>
-
-              {/* Bar 2 */}
-              <div className="flex flex-col items-center gap-1 w-[14%] z-10">
-                <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">94.2%</span>
-                <div className="w-full bg-[#1e293b] hover:bg-[#0f172a] rounded-t-[3px] transition-colors animate-bar-scale delay-100" style={{ height: "110px" }} />
-                <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">Oct 21</span>
-              </div>
-
-              {/* Bar 3 */}
-              <div className="flex flex-col items-center gap-1 w-[14%] z-10">
-                <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">94.2%</span>
-                <div className="w-full bg-[#1e293b] hover:bg-[#0f172a] rounded-t-[3px] transition-colors animate-bar-scale delay-200" style={{ height: "110px" }} />
-                <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">Oct 21-25</span>
-              </div>
-
-              {/* Bar 4 */}
-              <div className="flex flex-col items-center gap-1 w-[14%] z-10">
-                <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">94.2%</span>
-                <div className="w-full bg-[#1e293b] hover:bg-[#0f172a] rounded-t-[3px] transition-colors animate-bar-scale delay-300" style={{ height: "110px" }} />
-                <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">Oct 21-24</span>
-              </div>
-
-              {/* Bar 5 */}
-              <div className="flex flex-col items-center gap-1 w-[14%] z-10">
-                <span className="text-[9px] font-bold text-[#0f172a] font-mono mb-0.5">94.2%</span>
-                <div className="w-full bg-[#0f52ba]/80 hover:bg-[#0f52ba] rounded-t-[3px] transition-colors animate-bar-scale delay-400" style={{ height: "110px" }} />
-                <span className="text-[8px] text-[#64748b] font-mono mt-1 whitespace-nowrap">Oct 21-25</span>
-              </div>
-
-              {/* SVG Trend Line Overlay */}
-              <svg className="absolute inset-0 h-44 w-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                  d="M 10 38 L 30 38 L 50 38 L 70 38 L 90 38" 
-                  stroke="#3b82f6" 
-                  strokeWidth="2.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  className="animate-svg-draw"
-                />
-              </svg>
-              {/* Dots at connections */}
-              <div className="absolute left-[10%] bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" />
-              <div className="absolute left-[30%] bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" />
-              <div className="absolute left-[50%] bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" />
-              <div className="absolute left-[70%] bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" />
-              <div className="absolute left-[90%] bottom-[110px] -translate-x-1/2 translate-y-1/2 size-2 rounded-full bg-primary border border-white" />
-            </div>
-
-            {/* Legend */}
-            <div className="flex items-center justify-center gap-4 text-[9px] mt-4">
-              <span className="flex items-center gap-1.5 text-[#64748b] font-medium">
-                <span className="size-2 rounded-[2px] bg-[#1e293b]" /> Present
-              </span>
-              <span className="flex items-center gap-1.5 text-[#64748b] font-medium">
-                <span className="size-2 rounded-[2px] bg-[#ef4444]" /> Absent
-              </span>
-              <span className="flex items-center gap-1.5 text-[#64748b] font-medium">
-                <span className="size-2 rounded-[2px] bg-[#f59e0b]" /> Late
-              </span>
+            <div className="space-y-2.5">
+              {[
+                { start: "08:30", end: "09:30", subject: "Mathematics",        teacher: "Mr. J. Davis",   room: "Room 201", cls: "Grade 10-A", status: "done" },
+                { start: "09:45", end: "10:45", subject: "Physics",            teacher: "Ms. E. Smith",   room: "Lab 3",    cls: "Grade 10-B", status: "done" },
+                { start: "11:00", end: "12:00", subject: "History",            teacher: "Mr. R. Garcia",  room: "Room 104", cls: "Grade 9-A",  status: "active" },
+                { start: "12:00", end: "13:00", subject: "Lunch Break",        teacher: "",               room: "Cafeteria", cls: "",          status: "break" },
+                { start: "13:30", end: "14:30", subject: "English Literature", teacher: "Mrs. A. Patel",  room: "Room 302", cls: "Grade 11-A", status: "upcoming" },
+                { start: "14:45", end: "15:30", subject: "Chemistry",          teacher: "Dr. K. Rao",     room: "Lab 1",    cls: "Grade 9-B",  status: "upcoming" },
+              ].map((c) => (
+                <div
+                  key={c.start}
+                  className={`flex items-start gap-4 p-3 rounded-xl border transition-all duration-200 ${
+                    c.status === "active"   ? "bg-primary-soft/30 border-primary/30" :
+                    c.status === "break"    ? "bg-muted/40 border-border/40" :
+                    c.status === "done"     ? "bg-card border-border opacity-60" :
+                    "bg-card border-border hover:border-primary/20 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="w-16 shrink-0 text-right">
+                    <span className="text-xs font-bold text-[#0f172a] font-mono">{c.start}</span>
+                    <p className="text-[9px] text-[#64748b] font-mono">{c.end}</p>
+                  </div>
+                  <div className={`mt-1.5 w-0.5 h-8 rounded-full shrink-0 ${
+                    c.status === "active"   ? "bg-primary" :
+                    c.status === "break"    ? "bg-border" :
+                    c.status === "done"     ? "bg-success" :
+                    "bg-border/60"
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className={`text-sm font-bold ${c.status === "break" ? "text-[#64748b]" : "text-[#0f172a]"}`}>{c.subject}</h4>
+                      {c.status === "active"   && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary text-white shrink-0">In Progress</span>}
+                      {c.status === "done"     && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success-soft text-success shrink-0">Done</span>}
+                      {c.status === "upcoming" && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-[#64748b] border border-border shrink-0">Upcoming</span>}
+                    </div>
+                    {c.teacher
+                      ? <p className="text-[11px] text-[#64748b] mt-0.5">{c.teacher} · {c.room} · {c.cls}</p>
+                      : <p className="text-[11px] text-[#64748b] mt-0.5">{c.room}</p>
+                    }
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+        )}
 
-          {/* Banner */}
-          <div className="mt-5 p-3 rounded-lg bg-[#eff6ff] border border-[#bfdbfe]/40 text-[#1e40af] text-[11px] flex items-start gap-2">
-            <Info className="size-4 shrink-0 mt-0.5 text-blue-500" />
-            <p>Overall Attendance rate is stable. <strong>94.2%</strong></p>
-          </div>
-        </div>
-
-        {/* Column 3: Academic Progress Overview */}
-        <div className="bg-card rounded-xl border border-border p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-          <div>
-            <div className="flex items-center justify-between mb-4">
+        {/* ── STUDENTS ──────────────────────────────────────────── */}
+        {activeTab === "students" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
               <div>
-                <h4 className="text-sm font-bold text-[#0f172a] tracking-tight">Academic Progress Overview</h4>
-                <p className="text-[11px] text-[#64748b] mt-0.5">Progress Cards</p>
+                <h4 className="text-sm font-bold text-[#0f172a]">Student Directory</h4>
+                <p className="text-[11px] text-[#64748b]">All enrolled students — current term</p>
               </div>
-              <div className="p-2 rounded-lg bg-primary-soft text-primary">
-                <GraduationCap className="size-4" />
-              </div>
+              <span className="text-[11px] font-semibold text-[#475569] bg-muted px-2.5 py-1 rounded-md border border-border">552 Students</span>
             </div>
+            <div className="rounded-xl border border-border overflow-hidden bg-card">
+              <div className="grid grid-cols-5 gap-3 px-4 py-2.5 bg-muted/50 border-b border-border text-[10px] font-bold text-[#64748b] uppercase tracking-wider">
+                <span className="col-span-2">Student</span>
+                <span className="text-center">Attendance</span>
+                <span className="text-center">GPA</span>
+                <span className="text-center">Status</span>
+              </div>
+              {[
+                { initials: "EC", bg: "bg-[#bfdbfe] text-blue-800 border-blue-200",     name: "Emily Chen",    cls: "Grade 10-A", att: 98, gpa: 3.9, ok: true },
+                { initials: "LW", bg: "bg-[#fed7aa] text-orange-800 border-orange-200", name: "Liam Wilson",   cls: "Grade 9-B",  att: 82, gpa: 3.4, ok: true },
+                { initials: "SM", bg: "bg-[#fbcfe8] text-pink-800 border-pink-200",     name: "Sophia Miller", cls: "Grade 11-A", att: 96, gpa: 4.0, ok: true },
+                { initials: "AM", bg: "bg-[#d1fae5] text-emerald-800 border-emerald-200", name: "Arjun Mehta", cls: "Grade 10-B", att: 74, gpa: 3.1, ok: false },
+                { initials: "MP", bg: "bg-[#e0e7ff] text-indigo-800 border-indigo-200", name: "Maya Patel",    cls: "Grade 9-A",  att: 91, gpa: 3.6, ok: true },
+                { initials: "JR", bg: "bg-[#fef3c7] text-amber-800 border-amber-200",   name: "Jake Rivera",   cls: "Grade 11-B", att: 88, gpa: 3.3, ok: true },
+              ].map((s, i) => (
+                <div key={s.name} className={`grid grid-cols-5 gap-3 items-center px-4 py-3 transition-colors hover:bg-muted/20 ${i < 5 ? "border-b border-border/60" : ""}`}>
+                  <div className="col-span-2 flex items-center gap-2.5">
+                    <div className={`size-8 rounded-full ${s.bg} font-bold text-[11px] flex items-center justify-center border shrink-0`}>{s.initials}</div>
+                    <div>
+                      <p className="text-xs font-semibold text-[#0f172a]">{s.name}</p>
+                      <p className="text-[10px] text-[#64748b]">{s.cls}</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className={`text-xs font-bold font-mono ${s.att >= 90 ? "text-success" : s.att >= 80 ? "text-warning" : "text-danger"}`}>{s.att}%</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-xs font-bold font-mono text-[#0f172a]">{s.gpa.toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-center">
+                    {s.ok
+                      ? <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success-soft text-success">On Track</span>
+                      : <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning-soft text-warning">Alert</span>
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-            {/* Student List */}
+        {/* ── ATTENDANCE ────────────────────────────────────────── */}
+        {activeTab === "attendance" && (
+          <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4">
-              {/* Emily Chen */}
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-full bg-[#bfdbfe] text-blue-800 font-bold text-xs flex items-center justify-center border border-blue-200">
-                    EC
+              <div>
+                <h4 className="text-sm font-bold text-[#0f172a]">Weekly Attendance</h4>
+                <p className="text-[11px] text-[#64748b]">Week 42 · Oct 21–25, 2023</p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Present", value: "423", cls: "text-success", bg: "bg-success-soft" },
+                  { label: "Absent",  value: "31",  cls: "text-danger",  bg: "bg-danger-soft"  },
+                  { label: "Late",    value: "18",  cls: "text-warning", bg: "bg-warning-soft" },
+                ].map((s) => (
+                  <div key={s.label} className={`${s.bg} rounded-lg p-3 text-center`}>
+                    <p className={`text-base font-bold font-mono ${s.cls}`}>{s.value}</p>
+                    <p className="text-[10px] font-semibold text-[#64748b] mt-0.5">{s.label}</p>
                   </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-[#0f172a]">Emily Chen</h5>
-                    <p className="text-[9px] text-[#64748b]">Grade 10 • GPA 3.9</p>
-                    <p className="text-[9px] text-primary font-medium mt-0.5">Math A | Sci A-</p>
-                  </div>
+                ))}
+              </div>
+              <div className="bg-card rounded-xl border border-border p-4">
+                <div className="relative h-36 flex items-end justify-between border-b border-border/80 pb-2 px-1">
+                  {[
+                    { h: 100, label: "Mon", pct: "94.2%", hi: false },
+                    { h: 94,  label: "Tue", pct: "92.4%", hi: false },
+                    { h: 108, label: "Wed", pct: "96.1%", hi: false },
+                    { h: 88,  label: "Thu", pct: "89.7%", hi: false },
+                    { h: 100, label: "Fri", pct: "94.2%", hi: true  },
+                  ].map((b, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1 w-[14%] z-10">
+                      <span className="text-[8px] font-bold text-[#0f172a] font-mono mb-0.5">{b.pct}</span>
+                      <div
+                        className={`w-full rounded-t-[3px] transition-colors animate-bar-scale ${b.hi ? "bg-[#0f52ba]/80 hover:bg-[#0f52ba]" : "bg-[#1e293b] hover:bg-[#0f172a]"}`}
+                        style={{ height: `${b.h}px`, animationDelay: `${i * 80}ms` }}
+                      />
+                      <span className="text-[8px] text-[#64748b] font-mono mt-1">{b.label}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-[#0f172a] font-mono">96%</span>
-                  <div className="h-1.5 w-20 rounded-full bg-[#f1f5f9] overflow-hidden mt-1.5">
-                    <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress" style={{ width: "96%" }} />
-                  </div>
+                <div className="flex items-center justify-center gap-4 text-[9px] mt-3">
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#1e293b]" /> Present</span>
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#ef4444]" /> Absent</span>
+                  <span className="flex items-center gap-1.5 text-[#64748b] font-medium"><span className="size-2 rounded-[2px] bg-[#f59e0b]" /> Late</span>
                 </div>
               </div>
-
-              {/* Liam Wilson */}
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-full bg-[#fed7aa] text-orange-800 font-bold text-xs flex items-center justify-center border border-orange-200">
-                    LW
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-[#0f172a]">Attendance by Grade</h4>
+                <p className="text-[11px] text-[#64748b]">This week's rate per grade level</p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { grade: "Grade 9",  rate: 94, students: 156 },
+                  { grade: "Grade 10", rate: 92, students: 148 },
+                  { grade: "Grade 11", rate: 96, students: 131 },
+                  { grade: "Grade 12", rate: 91, students: 117 },
+                ].map((g) => (
+                  <div key={g.grade} className="bg-card rounded-lg border border-border p-3 hover:border-primary/20 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-[#0f172a]">{g.grade}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#64748b]">{g.students} students</span>
+                        <span className="text-xs font-bold font-mono text-[#0f172a]">{g.rate}%</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-[#f1f5f9] overflow-hidden">
+                      <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress" style={{ width: `${g.rate}%` }} />
+                    </div>
                   </div>
+                ))}
+              </div>
+              <div className="p-3 rounded-lg bg-[#eff6ff] border border-[#bfdbfe]/40 text-[#1e40af] text-[11px] flex items-start gap-2">
+                <Info className="size-4 shrink-0 mt-0.5 text-blue-500" />
+                <p>School-wide average is <strong>93.3%</strong> for Week 42.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ACADEMICS ─────────────────────────────────────────── */}
+        {activeTab === "academics" && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-[#0f172a]">Subject Performance</h4>
+                <p className="text-[11px] text-[#64748b]">Class averages — Grade 9-C</p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { subject: "English Literature", teacher: "Mrs. A. Patel", avg: 91 },
+                  { subject: "Mathematics",        teacher: "Mr. J. Davis",  avg: 87 },
+                  { subject: "History",            teacher: "Mr. R. Garcia", avg: 84 },
+                  { subject: "Physics",            teacher: "Ms. E. Smith",  avg: 79 },
+                  { subject: "Chemistry",          teacher: "Dr. K. Rao",    avg: 76 },
+                ].map((s, i) => (
+                  <div key={s.subject}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div>
+                        <span className="text-xs font-semibold text-[#0f172a]">{s.subject}</span>
+                        <span className="text-[10px] text-[#64748b] ml-2">{s.teacher}</span>
+                      </div>
+                      <span className={`text-xs font-bold font-mono ${s.avg >= 85 ? "text-success" : s.avg >= 80 ? "text-[#0f172a]" : "text-warning"}`}>{s.avg}%</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-[#f1f5f9] overflow-hidden">
+                      <div
+                        className="h-full rounded-full animate-progress"
+                        style={{ width: `${s.avg}%`, background: s.avg >= 85 ? "#22c55e" : s.avg >= 80 ? "#0f52ba" : "#f59e0b", animationDelay: `${i * 100}ms` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-[#0f172a]">Recent Assignments</h4>
+                <p className="text-[11px] text-[#64748b]">Submission status this term</p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { title: "Math Problem Set 7",  subject: "Mathematics",     due: "Oct 28", submitted: 18, total: 24 },
+                  { title: "Physics Lab Report",  subject: "Physics",         due: "Oct 27", submitted: 21, total: 24 },
+                  { title: "History Essay Draft", subject: "History",         due: "Oct 30", submitted: 14, total: 24 },
+                  { title: "English Commentary",  subject: "English Lit.",    due: "Nov 1",  submitted: 22, total: 24 },
+                ].map((a) => (
+                  <div key={a.title} className="bg-card rounded-lg border border-border p-3 hover:border-primary/20 transition-colors">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="text-xs font-semibold text-[#0f172a] leading-tight">{a.title}</p>
+                        <p className="text-[10px] text-[#64748b] mt-0.5">{a.subject} · Due {a.due}</p>
+                      </div>
+                      <span className="text-[10px] font-bold font-mono text-[#0f172a] shrink-0">{a.submitted}/{a.total}</span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-[#f1f5f9] overflow-hidden">
+                      <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress" style={{ width: `${(a.submitted / a.total) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ALL ───────────────────────────────────────────────── */}
+        {activeTab === "all" && (
+          <div className="space-y-5">
+            {/* Top: quick stats */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "Students Enrolled", value: "552",   icon: <GraduationCap className="size-4" />, bg: "bg-primary-soft text-primary" },
+                { label: "Attendance Rate",    value: "93.3%", icon: <BarChart3 className="size-4" />,     bg: "bg-success-soft text-success" },
+                { label: "Active Classes",     value: "6",     icon: <Calendar className="size-4" />,     bg: "bg-info-soft text-info" },
+                { label: "Assignments Due",    value: "4",     icon: <NotebookPen className="size-4" />,  bg: "bg-warning-soft text-warning" },
+              ].map((s) => (
+                <div key={s.label} className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 hover:border-primary/20 transition-all duration-200 hover:shadow-sm">
+                  <div className={`p-2 rounded-lg ${s.bg}`}>{s.icon}</div>
                   <div>
-                    <h5 className="text-xs font-bold text-[#0f172a]">Liam Wilson</h5>
-                    <p className="text-[9px] text-[#64748b]">Grade 9 • GPA 3.4</p>
-                    <p className="text-[9px] text-primary font-medium mt-0.5">Eng B+ | Hist B</p>
+                    <p className="text-sm font-bold text-[#0f172a]">{s.value}</p>
+                    <p className="text-[10px] text-[#64748b]">{s.label}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-[#0f172a] font-mono">82%</span>
-                  <div className="h-1.5 w-20 rounded-full bg-[#f1f5f9] overflow-hidden mt-1.5">
-                    <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress delay-100" style={{ width: "82%" }} />
-                  </div>
+              ))}
+            </div>
+
+            {/* Middle: today's classes + student highlights */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="bg-card rounded-xl border border-border p-4">
+                <h4 className="text-xs font-bold text-[#0f172a] mb-3 flex items-center gap-1.5"><Calendar className="size-3.5 text-primary" /> Today's Classes</h4>
+                <div className="space-y-2">
+                  {[
+                    { time: "08:30", subject: "Mathematics",        teacher: "Mr. J. Davis",  room: "Room 201", status: "done"     },
+                    { time: "09:45", subject: "Physics",            teacher: "Ms. E. Smith",  room: "Lab 3",    status: "done"     },
+                    { time: "11:00", subject: "History",            teacher: "Mr. R. Garcia", room: "Room 104", status: "active"   },
+                    { time: "13:30", subject: "English Literature", teacher: "Mrs. A. Patel", room: "Room 302", status: "upcoming" },
+                  ].map((c) => (
+                    <div key={c.time} className={`flex items-center gap-3 p-2 rounded-lg text-xs transition-colors ${c.status === "active" ? "bg-primary-soft/30 border border-primary/20" : "hover:bg-muted/30"}`}>
+                      <span className="font-mono font-bold text-[10px] text-[#475569] w-10 shrink-0">{c.time}</span>
+                      <div className={`w-1 h-4 rounded-full shrink-0 ${c.status === "active" ? "bg-primary" : c.status === "done" ? "bg-success" : "bg-border"}`} />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold text-[#0f172a] truncate block">{c.subject}</span>
+                        <span className="text-[10px] text-[#64748b] truncate block">{c.teacher} · {c.room}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Sophia Miller */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="size-9 rounded-full bg-[#fbcfe8] text-pink-800 font-bold text-xs flex items-center justify-center border border-pink-200">
-                    SM
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-[#0f172a]">Sophia Miller</h5>
-                    <p className="text-[9px] text-[#64748b]">Grade 11 • GPA 4.0</p>
-                    <p className="text-[9px] text-primary font-medium mt-0.5">Math A+ | Phys A+</p>
-                  </div>
+              <div className="bg-card rounded-xl border border-border p-4">
+                <h4 className="text-xs font-bold text-[#0f172a] mb-3 flex items-center gap-1.5"><GraduationCap className="size-3.5 text-primary" /> Student Highlights</h4>
+                <div className="space-y-2">
+                  {[
+                    { initials: "EC", bg: "bg-[#bfdbfe] text-blue-800 border-blue-200",       name: "Emily Chen",    detail: "Grade 10-A · GPA 3.9",          ok: true  },
+                    { initials: "AM", bg: "bg-[#d1fae5] text-emerald-800 border-emerald-200", name: "Arjun Mehta",   detail: "Grade 10-B · 74% attendance",   ok: false },
+                    { initials: "SM", bg: "bg-[#fbcfe8] text-pink-800 border-pink-200",       name: "Sophia Miller", detail: "Grade 11-A · GPA 4.0",          ok: true  },
+                    { initials: "MP", bg: "bg-[#e0e7ff] text-indigo-800 border-indigo-200",   name: "Maya Patel",    detail: "Grade 9-A · 91% attendance",    ok: true  },
+                  ].map((s) => (
+                    <div key={s.name} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                      <div className={`size-7 rounded-full ${s.bg} font-bold text-[10px] flex items-center justify-center border shrink-0`}>{s.initials}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-[#0f172a] truncate">{s.name}</p>
+                        <p className="text-[10px] text-[#64748b] truncate">{s.detail}</p>
+                      </div>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${s.ok ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}>
+                        {s.ok ? "✓" : "!"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-[#0f172a] font-mono">99%</span>
-                  <div className="h-1.5 w-20 rounded-full bg-[#f1f5f9] overflow-hidden mt-1.5">
-                    <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress delay-200" style={{ width: "99%" }} />
-                  </div>
+              </div>
+            </div>
+
+            {/* Bottom: assignments + alerts */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="bg-card rounded-xl border border-border p-4">
+                <h4 className="text-xs font-bold text-[#0f172a] mb-3 flex items-center gap-1.5"><NotebookPen className="size-3.5 text-primary" /> Pending Assignments</h4>
+                <div className="space-y-2">
+                  {[
+                    { title: "Math Problem Set 7", submitted: 18, total: 24, due: "Oct 28" },
+                    { title: "Physics Lab Report",  submitted: 21, total: 24, due: "Oct 27" },
+                  ].map((a) => (
+                    <div key={a.title} className="p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-[#0f172a] truncate flex-1">{a.title}</span>
+                        <span className="text-[10px] font-mono text-[#64748b] ml-2 shrink-0">{a.submitted}/{a.total}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 rounded-full bg-[#f1f5f9] overflow-hidden">
+                          <div className="h-full bg-[#0f52ba]/80 rounded-full animate-progress" style={{ width: `${(a.submitted / a.total) * 100}%` }} />
+                        </div>
+                        <span className="text-[9px] text-[#64748b]">Due {a.due}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-card rounded-xl border border-border p-4">
+                <h4 className="text-xs font-bold text-[#0f172a] mb-3 flex items-center gap-1.5"><Info className="size-3.5 text-primary" /> School Alerts</h4>
+                <div className="space-y-2">
+                  {[
+                    { msg: "Arjun Mehta's attendance is below 75%. Early support recommended.", type: "warning" },
+                    { msg: "Physics Lab Report deadline is tomorrow. 3 submissions pending.",   type: "info"    },
+                    { msg: "Grade 11-A achieved 96% attendance this week.",                     type: "success" },
+                  ].map((a, i) => (
+                    <div key={i} className={`p-2.5 rounded-lg text-[11px] border ${
+                      a.type === "warning" ? "bg-warning-soft border-warning/20 text-warning-foreground" :
+                      a.type === "info"    ? "bg-info-soft border-info/20 text-info" :
+                      "bg-success-soft border-success/20 text-success"
+                    }`}>
+                      {a.msg}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="text-[10px] text-center text-muted-foreground border-t border-border/40 pt-4 mt-4 bg-muted/10 py-1.5 rounded-lg font-mono">
-            * Illustrative Preview Data Only
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -508,13 +769,13 @@ function Landing() {
         </div>
 
         {/* Sub-Roles Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto justify-center">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto justify-center reveal-group">
           {activeCategory === "school" ? (
             <>
               {/* Principal */}
               <button
                 onClick={() => handleRoleSelect("principal")}
-                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group"
+                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group reveal"
               >
                 <div>
                   <div className="grid size-10 place-items-center rounded-lg bg-primary-soft text-primary mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -534,7 +795,7 @@ function Landing() {
               {/* Teacher */}
               <button
                 onClick={() => handleRoleSelect("teacher")}
-                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group"
+                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group reveal"
               >
                 <div>
                   <div className="grid size-10 place-items-center rounded-lg bg-primary-soft text-primary mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -554,7 +815,7 @@ function Landing() {
               {/* Owner */}
               <button
                 onClick={() => handleRoleSelect("owner")}
-                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group"
+                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group reveal"
               >
                 <div>
                   <div className="grid size-10 place-items-center rounded-lg bg-primary-soft text-primary mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -576,7 +837,7 @@ function Landing() {
               {/* Student */}
               <button
                 onClick={() => handleRoleSelect("student")}
-                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group"
+                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group reveal"
               >
                 <div>
                   <div className="grid size-10 place-items-center rounded-lg bg-primary-soft text-primary mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -596,7 +857,7 @@ function Landing() {
               {/* Parent */}
               <button
                 onClick={() => handleRoleSelect("parent")}
-                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group"
+                className="surface-panel p-6 flex flex-col text-left justify-between bg-card border border-border rounded-xl shadow-sm transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-primary/60 hover:shadow-elevated group reveal"
               >
                 <div>
                   <div className="grid size-10 place-items-center rounded-lg bg-primary-soft text-primary mb-4 transition-transform duration-300 group-hover:scale-110">
@@ -709,7 +970,7 @@ function Landing() {
               <div className="mt-6 flex flex-col gap-3">
                 <div className="flex gap-3">
                   <div className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary-soft text-[10px] font-bold text-primary">1</div>
-                  <p className="text-xs text-muted-foreground"><strong className="text-foreground font-semibold">Simulated Records:</strong> Track grades, attendance metrics, and homework completions inside the interactive demo environment.</p>
+                  <p className="text-xs text-muted-foreground"><strong className="text-foreground font-semibold">Unified Records:</strong> Track grades, attendance metrics, and homework completions across all classes in one connected view.</p>
                 </div>
                 <div className="flex gap-3">
                   <div className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-primary-soft text-[10px] font-bold text-primary">2</div>
@@ -721,16 +982,12 @@ function Landing() {
             <div className="lg:col-span-7 reveal">
               {/* Illustrative Mockup Container */}
               <div className="surface-panel p-5 bg-card shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-elevated">
-                <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+                <div className="flex items-center border-b border-border pb-3 mb-4">
                   <div className="flex items-center gap-2">
                     <span className="size-2.5 rounded-full bg-destructive" />
                     <span className="size-2.5 rounded-full bg-warning" />
                     <span className="size-2.5 rounded-full bg-success" />
-                    <span className="text-[10px] text-muted-foreground ml-2 font-mono">demo_insights_dashboard</span>
                   </div>
-                  <span className="rounded bg-muted px-2 py-0.5 text-[9px] font-mono font-medium text-muted-foreground">
-                    Illustrative Demo Data
-                  </span>
                 </div>
                 
                 {/* Simulated Student Progress Row */}

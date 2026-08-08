@@ -13,11 +13,11 @@ Frontend-only React 19 + TypeScript + Vite app. No backend, no real auth, no pay
 ## How to run
 
 ```bash
-npm install
-npm run dev   # served at port 5000 via the "Start application" workflow
+bun install
+bun run dev   # served at port 5000 via the "Start application" workflow
 ```
 
-The Replit workflow `Start application` runs `npm run dev -- --host 0.0.0.0 --port 5000` automatically.
+The Replit workflow `Start application` runs `bun run dev -- --host 0.0.0.0 --port 5000` automatically.
 
 ## Project structure
 

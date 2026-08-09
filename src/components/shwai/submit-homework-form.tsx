@@ -67,7 +67,11 @@ export function SubmitHomeworkForm({
         <FilePicker files={files} onChange={setFiles} label="Attach your work" />
       </div>
       <Button type="submit" disabled={mutation.isPending}>
-        {mutation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+        {mutation.isPending ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden />
+        ) : (
+          <Send className="size-4" aria-hidden />
+        )}
         {isResubmission ? "Resubmit" : "Submit homework"}
       </Button>
     </form>

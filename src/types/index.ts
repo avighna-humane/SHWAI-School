@@ -273,7 +273,15 @@ export interface AdmissionEnquiry {
   parentName: string;
   phone: string;
   source: "Walk-in" | "Website" | "Referral" | "Advertisement";
-  stage: "enquiry" | "application" | "documents" | "entrance-test" | "interview" | "offer" | "enrolled" | "dropped";
+  stage:
+    | "enquiry"
+    | "application"
+    | "documents"
+    | "entrance-test"
+    | "interview"
+    | "offer"
+    | "enrolled"
+    | "dropped";
   createdOn: string;
   followUpOn: string;
   documentsVerified: number;
@@ -483,7 +491,8 @@ export interface WorkloadRecommendation {
   detail: string;
   impact: string;
   teachersAffected: string[];
-  category: "reschedule" | "shared-rubric" | "resources" | "support-staff" | "remove-report" | "balance";
+  category:
+    "reschedule" | "shared-rubric" | "resources" | "support-staff" | "remove-report" | "balance";
   savingHours: number;
 }
 
@@ -514,7 +523,8 @@ export interface HelpMatch {
   studentName: string;
   topic: string;
   subject: string;
-  matchType: "peer-tutor" | "office-hour" | "remedial-group" | "library" | "external" | "counsellor";
+  matchType:
+    "peer-tutor" | "office-hour" | "remedial-group" | "library" | "external" | "counsellor";
   matchName: string;
   language: string;
   slot: string;
@@ -575,12 +585,20 @@ export interface Scenario {
   id: string;
   name: string;
   question: string;
-  category: "timetable" | "staffing" | "attendance" | "rooms" | "remedial" | "intervention" | "resources";
+  category:
+    "timetable" | "staffing" | "attendance" | "rooms" | "remedial" | "intervention" | "resources";
   createdBy: string;
   createdOn: string;
   assumptions: string[];
   risks: string[];
-  outcomes: { metric: string; baseline: number; projected: number; unit: string; ciLow: number; ciHigh: number }[];
+  outcomes: {
+    metric: string;
+    baseline: number;
+    projected: number;
+    unit: string;
+    ciLow: number;
+    ciHigh: number;
+  }[];
   confidence: number;
   status: "draft" | "simulated" | "adopted" | "rejected";
 }
@@ -634,7 +652,8 @@ export interface CalendarEvent {
   title: string;
   date: string;
   endDate?: string;
-  type: "holiday" | "exam" | "ptm" | "event" | "sports" | "function" | "assignment-due" | "exam-due";
+  type:
+    "holiday" | "exam" | "ptm" | "event" | "sports" | "function" | "assignment-due" | "exam-due";
   audience: string[];
   location?: string;
 }

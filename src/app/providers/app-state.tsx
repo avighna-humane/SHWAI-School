@@ -1,9 +1,18 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS } from "@/data/mock/platform";
 import { DEMO_PRINCIPAL_ACTOR, DEMO_USER } from "@/config/roles";
 import { DEMO_CLASS_STUDENTS, DEMO_STUDENT, DEMO_TEACHER, TEACHERS } from "@/data/mock/people";
+import type { UserSession } from "@/rpc/auth";
 
 const STORAGE_KEY = "shwai.demo.state";
 
@@ -23,6 +32,7 @@ interface PersistedState {
   readIds: string[];
   studentId: string;
   teacherId: string;
+  session: UserSession | null;
 }
 
 const DEFAULTS: PersistedState = {
@@ -36,6 +46,7 @@ const DEFAULTS: PersistedState = {
   readIds: NOTIFICATIONS.filter((n) => n.read).map((n) => n.id),
   studentId: DEMO_STUDENT.id,
   teacherId: DEMO_TEACHER.id,
+  session: null,
 };
 
 export interface Actor {
@@ -63,6 +74,7 @@ interface AppStateValue extends PersistedState {
   markUnread: (id: string) => void;
   unreadCount: number;
   isRead: (id: string) => boolean;
+  setSession: (sess: UserSession | null) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -75,7 +87,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const stored = JSON.parse(raw) as PersistedState;
-        setState({ ...DEFAULTS, ...stored, role: stored.role === "admin" ? "principal" : stored.role });
+        setState({
+          ...DEFAULTS,
+          ...stored,
+          role: stored.role === "admin" ? "principal" : stored.role,
+        });
       }
     } catch {
       /* demo-only persistence */
@@ -95,26 +111,51 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppStateValue>(() => {
-    const school = SCHOOLS.find((s) => s.id === state.schoolId) ?? SCHOOLS[0];
+    // If authenticated session exists, force values from session profile
+    const activeRole = state.session ? state.session.role : state.role;
+    const activeSchoolId = state.session ? state.session.schoolId : state.schoolId;
+
+    const school = SCHOOLS.find((s) => s.id === activeSchoolId) ?? SCHOOLS[0];
     const year = ACADEMIC_YEARS.find((y) => y.id === state.yearId) ?? ACADEMIC_YEARS[0];
     const readSet = new Set(state.readIds);
 
     const actor: Actor =
-      state.role === "student"
+      activeRole === "student"
         ? (() => {
             const s = ACTABLE_STUDENTS.find((x) => x.id === state.studentId) ?? DEMO_STUDENT;
-            return { id: s.id, name: s.name, schoolId: "sch-1" };
+            return { id: s.id, name: state.session?.fullName ?? s.name, schoolId: activeSchoolId };
           })()
-        : state.role === "teacher"
+        : activeRole === "teacher"
           ? (() => {
               const t = ACTABLE_TEACHERS.find((x) => x.id === state.teacherId) ?? DEMO_TEACHER;
-              return { id: t.id, name: t.name, schoolId: "sch-1" };
+              return {
+                id: t.id,
+                name: state.session?.fullName ?? t.name,
+                schoolId: activeSchoolId,
+              };
             })()
-          : { id: DEMO_PRINCIPAL_ACTOR.id, name: DEMO_PRINCIPAL_ACTOR.name, schoolId: "sch-1" };
+          : {
+              id: state.session?.userId ?? DEMO_PRINCIPAL_ACTOR.id,
+              name: state.session?.fullName ?? DEMO_PRINCIPAL_ACTOR.name,
+              schoolId: activeSchoolId,
+            };
+
+    const userObj = state.session
+      ? {
+          name: state.session.fullName,
+          sub: `${state.session.role.toUpperCase()} · ${school.name}`,
+          initials: state.session.fullName
+            .split(" ")
+            .map((x) => x[0])
+            .join(""),
+        }
+      : DEMO_USER[state.role];
 
     return {
       ...state,
-       user: DEMO_USER[state.role],
+      role: activeRole,
+      schoolId: activeSchoolId,
+      user: userObj,
       school,
       year,
       actor,
@@ -134,7 +175,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       markUnread: (id) => update({ readIds: state.readIds.filter((x) => x !== id) }),
       markAllRead: () => update({ readIds: NOTIFICATIONS.map((n) => n.id) }),
       isRead: (id) => readSet.has(id),
-      unreadCount: NOTIFICATIONS.filter((n) => n.roles.includes(state.role) && !readSet.has(n.id)).length,
+      unreadCount: NOTIFICATIONS.filter((n) => n.roles.includes(activeRole) && !readSet.has(n.id))
+        .length,
+      setSession: (session) =>
+        update({
+          session,
+          role: session ? session.role : "principal",
+          schoolId: session ? session.schoolId : "sch-1",
+        }),
     };
   }, [state, update]);
 

@@ -103,7 +103,8 @@ export function HomeworkFormDialog({
     },
   });
 
-  const canSubmit = subject.trim() && title.trim() && description.trim() && dueAt && (isEdit || classId);
+  const canSubmit =
+    subject.trim() && title.trim() && description.trim() && dueAt && (isEdit || classId);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -118,7 +119,9 @@ export function HomeworkFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit homework" : "Create homework"}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update the details of this assignment." : "Assign a new homework to one of your classes."}
+            {isEdit
+              ? "Update the details of this assignment."
+              : "Assign a new homework to one of your classes."}
           </DialogDescription>
         </DialogHeader>
 
@@ -149,12 +152,24 @@ export function HomeworkFormDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="hw-subject">Subject</Label>
-            <Input id="hw-subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Mathematics" required />
+            <Input
+              id="hw-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g. Mathematics"
+              required
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="hw-title">Title</Label>
-            <Input id="hw-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Chapter 4 — Practice worksheet" required />
+            <Input
+              id="hw-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Chapter 4 — Practice worksheet"
+              required
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -172,20 +187,39 @@ export function HomeworkFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="hw-due">Due date & time</Label>
-              <Input id="hw-due" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} required />
+              <Input
+                id="hw-due"
+                type="datetime-local"
+                value={dueAt}
+                onChange={(e) => setDueAt(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="hw-marks">Total marks (optional)</Label>
-              <Input id="hw-marks" type="number" min={0} value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} placeholder="e.g. 20" />
+              <Input
+                id="hw-marks"
+                type="number"
+                min={0}
+                value={totalMarks}
+                onChange={(e) => setTotalMarks(e.target.value)}
+                placeholder="e.g. 20"
+              />
             </div>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
             <div>
               <p className="text-sm font-medium">Allow resubmission</p>
-              <p className="text-xs text-muted-foreground">Students can replace their submission before grading.</p>
+              <p className="text-xs text-muted-foreground">
+                Students can replace their submission before grading.
+              </p>
             </div>
-            <Switch checked={allowResubmission} onCheckedChange={setAllowResubmission} aria-label="Allow resubmission" />
+            <Switch
+              checked={allowResubmission}
+              onCheckedChange={setAllowResubmission}
+              aria-label="Allow resubmission"
+            />
           </div>
 
           <div className="space-y-1.5">

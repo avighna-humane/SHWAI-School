@@ -19,7 +19,14 @@ function toContents(request: AIGenerateRequest): Content[] {
       .filter((message) => message.role === "user" || message.role === "assistant")
       .map((message) => ({
         role: message.role === "assistant" ? "model" : "user",
-        parts: [{ text: typeof message.content === "string" ? message.content : JSON.stringify(message.content) }],
+        parts: [
+          {
+            text:
+              typeof message.content === "string"
+                ? message.content
+                : JSON.stringify(message.content),
+          },
+        ],
       }));
   }
   return [{ role: "user", parts: [{ text: request.prompt ?? "" }] }];

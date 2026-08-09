@@ -18,8 +18,8 @@ function Dashboard() {
         </p>
         <h1 className="text-3xl font-extrabold tracking-tight">Welcome to your workspace</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Your {ROLE_LABEL[role].toLowerCase()} workspace is ready. Connect your school data to begin viewing live
-          attendance, academic, operations, and communication information.
+          Your {ROLE_LABEL[role].toLowerCase()} workspace is ready. Connect your school data to
+          begin viewing live attendance, academic, operations, and communication information.
         </p>
       </header>
 
@@ -35,8 +35,8 @@ function Dashboard() {
           </div>
           <h2 className="mt-5 text-lg font-bold tracking-tight">Your access is ready</h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-            You are signed in as {ROLE_LABEL[role]}. Available modules and permissions are determined by this account
-            role.
+            You are signed in as {ROLE_LABEL[role]}. Available modules and permissions are
+            determined by this account role.
           </p>
         </section>
       </div>

@@ -18,11 +18,29 @@ function num(seed: number, min: number, max: number) {
 }
 
 const CONCEPT_SEEDS: [string, string, number, string, string[]][] = [
-  ["Factorisation of quadratics", "Mathematics", 9, "Algebra", ["Algebraic identities", "Linear equations"]],
+  [
+    "Factorisation of quadratics",
+    "Mathematics",
+    9,
+    "Algebra",
+    ["Algebraic identities", "Linear equations"],
+  ],
   ["Nature of roots (discriminant)", "Mathematics", 9, "Algebra", ["Factorisation of quadratics"]],
-  ["Trigonometric ratios", "Mathematics", 10, "Trigonometry", ["Similar triangles", "Pythagoras theorem"]],
+  [
+    "Trigonometric ratios",
+    "Mathematics",
+    10,
+    "Trigonometry",
+    ["Similar triangles", "Pythagoras theorem"],
+  ],
   ["Mean of grouped data", "Mathematics", 10, "Statistics", ["Frequency distribution"]],
-  ["Balancing chemical equations", "Science", 9, "Chemical Reactions", ["Symbols and formulae", "Law of conservation of mass"]],
+  [
+    "Balancing chemical equations",
+    "Science",
+    9,
+    "Chemical Reactions",
+    ["Symbols and formulae", "Law of conservation of mass"],
+  ],
   ["Mirror formula & magnification", "Science", 10, "Light", ["Reflection", "Ray diagrams"]],
   ["Ohm's law", "Science", 10, "Electricity", ["Current and potential difference"]],
   ["Photosynthesis pathway", "Science", 9, "Life Processes", ["Cell structure"]],
@@ -35,31 +53,79 @@ const CONCEPT_SEEDS: [string, string, number, string, string[]][] = [
   ["Functions & return values", "Computer Science", 9, "Programming", ["Nested loops"]],
 ];
 
-export const CONCEPTS: Concept[] = CONCEPT_SEEDS.map(([name, subject, grade, unit, prerequisites], i) => {
-  const n = i + 1;
-  const masteryPct = num(n * 2.6, 28, 94);
-  return {
-    id: `cnp-${n}`,
-    name,
-    subject,
-    grade,
-    unit,
-    prerequisites,
-    masteryPct,
-    studentsStruggling: num(n * 3.6, 2, 26),
-    taughtOn: rnd(n * 4.6) > 0.25 ? `${num(n * 5.6, 1, 28)}/10/2025` : undefined,
-    plannedOn: `${num(n * 6.6, 1, 28)}/10/2025`,
-    retestScheduled: masteryPct < 55,
-    misconceptions: [],
-  };
-});
+export const CONCEPTS: Concept[] = CONCEPT_SEEDS.map(
+  ([name, subject, grade, unit, prerequisites], i) => {
+    const n = i + 1;
+    const masteryPct = num(n * 2.6, 28, 94);
+    return {
+      id: `cnp-${n}`,
+      name,
+      subject,
+      grade,
+      unit,
+      prerequisites,
+      masteryPct,
+      studentsStruggling: num(n * 3.6, 2, 26),
+      taughtOn: rnd(n * 4.6) > 0.25 ? `${num(n * 5.6, 1, 28)}/10/2025` : undefined,
+      plannedOn: `${num(n * 6.6, 1, 28)}/10/2025`,
+      retestScheduled: masteryPct < 55,
+      misconceptions: [],
+    };
+  },
+);
 
 export const MISCONCEPTIONS: Misconception[] = [
-  { id: "mis-1", conceptId: "cnp-1", statement: "Students treat (a+b)² as a² + b², dropping the middle term.", correction: "Reinforce the expansion a² + 2ab + b² with an area-model demonstration.", studentsAffected: 19, classesAffected: ["Grade 9 — A", "Grade 9 — B"], detectedFrom: "Unit Test 2 · Q4, Q7 error clustering", confidence: 0.91 },
-  { id: "mis-2", conceptId: "cnp-5", statement: "Coefficients are changed inside the formula instead of in front of it while balancing.", correction: "Practise with molecular models before symbolic balancing.", studentsAffected: 14, classesAffected: ["Grade 9 — A", "Grade 9 — C"], detectedFrom: "Worksheet submissions · 11 of 15 items", confidence: 0.84 },
-  { id: "mis-3", conceptId: "cnp-6", statement: "Sign convention ignored — distances behind the mirror taken as positive.", correction: "Drill the Cartesian sign convention with three worked ray diagrams.", studentsAffected: 22, classesAffected: ["Grade 10 — A", "Grade 10 — B"], detectedFrom: "Numericals 3–7 error pattern", confidence: 0.88 },
-  { id: "mis-4", conceptId: "cnp-3", statement: "sin θ and cos θ swapped when the triangle is rotated.", correction: "Anchor ratios to the angle, not to the page orientation.", studentsAffected: 17, classesAffected: ["Grade 10 — A"], detectedFrom: "Class test item analysis", confidence: 0.79 },
-  { id: "mis-5", conceptId: "cnp-14", statement: "Inner loop counter reset omitted, producing partial output tables.", correction: "Trace-table exercise before writing code.", studentsAffected: 9, classesAffected: ["Grade 9 — A"], detectedFrom: "Lab submissions · 8 programs", confidence: 0.86 },
+  {
+    id: "mis-1",
+    conceptId: "cnp-1",
+    statement: "Students treat (a+b)² as a² + b², dropping the middle term.",
+    correction: "Reinforce the expansion a² + 2ab + b² with an area-model demonstration.",
+    studentsAffected: 19,
+    classesAffected: ["Grade 9 — A", "Grade 9 — B"],
+    detectedFrom: "Unit Test 2 · Q4, Q7 error clustering",
+    confidence: 0.91,
+  },
+  {
+    id: "mis-2",
+    conceptId: "cnp-5",
+    statement:
+      "Coefficients are changed inside the formula instead of in front of it while balancing.",
+    correction: "Practise with molecular models before symbolic balancing.",
+    studentsAffected: 14,
+    classesAffected: ["Grade 9 — A", "Grade 9 — C"],
+    detectedFrom: "Worksheet submissions · 11 of 15 items",
+    confidence: 0.84,
+  },
+  {
+    id: "mis-3",
+    conceptId: "cnp-6",
+    statement: "Sign convention ignored — distances behind the mirror taken as positive.",
+    correction: "Drill the Cartesian sign convention with three worked ray diagrams.",
+    studentsAffected: 22,
+    classesAffected: ["Grade 10 — A", "Grade 10 — B"],
+    detectedFrom: "Numericals 3–7 error pattern",
+    confidence: 0.88,
+  },
+  {
+    id: "mis-4",
+    conceptId: "cnp-3",
+    statement: "sin θ and cos θ swapped when the triangle is rotated.",
+    correction: "Anchor ratios to the angle, not to the page orientation.",
+    studentsAffected: 17,
+    classesAffected: ["Grade 10 — A"],
+    detectedFrom: "Class test item analysis",
+    confidence: 0.79,
+  },
+  {
+    id: "mis-5",
+    conceptId: "cnp-14",
+    statement: "Inner loop counter reset omitted, producing partial output tables.",
+    correction: "Trace-table exercise before writing code.",
+    studentsAffected: 9,
+    classesAffected: ["Grade 9 — A"],
+    detectedFrom: "Lab submissions · 8 programs",
+    confidence: 0.86,
+  },
 ];
 
 CONCEPTS.forEach((c) => {
@@ -79,7 +145,7 @@ const DEBT_TYPES: LearningDebtItem["debtType"][] = [
 export const LEARNING_DEBT: LearningDebtItem[] = CONCEPTS.flatMap((c, i) =>
   ["A", "B"].map((sec, j) => {
     const n = (i + 1) * (j + 2);
-    const severity = (num(n * 2.9, 1, 5) as LearningDebtItem["severity"]);
+    const severity = num(n * 2.9, 1, 5) as LearningDebtItem["severity"];
     return {
       id: `dbt-${c.id}-${sec}`,
       conceptId: c.id,
@@ -98,11 +164,20 @@ export const LEARNING_DEBT: LearningDebtItem[] = CONCEPTS.flatMap((c, i) =>
   }),
 );
 
-export const RISK_ALERTS: RiskAlert[] = STUDENTS.filter((s) => s.riskLevel === "critical" || s.riskLevel === "high")
+export const RISK_ALERTS: RiskAlert[] = STUDENTS.filter(
+  (s) => s.riskLevel === "critical" || s.riskLevel === "high",
+)
   .slice(0, 22)
   .map((s, i) => {
     const n = i + 1;
-    const types: RiskAlert["riskType"][] = ["attendance", "homework", "performance-decline", "missed-assignments", "engagement", "dropout"];
+    const types: RiskAlert["riskType"][] = [
+      "attendance",
+      "homework",
+      "performance-decline",
+      "missed-assignments",
+      "engagement",
+      "dropout",
+    ];
     const riskType = types[n % types.length];
     return {
       id: `alr-${n}`,
@@ -116,10 +191,19 @@ export const RISK_ALERTS: RiskAlert[] = STUDENTS.filter((s) => s.riskLevel === "
         "Attendance data for two weeks in October was entered offline and synced late, so the trend line is smoothed.",
       evidence: [
         { label: "Attendance (last 30 days)", value: `${s.attendancePct}% (school avg 93%)` },
-        { label: "Homework completion", value: `${s.homeworkCompletion}% (down from ${Math.min(100, s.homeworkCompletion + 18)}%)` },
-        { label: "Score movement", value: `${s.avgScore}% in UT2 vs ${Math.min(99, s.avgScore + 11)}% in UT1` },
+        {
+          label: "Homework completion",
+          value: `${s.homeworkCompletion}% (down from ${Math.min(100, s.homeworkCompletion + 18)}%)`,
+        },
+        {
+          label: "Score movement",
+          value: `${s.avgScore}% in UT2 vs ${Math.min(99, s.avgScore + 11)}% in UT1`,
+        },
         { label: "Missed submissions", value: `${num(n * 4.2, 1, 7)} in the last 3 weeks` },
-        { label: "AI tutor sessions", value: `${num(n * 5.2, 0, 14)} sessions, ${num(n * 6.2, 1, 5)} unresolved concepts` },
+        {
+          label: "AI tutor sessions",
+          value: `${num(n * 5.2, 0, 14)} sessions, ${num(n * 6.2, 1, 5)} unresolved concepts`,
+        },
       ],
       recommendation:
         riskType === "attendance"
@@ -153,12 +237,61 @@ export const WORKLOAD_SIGNALS: WorkloadSignal[] = TEACHERS.map((t, i) => {
 });
 
 export const WORKLOAD_RECOMMENDATIONS: WorkloadRecommendation[] = [
-  { id: "wr-1", title: "Move the Grade 9 Science unit test by four days", detail: "Three assessments land in the same week for 9A and 9B, creating a 14-hour grading spike.", impact: "Removes a 14-hour grading spike for 4 teachers", teachersAffected: ["Anil Kulkarni", "Suresh Patil", "Meera Iyer", "Kavita Rao"], category: "reschedule", savingHours: 14 },
-  { id: "wr-2", title: "Adopt a shared rubric for English writing tasks", detail: "Four teachers are maintaining separate rubrics for the same writing outcomes.", impact: "Cuts grading time ~22% for writing tasks", teachersAffected: ["Shalini Verma", "Ritu Agarwal"], category: "shared-rubric", savingHours: 9 },
-  { id: "wr-3", title: "Retire two duplicate weekly reports", detail: "Attendance summary and class-teacher digest contain the same figures.", impact: "Saves 3 hours per teacher per month", teachersAffected: ["All class teachers"], category: "remove-report", savingHours: 36 },
-  { id: "wr-4", title: "Add lab-assistant support for Grade 10 practicals", detail: "Practical setup is consuming teaching preparation time.", impact: "Returns 6 hours per week to preparation", teachersAffected: ["Imran Sheikh", "Neha Chatterjee"], category: "support-staff", savingHours: 6 },
-  { id: "wr-5", title: "Redistribute remedial duties in the Mathematics department", detail: "Two teachers hold 7 of 11 remedial slots.", impact: "Balances remedial load across 5 teachers", teachersAffected: ["Meera Iyer", "Deepak Shetty", "Kavita Rao"], category: "balance", savingHours: 5 },
-  { id: "wr-6", title: "Share the Grade 9 question bank across sections", detail: "Sections are generating separate question sets for identical outcomes.", impact: "Avoids ~40 duplicate question entries per term", teachersAffected: ["Mathematics department"], category: "resources", savingHours: 7 },
+  {
+    id: "wr-1",
+    title: "Move the Grade 9 Science unit test by four days",
+    detail:
+      "Three assessments land in the same week for 9A and 9B, creating a 14-hour grading spike.",
+    impact: "Removes a 14-hour grading spike for 4 teachers",
+    teachersAffected: ["Anil Kulkarni", "Suresh Patil", "Meera Iyer", "Kavita Rao"],
+    category: "reschedule",
+    savingHours: 14,
+  },
+  {
+    id: "wr-2",
+    title: "Adopt a shared rubric for English writing tasks",
+    detail: "Four teachers are maintaining separate rubrics for the same writing outcomes.",
+    impact: "Cuts grading time ~22% for writing tasks",
+    teachersAffected: ["Shalini Verma", "Ritu Agarwal"],
+    category: "shared-rubric",
+    savingHours: 9,
+  },
+  {
+    id: "wr-3",
+    title: "Retire two duplicate weekly reports",
+    detail: "Attendance summary and class-teacher digest contain the same figures.",
+    impact: "Saves 3 hours per teacher per month",
+    teachersAffected: ["All class teachers"],
+    category: "remove-report",
+    savingHours: 36,
+  },
+  {
+    id: "wr-4",
+    title: "Add lab-assistant support for Grade 10 practicals",
+    detail: "Practical setup is consuming teaching preparation time.",
+    impact: "Returns 6 hours per week to preparation",
+    teachersAffected: ["Imran Sheikh", "Neha Chatterjee"],
+    category: "support-staff",
+    savingHours: 6,
+  },
+  {
+    id: "wr-5",
+    title: "Redistribute remedial duties in the Mathematics department",
+    detail: "Two teachers hold 7 of 11 remedial slots.",
+    impact: "Balances remedial load across 5 teachers",
+    teachersAffected: ["Meera Iyer", "Deepak Shetty", "Kavita Rao"],
+    category: "balance",
+    savingHours: 5,
+  },
+  {
+    id: "wr-6",
+    title: "Share the Grade 9 question bank across sections",
+    detail: "Sections are generating separate question sets for identical outcomes.",
+    impact: "Avoids ~40 duplicate question entries per term",
+    teachersAffected: ["Mathematics department"],
+    category: "resources",
+    savingHours: 7,
+  },
 ];
 
 export const PREDICTIONS: Prediction[] = [
@@ -175,8 +308,12 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "Dec 2025",
     requiresHumanReview: false,
     trend: [
-      { label: "Aug", actual: 90 }, { label: "Sep", actual: 88 }, { label: "Oct", actual: 91 },
-      { label: "Nov", actual: 93 }, { label: "Dec", predicted: 91.4 }, { label: "Jan", predicted: 90.2 },
+      { label: "Aug", actual: 90 },
+      { label: "Sep", actual: 88 },
+      { label: "Oct", actual: 91 },
+      { label: "Nov", actual: 93 },
+      { label: "Dec", predicted: 91.4 },
+      { label: "Jan", predicted: 90.2 },
     ],
   },
   {
@@ -192,8 +329,11 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "Mar 2026",
     requiresHumanReview: true,
     trend: [
-      { label: "UT1", actual: 68 }, { label: "HY", actual: 72 }, { label: "UT2", actual: 74 },
-      { label: "Pre-Board", predicted: 75.5 }, { label: "Board", predicted: 76.8 },
+      { label: "UT1", actual: 68 },
+      { label: "HY", actual: 72 },
+      { label: "UT2", actual: 74 },
+      { label: "Pre-Board", predicted: 75.5 },
+      { label: "Board", predicted: 76.8 },
     ],
   },
   {
@@ -209,7 +349,9 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "Dec 2025",
     requiresHumanReview: false,
     trend: [
-      { label: "Sep", actual: 74 }, { label: "Oct", actual: 71 }, { label: "Nov", actual: 69 },
+      { label: "Sep", actual: 74 },
+      { label: "Oct", actual: 71 },
+      { label: "Nov", actual: 69 },
       { label: "Dec", predicted: 68.2 },
     ],
   },
@@ -226,7 +368,9 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "This academic year",
     requiresHumanReview: true,
     trend: [
-      { label: "2023–24", actual: 14 }, { label: "2024–25", actual: 12 }, { label: "2025–26", predicted: 11 },
+      { label: "2023–24", actual: 14 },
+      { label: "2024–25", actual: 12 },
+      { label: "2025–26", predicted: 11 },
     ],
   },
   {
@@ -242,8 +386,11 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "Week 48",
     requiresHumanReview: false,
     trend: [
-      { label: "W44", actual: 71 }, { label: "W45", actual: 76 }, { label: "W46", actual: 79 },
-      { label: "W47", actual: 80 }, { label: "W48", predicted: 82 },
+      { label: "W44", actual: 71 },
+      { label: "W45", actual: 76 },
+      { label: "W46", actual: 79 },
+      { label: "W47", actual: 80 },
+      { label: "W48", predicted: 82 },
     ],
   },
   {
@@ -259,7 +406,9 @@ export const PREDICTIONS: Prediction[] = [
     horizon: "Jan 2026",
     requiresHumanReview: false,
     trend: [
-      { label: "T1", actual: 284 }, { label: "T2", actual: 301 }, { label: "T3", predicted: 318 },
+      { label: "T1", actual: 284 },
+      { label: "T2", actual: 301 },
+      { label: "T3", predicted: 318 },
     ],
   },
 ];
@@ -268,7 +417,8 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "scn-1",
     name: "Shift Grade 10 remedial blocks to Period 8",
-    question: "If remedial Mathematics moves to the last period, what happens to attendance and teacher load?",
+    question:
+      "If remedial Mathematics moves to the last period, what happens to attendance and teacher load?",
     category: "remedial",
     createdBy: "Dr. Vikram Nair",
     createdOn: "12/11/2025",
@@ -282,9 +432,30 @@ export const SCENARIOS: Scenario[] = [
       "Teacher fatigue in the final slot may lower session quality",
     ],
     outcomes: [
-      { metric: "Remedial attendance", baseline: 78, projected: 66, unit: "%", ciLow: 60, ciHigh: 72 },
-      { metric: "Teacher overload flags", baseline: 5, projected: 2, unit: "teachers", ciLow: 1, ciHigh: 3 },
-      { metric: "Room conflicts", baseline: 4, projected: 0, unit: "conflicts", ciLow: 0, ciHigh: 1 },
+      {
+        metric: "Remedial attendance",
+        baseline: 78,
+        projected: 66,
+        unit: "%",
+        ciLow: 60,
+        ciHigh: 72,
+      },
+      {
+        metric: "Teacher overload flags",
+        baseline: 5,
+        projected: 2,
+        unit: "teachers",
+        ciLow: 1,
+        ciHigh: 3,
+      },
+      {
+        metric: "Room conflicts",
+        baseline: 4,
+        projected: 0,
+        unit: "conflicts",
+        ciLow: 0,
+        ciHigh: 1,
+      },
     ],
     confidence: 0.72,
     status: "simulated",
@@ -296,12 +467,40 @@ export const SCENARIOS: Scenario[] = [
     category: "staffing",
     createdBy: "Sunita Deshpande",
     createdOn: "05/11/2025",
-    assumptions: ["Appointment from January 2026", "Existing sections unchanged", "New teacher takes 22 periods"],
-    risks: ["Recruitment lead time may slip by a month", "Onboarding lowers first-term effectiveness"],
+    assumptions: [
+      "Appointment from January 2026",
+      "Existing sections unchanged",
+      "New teacher takes 22 periods",
+    ],
+    risks: [
+      "Recruitment lead time may slip by a month",
+      "Onboarding lowers first-term effectiveness",
+    ],
     outcomes: [
-      { metric: "Avg workload index", baseline: 82, projected: 71, unit: "index", ciLow: 67, ciHigh: 75 },
-      { metric: "Science class average", baseline: 68, projected: 73, unit: "%", ciLow: 70, ciHigh: 76 },
-      { metric: "Annual staff cost", baseline: 0, projected: 780000, unit: "₹", ciLow: 720000, ciHigh: 860000 },
+      {
+        metric: "Avg workload index",
+        baseline: 82,
+        projected: 71,
+        unit: "index",
+        ciLow: 67,
+        ciHigh: 75,
+      },
+      {
+        metric: "Science class average",
+        baseline: 68,
+        projected: 73,
+        unit: "%",
+        ciLow: 70,
+        ciHigh: 76,
+      },
+      {
+        metric: "Annual staff cost",
+        baseline: 0,
+        projected: 780000,
+        unit: "₹",
+        ciLow: 720000,
+        ciHigh: 860000,
+      },
     ],
     confidence: 0.68,
     status: "simulated",
@@ -313,11 +512,31 @@ export const SCENARIOS: Scenario[] = [
     category: "attendance",
     createdBy: "Dr. Vikram Nair",
     createdOn: "18/11/2025",
-    assumptions: ["Class teachers make one call per week", "Parents reachable on the registered number"],
-    risks: ["Adds 3 hours per week of class-teacher time", "Effect fades after six weeks without review"],
+    assumptions: [
+      "Class teachers make one call per week",
+      "Parents reachable on the registered number",
+    ],
+    risks: [
+      "Adds 3 hours per week of class-teacher time",
+      "Effect fades after six weeks without review",
+    ],
     outcomes: [
-      { metric: "School attendance", baseline: 91, projected: 94, unit: "%", ciLow: 92, ciHigh: 95 },
-      { metric: "Class-teacher hours", baseline: 0, projected: 3, unit: "hrs/week", ciLow: 2, ciHigh: 4 },
+      {
+        metric: "School attendance",
+        baseline: 91,
+        projected: 94,
+        unit: "%",
+        ciLow: 92,
+        ciHigh: 95,
+      },
+      {
+        metric: "Class-teacher hours",
+        baseline: 0,
+        projected: 3,
+        unit: "hrs/week",
+        ciLow: 2,
+        ciHigh: 4,
+      },
     ],
     confidence: 0.79,
     status: "adopted",
@@ -329,11 +548,31 @@ export const SCENARIOS: Scenario[] = [
     category: "rooms",
     createdBy: "Harish Agarwal",
     createdOn: "02/11/2025",
-    assumptions: ["Capital work completes in the summer break", "24 workstations retained in total"],
-    risks: ["Practical batch sizes drop below viable group work", "Capital cost may exceed the estimate"],
+    assumptions: [
+      "Capital work completes in the summer break",
+      "24 workstations retained in total",
+    ],
+    risks: [
+      "Practical batch sizes drop below viable group work",
+      "Capital cost may exceed the estimate",
+    ],
     outcomes: [
-      { metric: "Room conflicts", baseline: 11, projected: 3, unit: "conflicts", ciLow: 2, ciHigh: 5 },
-      { metric: "Practical minutes per student", baseline: 42, projected: 36, unit: "mins", ciLow: 33, ciHigh: 39 },
+      {
+        metric: "Room conflicts",
+        baseline: 11,
+        projected: 3,
+        unit: "conflicts",
+        ciLow: 2,
+        ciHigh: 5,
+      },
+      {
+        metric: "Practical minutes per student",
+        baseline: 42,
+        projected: 36,
+        unit: "mins",
+        ciLow: 33,
+        ciHigh: 39,
+      },
     ],
     confidence: 0.64,
     status: "draft",

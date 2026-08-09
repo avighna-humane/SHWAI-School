@@ -1,9 +1,21 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Megaphone, CalendarClock, Users, Eye, Trash2, Plus, Loader2, FileText, CheckCircle2, X } from "lucide-react";
+import {
+  Megaphone,
+  CalendarClock,
+  Users,
+  Eye,
+  Trash2,
+  Plus,
+  Loader2,
+  FileText,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { useActorParams } from "@/hooks/use-actor-params";
+import type { NoticeAudienceType } from "@/types";
 import {
   listNoticesFor,
   listMyNoticesFor,
@@ -43,7 +55,9 @@ function AnnouncementsPage() {
   const { role } = useAppState();
   const actorParams = useActorParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"notices" | "my-notices" | "teacher-notices">("notices");
+  const [activeTab, setActiveTab] = useState<"notices" | "my-notices" | "teacher-notices">(
+    "notices",
+  );
   const [selectedNotice, setSelectedNotice] = useState<any>(null);
   const [activityNoticeId, setActivityNoticeId] = useState<string | null>(null);
 
@@ -104,7 +118,9 @@ function AnnouncementsPage() {
     <div className="relative space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Engagement</p>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+            Engagement
+          </p>
           <h1 className="text-3xl font-extrabold tracking-tight">Announcements</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             View notices, updates, circulars, and teacher-principal communication channels.
@@ -136,13 +152,25 @@ function AnnouncementsPage() {
           {noticesQuery.isLoading ? (
             <LoadingCards count={4} />
           ) : noticesQuery.isError ? (
-            <ErrorState message={(noticesQuery.error as Error)?.message} onRetry={() => noticesQuery.refetch()} />
+            <ErrorState
+              message={(noticesQuery.error as Error)?.message}
+              onRetry={() => noticesQuery.refetch()}
+            />
           ) : (noticesQuery.data ?? []).length === 0 ? (
-            <EmptyState title="No notices" description="There are no active notices at this moment." icon={<Megaphone className="size-6" />} />
+            <EmptyState
+              title="No notices"
+              description="There are no active notices at this moment."
+              icon={<Megaphone className="size-6" />}
+            />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {(noticesQuery.data ?? []).map((notice) => (
-                <NoticeCard key={notice.id} notice={notice} onOpen={() => handleOpenNotice(notice)} showUnreadBadge={role !== "principal"} />
+                <NoticeCard
+                  key={notice.id}
+                  notice={notice}
+                  onOpen={() => handleOpenNotice(notice)}
+                  showUnreadBadge={role !== "principal"}
+                />
               ))}
             </div>
           )}
@@ -152,9 +180,16 @@ function AnnouncementsPage() {
           {myNoticesQuery.isLoading ? (
             <LoadingCards count={4} />
           ) : myNoticesQuery.isError ? (
-            <ErrorState message={(myNoticesQuery.error as Error)?.message} onRetry={() => myNoticesQuery.refetch()} />
+            <ErrorState
+              message={(myNoticesQuery.error as Error)?.message}
+              onRetry={() => myNoticesQuery.refetch()}
+            />
           ) : (myNoticesQuery.data ?? []).length === 0 ? (
-            <EmptyState title="No notices published" description="You have not created or published any notices." icon={<Megaphone className="size-6" />} />
+            <EmptyState
+              title="No notices published"
+              description="You have not created or published any notices."
+              icon={<Megaphone className="size-6" />}
+            />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {(myNoticesQuery.data ?? []).map((notice) => (
@@ -175,9 +210,16 @@ function AnnouncementsPage() {
           {staffNoticesQuery.isLoading ? (
             <LoadingCards count={4} />
           ) : staffNoticesQuery.isError ? (
-            <ErrorState message={(staffNoticesQuery.error as Error)?.message} onRetry={() => staffNoticesQuery.refetch()} />
+            <ErrorState
+              message={(staffNoticesQuery.error as Error)?.message}
+              onRetry={() => staffNoticesQuery.refetch()}
+            />
           ) : (staffNoticesQuery.data ?? []).length === 0 ? (
-            <EmptyState title="No posts" description="No posts specifically for staff have been published." icon={<Megaphone className="size-6" />} />
+            <EmptyState
+              title="No posts"
+              description="No posts specifically for staff have been published."
+              icon={<Megaphone className="size-6" />}
+            />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {(staffNoticesQuery.data ?? []).map((notice) => (
@@ -185,8 +227,12 @@ function AnnouncementsPage() {
                   key={notice.id}
                   notice={notice}
                   onOpen={() => handleOpenNotice(notice)}
-                  onDelete={role === "principal" ? () => deleteMutation.mutate(notice.id) : undefined}
-                  onViewActivity={role === "principal" ? () => setActivityNoticeId(notice.id) : undefined}
+                  onDelete={
+                    role === "principal" ? () => deleteMutation.mutate(notice.id) : undefined
+                  }
+                  onViewActivity={
+                    role === "principal" ? () => setActivityNoticeId(notice.id) : undefined
+                  }
                   showStats={role === "principal"}
                   showUnreadBadge={role === "teacher"}
                 />
@@ -198,30 +244,44 @@ function AnnouncementsPage() {
 
       {/* Notice Detail Dialog */}
       {selectedNotice && (
-        <Dialog open={Boolean(selectedNotice)} onOpenChange={(open) => !open && setSelectedNotice(null)}>
+        <Dialog
+          open={Boolean(selectedNotice)}
+          onOpenChange={(open) => !open && setSelectedNotice(null)}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="rounded-full bg-primary-soft text-primary border-primary/20 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="rounded-full bg-primary-soft text-primary border-primary/20 text-[10px]"
+                >
                   {selectedNotice.authorRole}
                 </Badge>
                 <Badge variant="outline" className="rounded-full text-[10px]">
                   {selectedNotice.audienceType.replace("_", " ")}
                 </Badge>
               </div>
-              <DialogTitle className="text-xl font-extrabold tracking-tight mt-2 text-balance">{selectedNotice.title}</DialogTitle>
+              <DialogTitle className="text-xl font-extrabold tracking-tight mt-2 text-balance">
+                {selectedNotice.title}
+              </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-1">
-                Published by {selectedNotice.authorName} on {formatDateTime(selectedNotice.createdAt)}
+                Published by {selectedNotice.authorName} on{" "}
+                {formatDateTime(selectedNotice.createdAt)}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
-              <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{selectedNotice.body}</p>
+              <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                {selectedNotice.body}
+              </p>
               {selectedNotice.attachments && selectedNotice.attachments.length > 0 && (
                 <div className="space-y-2 border-t pt-4">
                   <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <FileText className="size-3.5" /> Attachments
                   </p>
-                  <AttachmentList files={selectedNotice.attachments} getUrl={async (path) => selectedNotice.attachments[0].filePath} />
+                  <AttachmentList
+                    files={selectedNotice.attachments}
+                    getUrl={async (path) => selectedNotice.attachments[0].filePath}
+                  />
                 </div>
               )}
             </div>
@@ -234,7 +294,10 @@ function AnnouncementsPage() {
 
       {/* Notice Activity Tracking Sheet */}
       {activityNoticeId && (
-        <NoticeActivityDialog noticeId={activityNoticeId} onClose={() => setActivityNoticeId(null)} />
+        <NoticeActivityDialog
+          noticeId={activityNoticeId}
+          onClose={() => setActivityNoticeId(null)}
+        />
       )}
 
       <FloatingAI />
@@ -260,18 +323,28 @@ function NoticeCard({
   const hasUnread = showUnreadBadge && !notice.viewerHasViewed;
   return (
     <div className="surface-panel flex flex-col gap-3 p-5 relative group transition-all hover:border-border-strong">
-      <button onClick={onOpen} className="absolute inset-0 z-0" aria-label={`Open notice ${notice.title}`} />
+      <button
+        onClick={onOpen}
+        className="absolute inset-0 z-0"
+        aria-label={`Open notice ${notice.title}`}
+      />
 
       <div className="relative z-10 flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="outline" className="rounded-full bg-primary-soft text-primary border-primary/20 text-[10px]">
+          <Badge
+            variant="outline"
+            className="rounded-full bg-primary-soft text-primary border-primary/20 text-[10px]"
+          >
             {notice.authorRole}
           </Badge>
           <Badge variant="outline" className="rounded-full text-[10px]">
             {notice.audienceType.replace("_", " ")}
           </Badge>
           {hasUnread && (
-            <Badge variant="outline" className="rounded-full bg-danger-soft text-danger border-danger/20 text-[10px] animate-pulse">
+            <Badge
+              variant="outline"
+              className="rounded-full bg-danger-soft text-danger border-danger/20 text-[10px] animate-pulse"
+            >
               New
             </Badge>
           )}
@@ -292,11 +365,15 @@ function NoticeCard({
       </div>
 
       <div className="relative z-10">
-        <h3 className="text-balance text-base font-bold leading-snug group-hover:text-primary transition-colors">{notice.title}</h3>
+        <h3 className="text-balance text-base font-bold leading-snug group-hover:text-primary transition-colors">
+          {notice.title}
+        </h3>
         <p className="mt-1 text-xs text-muted-foreground">By {notice.authorName}</p>
       </div>
 
-      <p className="relative z-10 line-clamp-2 text-sm text-muted-foreground leading-relaxed">{notice.body}</p>
+      <p className="relative z-10 line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+        {notice.body}
+      </p>
 
       <div className="relative z-10 mt-auto flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/40 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
@@ -375,14 +452,15 @@ function CreateNoticeDialog({ actorId, role }: { actorId?: string; role: string 
     onError: (err: Error) => toast.error(err.message || "Failed to publish notice"),
   });
 
-  const canSubmit = title.trim() && body.trim() && (
-    audienceType === "all_students" ||
-    audienceType === "all_teachers" ||
-    audienceType === "school" ||
-    (audienceType === "class" && selectedClassId) ||
-    (audienceType === "specific_teachers" && selectedTeacherId) ||
-    (audienceType === "specific_students" && selectedStudentId)
-  );
+  const canSubmit =
+    title.trim() &&
+    body.trim() &&
+    (audienceType === "all_students" ||
+      audienceType === "all_teachers" ||
+      audienceType === "school" ||
+      (audienceType === "class" && selectedClassId) ||
+      (audienceType === "specific_teachers" && selectedTeacherId) ||
+      (audienceType === "specific_students" && selectedStudentId));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -394,7 +472,9 @@ function CreateNoticeDialog({ actorId, role }: { actorId?: string; role: string 
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Publish new notice</DialogTitle>
-          <DialogDescription>Create a general notice or target specific classes and teachers.</DialogDescription>
+          <DialogDescription>
+            Create a general notice or target specific classes and teachers.
+          </DialogDescription>
         </DialogHeader>
 
         <form
@@ -406,12 +486,25 @@ function CreateNoticeDialog({ actorId, role }: { actorId?: string; role: string 
         >
           <div className="space-y-1.5">
             <Label htmlFor="notice-title">Notice Title</Label>
-            <Input id="notice-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Schedule for half-yearly exams" required />
+            <Input
+              id="notice-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Schedule for half-yearly exams"
+              required
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="notice-body">Content</Label>
-            <Textarea id="notice-body" value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write notice details here…" className="min-h-28" required />
+            <Textarea
+              id="notice-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Write notice details here…"
+              className="min-h-28"
+              required
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -490,7 +583,12 @@ function CreateNoticeDialog({ actorId, role }: { actorId?: string; role: string 
 
           <div className="space-y-1.5">
             <Label htmlFor="notice-attachment">Optional attachment</Label>
-            <Input id="notice-attachment" type="file" onChange={(e) => setAttachment(e.target.files?.[0] ?? null)} className="h-9 bg-background" />
+            <Input
+              id="notice-attachment"
+              type="file"
+              onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
+              className="h-9 bg-background"
+            />
           </div>
 
           <DialogFooter>
@@ -519,7 +617,9 @@ function NoticeActivityDialog({ noticeId, onClose }: { noticeId: string; onClose
         <DialogHeader className="flex flex-row items-center justify-between border-b pb-3">
           <div>
             <DialogTitle className="text-lg font-bold">Notice read receipts</DialogTitle>
-            <DialogDescription className="text-xs">Track who opened this notice and when.</DialogDescription>
+            <DialogDescription className="text-xs">
+              Track who opened this notice and when.
+            </DialogDescription>
           </div>
           <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
             <X className="size-4" />
@@ -532,39 +632,56 @@ function NoticeActivityDialog({ noticeId, onClose }: { noticeId: string; onClose
             <p className="text-xs text-muted-foreground mt-2">Loading read activity...</p>
           </div>
         ) : query.isError ? (
-          <div className="py-6 text-center text-sm text-danger">{(query.error as Error)?.message}</div>
+          <div className="py-6 text-center text-sm text-danger">
+            {(query.error as Error)?.message}
+          </div>
         ) : !query.data ? (
           <div className="py-6 text-center text-sm text-muted-foreground">No data found.</div>
         ) : (
           <div className="space-y-4 pt-3">
             <div className="flex items-center gap-4 bg-muted/50 rounded-lg p-3 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wide">Target recipients</p>
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wide">
+                  Target recipients
+                </p>
                 <p className="text-xl font-extrabold">{query.data.recipientCount}</p>
               </div>
               <div className="border-l pl-4">
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wide">Opened / Read</p>
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wide">
+                  Opened / Read
+                </p>
                 <p className="text-xl font-extrabold text-success">{query.data.viewedCount}</p>
               </div>
             </div>
 
             <div className="max-h-72 overflow-y-auto space-y-2.5 divide-y divide-border/40">
               {query.data.rows.map((row) => (
-                <div key={row.viewerId} className="flex items-center justify-between py-2 first:pt-0">
+                <div
+                  key={row.viewerId}
+                  className="flex items-center justify-between py-2 first:pt-0"
+                >
                   <div>
                     <p className="text-sm font-semibold">{row.viewerName}</p>
                     {row.viewed && row.firstViewedAt ? (
-                      <p className="text-[11px] text-muted-foreground">First read: {formatDateTime(row.firstViewedAt)}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        First read: {formatDateTime(row.firstViewedAt)}
+                      </p>
                     ) : (
                       <p className="text-[11px] text-muted-foreground">Not viewed yet</p>
                     )}
                   </div>
                   {row.viewed ? (
-                    <Badge variant="outline" className="rounded-full bg-success-soft text-success border-success/20 text-[10px] gap-1">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full bg-success-soft text-success border-success/20 text-[10px] gap-1"
+                    >
                       <CheckCircle2 className="size-3" /> Read ({row.viewCount})
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full text-[10px] text-muted-foreground"
+                    >
                       Pending
                     </Badge>
                   )}

@@ -77,7 +77,14 @@ export const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
   student: ["view-own-progress"],
   teacher: ["grade", "mark-attendance", "view-own-progress"],
   parent: ["view-ward"],
-  admin: ["manage-school", "manage-people", "grade", "mark-attendance", "school-intelligence", "sensitive-context"],
+  admin: [
+    "manage-school",
+    "manage-people",
+    "grade",
+    "mark-attendance",
+    "school-intelligence",
+    "sensitive-context",
+  ],
   principal: [
     "manage-school",
     "manage-people",

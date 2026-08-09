@@ -1,7 +1,14 @@
 import { useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, ClipboardCheck, FileText, NotebookPen, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  ClipboardCheck,
+  FileText,
+  NotebookPen,
+  Users,
+} from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { useActorParams } from "@/hooks/use-actor-params";
 import {
@@ -82,7 +89,8 @@ function HomeworkDetail() {
 
   const hw = homeworkQuery.data;
   const overdue = isOverdue(hw.dueAt);
-  const canSubmit = actorParams.role === "student" && (!hw.viewerSubmission || hw.allowResubmission);
+  const canSubmit =
+    actorParams.role === "student" && (!hw.viewerSubmission || hw.allowResubmission);
 
   const activityRows: ActivityRow[] =
     activityQuery.data?.rows.map((r) => ({
@@ -91,7 +99,15 @@ function HomeworkDetail() {
       viewed: r.viewed,
       firstViewedAt: r.firstViewedAt,
       extra: r.submitted
-        ? { label: r.submissionStatus === "late" ? "Late" : r.submissionStatus === "graded" ? "Graded" : "Submitted", status: r.submissionStatus === "late" ? "late" : "submitted" }
+        ? {
+            label:
+              r.submissionStatus === "late"
+                ? "Late"
+                : r.submissionStatus === "graded"
+                  ? "Graded"
+                  : "Submitted",
+            status: r.submissionStatus === "late" ? "late" : "submitted",
+          }
         : { label: "Not submitted", status: "pending" },
     })) ?? [];
 
@@ -107,7 +123,10 @@ function HomeworkDetail() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="rounded-full border-primary/30 bg-primary-soft text-[11px] text-primary">
+              <Badge
+                variant="outline"
+                className="rounded-full border-primary/30 bg-primary-soft text-[11px] text-primary"
+              >
                 {hw.subject}
               </Badge>
               <Badge variant="outline" className="rounded-full text-[11px] text-muted-foreground">
@@ -121,7 +140,9 @@ function HomeworkDetail() {
             variant="outline"
             className={cn(
               "rounded-full text-[11px]",
-              overdue ? "border-danger/30 bg-danger-soft text-danger" : "border-success/30 bg-success-soft text-success",
+              overdue
+                ? "border-danger/30 bg-danger-soft text-danger"
+                : "border-success/30 bg-success-soft text-success",
             )}
           >
             <CalendarClock className="mr-1 size-3" aria-hidden />
@@ -129,9 +150,13 @@ function HomeworkDetail() {
           </Badge>
         </div>
 
-        <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{hw.description}</p>
+        <p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+          {hw.description}
+        </p>
 
-        {hw.totalMarks != null ? <p className="text-xs text-muted-foreground">Total marks: {hw.totalMarks}</p> : null}
+        {hw.totalMarks != null ? (
+          <p className="text-xs text-muted-foreground">Total marks: {hw.totalMarks}</p>
+        ) : null}
 
         {hw.attachments.length > 0 ? (
           <div className="space-y-2">
@@ -140,7 +165,11 @@ function HomeworkDetail() {
             </p>
             <AttachmentList
               files={hw.attachments}
-              getUrl={(filePath) => getHomeworkAttachmentUrl({ data: { ...actorParams, homeworkId, filePath } }).then((r) => r.url)}
+              getUrl={(filePath) =>
+                getHomeworkAttachmentUrl({ data: { ...actorParams, homeworkId, filePath } }).then(
+                  (r) => r.url,
+                )
+              }
             />
           </div>
         ) : null}
@@ -148,7 +177,9 @@ function HomeworkDetail() {
 
       {actorParams.role === "student" ? (
         <div className="surface-panel space-y-4 p-5 sm:p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Your submission</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Your submission
+          </h2>
           {hw.viewerSubmission ? (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -163,15 +194,25 @@ function HomeworkDetail() {
                         : "border-border text-muted-foreground",
                   )}
                 >
-                  {hw.viewerSubmission.status === "graded" ? "Graded" : hw.viewerSubmission.status === "late" ? "Submitted late" : "Submitted"}
+                  {hw.viewerSubmission.status === "graded"
+                    ? "Graded"
+                    : hw.viewerSubmission.status === "late"
+                      ? "Submitted late"
+                      : "Submitted"}
                 </Badge>
-                <span className="text-xs text-muted-foreground">on {formatDateTime(hw.viewerSubmission.submittedAt)}</span>
+                <span className="text-xs text-muted-foreground">
+                  on {formatDateTime(hw.viewerSubmission.submittedAt)}
+                </span>
               </div>
-              {hw.viewerSubmission.comment ? <p className="text-sm text-muted-foreground">{hw.viewerSubmission.comment}</p> : null}
+              {hw.viewerSubmission.comment ? (
+                <p className="text-sm text-muted-foreground">{hw.viewerSubmission.comment}</p>
+              ) : null}
               <AttachmentList
                 files={hw.viewerSubmission.files}
                 getUrl={(filePath) =>
-                  getSubmissionFileUrl({ data: { ...actorParams, submissionId: hw.viewerSubmission!.id, filePath } }).then((r) => r.url)
+                  getSubmissionFileUrl({
+                    data: { ...actorParams, submissionId: hw.viewerSubmission!.id, filePath },
+                  }).then((r) => r.url)
                 }
               />
               {hw.viewerSubmission.status === "graded" ? (
@@ -180,7 +221,11 @@ function HomeworkDetail() {
                     Marks: {hw.viewerSubmission.marks ?? "—"}
                     {hw.totalMarks ? ` / ${hw.totalMarks}` : ""}
                   </p>
-                  {hw.viewerSubmission.feedback ? <p className="mt-1 text-sm text-muted-foreground">{hw.viewerSubmission.feedback}</p> : null}
+                  {hw.viewerSubmission.feedback ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {hw.viewerSubmission.feedback}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -191,7 +236,11 @@ function HomeworkDetail() {
           {canSubmit ? (
             <>
               {hw.viewerSubmission ? <Separator /> : null}
-              <SubmitHomeworkForm actorId={actorParams.actorId} homeworkId={homeworkId} isResubmission={Boolean(hw.viewerSubmission)} />
+              <SubmitHomeworkForm
+                actorId={actorParams.actorId}
+                homeworkId={homeworkId}
+                isResubmission={Boolean(hw.viewerSubmission)}
+              />
             </>
           ) : null}
         </div>
@@ -204,7 +253,10 @@ function HomeworkDetail() {
             {activityQuery.isLoading ? (
               <LoadingCards count={4} />
             ) : activityQuery.isError ? (
-              <ErrorState message={(activityQuery.error as Error)?.message} onRetry={() => activityQuery.refetch()} />
+              <ErrorState
+                message={(activityQuery.error as Error)?.message}
+                onRetry={() => activityQuery.refetch()}
+              />
             ) : (
               <ActivityTable rows={activityRows} showSubmissions />
             )}
@@ -217,13 +269,19 @@ function HomeworkDetail() {
             {submissionsQuery.isLoading ? (
               <LoadingCards count={4} />
             ) : submissionsQuery.isError ? (
-              <ErrorState message={(submissionsQuery.error as Error)?.message} onRetry={() => submissionsQuery.refetch()} />
+              <ErrorState
+                message={(submissionsQuery.error as Error)?.message}
+                onRetry={() => submissionsQuery.refetch()}
+              />
             ) : (submissionsQuery.data ?? []).length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No submissions yet.</p>
             ) : (
               <ul className="divide-y divide-border">
                 {submissionsQuery.data!.map((sub) => (
-                  <li key={sub.id} className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                  <li
+                    key={sub.id}
+                    className="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0"
+                  >
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold">{sub.studentName}</p>
@@ -238,18 +296,35 @@ function HomeworkDetail() {
                                 : "border-border text-muted-foreground",
                           )}
                         >
-                          {sub.status === "graded" ? `Graded${sub.marks != null ? ` · ${sub.marks}${hw.totalMarks ? `/${hw.totalMarks}` : ""}` : ""}` : sub.status === "late" ? "Late" : "Submitted"}
+                          {sub.status === "graded"
+                            ? `Graded${sub.marks != null ? ` · ${sub.marks}${hw.totalMarks ? `/${hw.totalMarks}` : ""}` : ""}`
+                            : sub.status === "late"
+                              ? "Late"
+                              : "Submitted"}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">on {formatDateTime(sub.submittedAt)}</p>
-                      {sub.comment ? <p className="text-sm text-muted-foreground">{sub.comment}</p> : null}
+                      <p className="text-xs text-muted-foreground">
+                        on {formatDateTime(sub.submittedAt)}
+                      </p>
+                      {sub.comment ? (
+                        <p className="text-sm text-muted-foreground">{sub.comment}</p>
+                      ) : null}
                       <AttachmentList
                         files={sub.files}
-                        getUrl={(filePath) => getSubmissionFileUrl({ data: { ...actorParams, submissionId: sub.id, filePath } }).then((r) => r.url)}
+                        getUrl={(filePath) =>
+                          getSubmissionFileUrl({
+                            data: { ...actorParams, submissionId: sub.id, filePath },
+                          }).then((r) => r.url)
+                        }
                       />
                     </div>
                     {actorParams.role === "teacher" ? (
-                      <GradeSubmissionDialog role="teacher" actorId={actorParams.actorId} submission={sub} totalMarks={hw.totalMarks} />
+                      <GradeSubmissionDialog
+                        role="teacher"
+                        actorId={actorParams.actorId}
+                        submission={sub}
+                        totalMarks={hw.totalMarks}
+                      />
                     ) : null}
                   </li>
                 ))}

@@ -32,7 +32,9 @@ export function assertValidFile(file: File): void {
   if (file.size <= 0) throw new FileValidationError("The selected file is empty.");
   if (file.size > MAX_FILE_BYTES) throw new FileValidationError("Files must be 10MB or smaller.");
   if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
-    throw new FileValidationError("Unsupported file type. Allowed: PDF, images, Word, Excel, PowerPoint.");
+    throw new FileValidationError(
+      "Unsupported file type. Allowed: PDF, images, Word, Excel, PowerPoint.",
+    );
   }
 }
 
@@ -63,7 +65,10 @@ export async function uploadToBucket(prefix: string, file: File): Promise<Stored
 
 /** Issues a short-lived signed URL. Callers must have already authorized the request. */
 export async function signedUrlFor(path: string, expiresInSeconds = 60 * 5): Promise<string> {
-  const { data, error } = await supabaseAdmin.storage.from(FILES_BUCKET).createSignedUrl(path, expiresInSeconds);
-  if (error || !data) throw new Error(`Could not create a signed URL: ${error?.message ?? "unknown error"}`);
+  const { data, error } = await supabaseAdmin.storage
+    .from(FILES_BUCKET)
+    .createSignedUrl(path, expiresInSeconds);
+  if (error || !data)
+    throw new Error(`Could not create a signed URL: ${error?.message ?? "unknown error"}`);
   return data.signedUrl;
 }

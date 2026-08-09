@@ -30,7 +30,13 @@ interface HomeworkRow {
   status: "draft" | "published" | "closed";
   created_at: string;
   deleted_at: string | null;
-  homework_attachments?: { id: string; file_path: string; file_name: string; size_bytes: number; mime_type: string }[];
+  homework_attachments?: {
+    id: string;
+    file_path: string;
+    file_name: string;
+    size_bytes: number;
+    mime_type: string;
+  }[];
 }
 
 interface SubmissionRow {
@@ -44,7 +50,13 @@ interface SubmissionRow {
   marks: number | null;
   feedback: string | null;
   reviewed_at: string | null;
-  submission_files?: { id: string; file_path: string; file_name: string; size_bytes: number; mime_type: string }[];
+  submission_files?: {
+    id: string;
+    file_path: string;
+    file_name: string;
+    size_bytes: number;
+    mime_type: string;
+  }[];
 }
 
 function mapHomework(row: HomeworkRow): HomeworkItem {
@@ -105,7 +117,11 @@ export const listHomeworkFor = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
 
-    let query = supabaseAdmin.from("homework").select("*, homework_attachments(*)").eq("school_id", actor.schoolId).is("deleted_at", null);
+    let query = supabaseAdmin
+      .from("homework")
+      .select("*, homework_attachments(*)")
+      .eq("school_id", actor.schoolId)
+      .is("deleted_at", null);
     if (actor.role === "student") {
       query = query.eq("class_id", actor.classId).eq("status", "published");
     } else if (actor.role === "teacher") {
@@ -118,11 +134,21 @@ export const listHomeworkFor = createServerFn({ method: "GET" })
 
     if (actor.role === "student") {
       const [{ data: views }, { data: subs }] = await Promise.all([
-        supabaseAdmin.from("homework_views").select("homework_id").eq("student_id", actor.id).in("homework_id", ids),
-        supabaseAdmin.from("submissions").select("*, submission_files(*)").eq("student_id", actor.id).in("homework_id", ids),
+        supabaseAdmin
+          .from("homework_views")
+          .select("homework_id")
+          .eq("student_id", actor.id)
+          .in("homework_id", ids),
+        supabaseAdmin
+          .from("submissions")
+          .select("*, submission_files(*)")
+          .eq("student_id", actor.id)
+          .in("homework_id", ids),
       ]);
       const viewedSet = new Set((views ?? []).map((v) => v.homework_id));
-      const subMap = new Map((subs ?? []).map((s) => [s.homework_id, mapSubmission(s as SubmissionRow)]));
+      const subMap = new Map(
+        (subs ?? []).map((s) => [s.homework_id, mapSubmission(s as SubmissionRow)]),
+      );
       return homeworkRows.map((row) => {
         const item = mapHomework(row);
         item.viewerHasViewed = viewedSet.has(row.id);
@@ -137,12 +163,14 @@ export const listHomeworkFor = createServerFn({ method: "GET" })
       supabaseAdmin.from("submissions").select("homework_id, status").in("homework_id", ids),
     ]);
     const viewedCounts = new Map<string, number>();
-    for (const v of views ?? []) viewedCounts.set(v.homework_id, (viewedCounts.get(v.homework_id) ?? 0) + 1);
+    for (const v of views ?? [])
+      viewedCounts.set(v.homework_id, (viewedCounts.get(v.homework_id) ?? 0) + 1);
     const submittedCounts = new Map<string, number>();
     const lateCounts = new Map<string, number>();
     for (const s of subs ?? []) {
       submittedCounts.set(s.homework_id, (submittedCounts.get(s.homework_id) ?? 0) + 1);
-      if (s.status === "late") lateCounts.set(s.homework_id, (lateCounts.get(s.homework_id) ?? 0) + 1);
+      if (s.status === "late")
+        lateCounts.set(s.homework_id, (lateCounts.get(s.homework_id) ?? 0) + 1);
     }
 
     return homeworkRows.map((row) => {
@@ -229,7 +257,8 @@ export const createHomework = createServerFn({ method: "POST" })
     const subject = String(data.get("subject") ?? "").trim();
     const description = String(data.get("description") ?? "").trim();
     const dueAt = String(data.get("dueAt") ?? "");
-    if (!title || !subject || !description || !dueAt) throw new Error("Title, subject, description and due date are required.");
+    if (!title || !subject || !description || !dueAt)
+      throw new Error("Title, subject, description and due date are required.");
 
     const totalMarksRaw = data.get("totalMarks");
     const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : null;
@@ -255,11 +284,15 @@ export const createHomework = createServerFn({ method: "POST" })
       .single();
     if (error || !inserted) throw new Error(error?.message ?? "Could not create homework.");
 
-    const files = data.getAll("attachments").filter((f): f is File => f instanceof File && f.size > 0);
+    const files = data
+      .getAll("attachments")
+      .filter((f): f is File => f instanceof File && f.size > 0);
     for (const file of files) {
       assertValidFile(file);
       const meta = await uploadToBucket(`homework/${inserted.id}`, file);
-      const { error: attError } = await supabaseAdmin.from("homework_attachments").insert({ homework_id: inserted.id, ...meta });
+      const { error: attError } = await supabaseAdmin
+        .from("homework_attachments")
+        .insert({ homework_id: inserted.id, ...meta });
       if (attError) throw new Error(attError.message);
     }
 
@@ -276,15 +309,22 @@ export const updateHomework = createServerFn({ method: "POST" })
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can edit homework.");
 
     const homeworkId = String(data.get("homeworkId") ?? "");
-    const { data: hw, error: hwError } = await supabaseAdmin.from("homework").select("id, teacher_id").eq("id", homeworkId).is("deleted_at", null).single();
+    const { data: hw, error: hwError } = await supabaseAdmin
+      .from("homework")
+      .select("id, teacher_id")
+      .eq("id", homeworkId)
+      .is("deleted_at", null)
+      .single();
     if (hwError || !hw) throw new NotFoundError("Homework not found.");
-    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only edit homework you created.");
+    if (hw.teacher_id !== actor.id)
+      throw new ForbiddenError("You can only edit homework you created.");
 
     const title = String(data.get("title") ?? "").trim();
     const subject = String(data.get("subject") ?? "").trim();
     const description = String(data.get("description") ?? "").trim();
     const dueAt = String(data.get("dueAt") ?? "");
-    if (!title || !subject || !description || !dueAt) throw new Error("Title, subject, description and due date are required.");
+    if (!title || !subject || !description || !dueAt)
+      throw new Error("Title, subject, description and due date are required.");
 
     const totalMarksRaw = data.get("totalMarks");
     const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : null;
@@ -292,15 +332,26 @@ export const updateHomework = createServerFn({ method: "POST" })
 
     const { error } = await supabaseAdmin
       .from("homework")
-      .update({ title, subject, description, due_at: dueAt, total_marks: totalMarks, allow_resubmission: allowResubmission })
+      .update({
+        title,
+        subject,
+        description,
+        due_at: dueAt,
+        total_marks: totalMarks,
+        allow_resubmission: allowResubmission,
+      })
       .eq("id", homeworkId);
     if (error) throw new Error(error.message);
 
-    const files = data.getAll("attachments").filter((f): f is File => f instanceof File && f.size > 0);
+    const files = data
+      .getAll("attachments")
+      .filter((f): f is File => f instanceof File && f.size > 0);
     for (const file of files) {
       assertValidFile(file);
       const meta = await uploadToBucket(`homework/${homeworkId}`, file);
-      const { error: attError } = await supabaseAdmin.from("homework_attachments").insert({ homework_id: homeworkId, ...meta });
+      const { error: attError } = await supabaseAdmin
+        .from("homework_attachments")
+        .insert({ homework_id: homeworkId, ...meta });
       if (attError) throw new Error(attError.message);
     }
 
@@ -309,16 +360,32 @@ export const updateHomework = createServerFn({ method: "POST" })
 
 /** Teacher removes an attachment they added while editing homework (before or after publish). */
 export const deleteHomeworkAttachment = createServerFn({ method: "POST" })
-  .validator((data: { role: ActorRole; actorId?: string; homeworkId: string; attachmentId: string; filePath: string }) => data)
+  .validator(
+    (data: {
+      role: ActorRole;
+      actorId?: string;
+      homeworkId: string;
+      attachmentId: string;
+      filePath: string;
+    }) => data,
+  )
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can edit homework.");
-    const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
+    const { data: hw, error } = await supabaseAdmin
+      .from("homework")
+      .select("teacher_id")
+      .eq("id", data.homeworkId)
+      .single();
     if (error || !hw) throw new NotFoundError("Homework not found.");
-    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only edit homework you created.");
+    if (hw.teacher_id !== actor.id)
+      throw new ForbiddenError("You can only edit homework you created.");
 
     await supabaseAdmin.storage.from("shwai-files").remove([data.filePath]);
-    const { error: delError } = await supabaseAdmin.from("homework_attachments").delete().eq("id", data.attachmentId);
+    const { error: delError } = await supabaseAdmin
+      .from("homework_attachments")
+      .delete()
+      .eq("id", data.attachmentId);
     if (delError) throw new Error(delError.message);
     return { ok: true };
   });
@@ -329,11 +396,19 @@ export const deleteHomework = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can delete homework.");
-    const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
+    const { data: hw, error } = await supabaseAdmin
+      .from("homework")
+      .select("teacher_id")
+      .eq("id", data.homeworkId)
+      .single();
     if (error || !hw) throw new NotFoundError("Homework not found.");
-    if (hw.teacher_id !== actor.id) throw new ForbiddenError("You can only delete homework you created.");
+    if (hw.teacher_id !== actor.id)
+      throw new ForbiddenError("You can only delete homework you created.");
 
-    const { error: delError } = await supabaseAdmin.from("homework").update({ deleted_at: new Date().toISOString() }).eq("id", data.homeworkId);
+    const { error: delError } = await supabaseAdmin
+      .from("homework")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", data.homeworkId);
     if (delError) throw new Error(delError.message);
     return { ok: true };
   });
@@ -345,8 +420,13 @@ export const recordHomeworkView = createServerFn({ method: "POST" })
     const actor = resolveActor(data);
     if (actor.role !== "student") return { ok: true };
 
-    const { data: hw } = await supabaseAdmin.from("homework").select("class_id").eq("id", data.homeworkId).single();
-    if (!hw || hw.class_id !== actor.classId) throw new ForbiddenError("This homework is not assigned to your class.");
+    const { data: hw } = await supabaseAdmin
+      .from("homework")
+      .select("class_id")
+      .eq("id", data.homeworkId)
+      .single();
+    if (!hw || hw.class_id !== actor.classId)
+      throw new ForbiddenError("This homework is not assigned to your class.");
 
     const { data: existing } = await supabaseAdmin
       .from("homework_views")
@@ -357,7 +437,10 @@ export const recordHomeworkView = createServerFn({ method: "POST" })
 
     const now = new Date().toISOString();
     if (existing) {
-      await supabaseAdmin.from("homework_views").update({ last_viewed_at: now, view_count: existing.view_count + 1 }).eq("id", existing.id);
+      await supabaseAdmin
+        .from("homework_views")
+        .update({ last_viewed_at: now, view_count: existing.view_count + 1 })
+        .eq("id", existing.id);
     } else {
       await supabaseAdmin.from("homework_views").insert({
         homework_id: data.homeworkId,
@@ -375,15 +458,27 @@ export const getHomeworkActivity = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)
   .handler(async ({ data }): Promise<HomeworkActivity> => {
     const actor = resolveActor(data);
-    const { data: row, error } = await supabaseAdmin.from("homework").select("*").eq("id", data.homeworkId).single();
+    const { data: row, error } = await supabaseAdmin
+      .from("homework")
+      .select("*")
+      .eq("id", data.homeworkId)
+      .single();
     if (error || !row) throw new NotFoundError("Homework not found.");
-    if (actor.role === "teacher" && row.teacher_id !== actor.id) throw new ForbiddenError("You can only view activity for your own homework.");
-    if (actor.role === "student") throw new ForbiddenError("Students cannot view class-wide activity.");
+    if (actor.role === "teacher" && row.teacher_id !== actor.id)
+      throw new ForbiddenError("You can only view activity for your own homework.");
+    if (actor.role === "student")
+      throw new ForbiddenError("Students cannot view class-wide activity.");
 
     const roster = classRoster(row.class_id);
     const [{ data: views }, { data: subs }] = await Promise.all([
-      supabaseAdmin.from("homework_views").select("student_id, first_viewed_at").eq("homework_id", data.homeworkId),
-      supabaseAdmin.from("submissions").select("student_id, status, submitted_at").eq("homework_id", data.homeworkId),
+      supabaseAdmin
+        .from("homework_views")
+        .select("student_id, first_viewed_at")
+        .eq("homework_id", data.homeworkId),
+      supabaseAdmin
+        .from("submissions")
+        .select("student_id, status, submitted_at")
+        .eq("homework_id", data.homeworkId),
     ]);
     const viewMap = new Map((views ?? []).map((v) => [v.student_id, v.first_viewed_at]));
     const subMap = new Map((subs ?? []).map((s) => [s.student_id, s]));
@@ -412,9 +507,17 @@ export const getHomeworkActivity = createServerFn({ method: "GET" })
     };
   });
 
-export async function homeworkAttachmentUrl(actorInput: { role: ActorRole; actorId?: string }, homeworkId: string, filePath: string): Promise<string> {
+export async function homeworkAttachmentUrl(
+  actorInput: { role: ActorRole; actorId?: string },
+  homeworkId: string,
+  filePath: string,
+): Promise<string> {
   const actor = resolveActor(actorInput);
-  const { data: row, error } = await supabaseAdmin.from("homework").select("class_id, teacher_id").eq("id", homeworkId).single();
+  const { data: row, error } = await supabaseAdmin
+    .from("homework")
+    .select("class_id, teacher_id")
+    .eq("id", homeworkId)
+    .single();
   if (error || !row) throw new NotFoundError("Homework not found.");
   if (actor.role === "student" && row.class_id !== actor.classId) throw new ForbiddenError();
   if (actor.role === "teacher" && row.teacher_id !== actor.id) throw new ForbiddenError();
@@ -422,5 +525,9 @@ export async function homeworkAttachmentUrl(actorInput: { role: ActorRole; actor
 }
 
 export const getHomeworkAttachmentUrl = createServerFn({ method: "POST" })
-  .validator((data: { role: ActorRole; actorId?: string; homeworkId: string; filePath: string }) => data)
-  .handler(async ({ data }) => ({ url: await homeworkAttachmentUrl(data, data.homeworkId, data.filePath) }));
+  .validator(
+    (data: { role: ActorRole; actorId?: string; homeworkId: string; filePath: string }) => data,
+  )
+  .handler(async ({ data }) => ({
+    url: await homeworkAttachmentUrl(data, data.homeworkId, data.filePath),
+  }));

@@ -1,4 +1,9 @@
-import { AIAllProvidersFailedError, AINoProvidersConfiguredError, classifyError, type AIAttemptFailure } from "./errors";
+import {
+  AIAllProvidersFailedError,
+  AINoProvidersConfiguredError,
+  classifyError,
+  type AIAttemptFailure,
+} from "./errors";
 import { getRotator, maskKey } from "./key-rotation";
 import { cerebrasProvider } from "./providers/cerebras";
 import { firebaseProvider } from "./providers/firebase";
@@ -14,7 +19,12 @@ import type { AIGenerateRequest, AIGenerateResult, ProviderAdapter } from "./pro
  * provider, edit this array (and add a matching adapter under ./providers) — nothing
  * else in the app needs to change.
  */
-const PROVIDERS: ProviderAdapter[] = [groqProvider, firebaseProvider, geminiProvider, cerebrasProvider];
+const PROVIDERS: ProviderAdapter[] = [
+  groqProvider,
+  firebaseProvider,
+  geminiProvider,
+  cerebrasProvider,
+];
 
 /**
  * Single entry point for all AI text generation in SHWAI. Every feature that needs
@@ -57,7 +67,11 @@ export async function generate(request: AIGenerateRequest): Promise<AIGenerateRe
         return { text, provider: provider.name, model: provider.getModel() };
       } catch (error) {
         const classified = classifyError(error);
-        attempts.push({ provider: provider.name, type: classified.type, message: classified.message });
+        attempts.push({
+          provider: provider.name,
+          type: classified.type,
+          message: classified.message,
+        });
 
         if (!classified.retryNextKey) {
           // The request itself is the problem (bad params, unsupported input, etc.) —

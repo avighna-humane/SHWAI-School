@@ -1,10 +1,86 @@
 import type { Parent, RiskLevel, StaffMember, Student, Teacher } from "@/types";
 import { CLASS_SECTIONS, HOUSES } from "./core";
 
-const FIRST_M = ["Aarav", "Vihaan", "Arjun", "Rohan", "Kabir", "Aditya", "Ishaan", "Dhruv", "Rudra", "Karan", "Yash", "Neel", "Om", "Parth", "Sarthak", "Tanish", "Veer", "Ayaan", "Advik", "Nikhil"];
-const FIRST_F = ["Ananya", "Diya", "Ishita", "Kavya", "Meher", "Riya", "Saanvi", "Tara", "Aditi", "Pihu", "Anvi", "Myra", "Navya", "Sara", "Trisha", "Ira", "Aarohi", "Vanya", "Shreya", "Nitya"];
-const SURNAMES = ["Sharma", "Patil", "Iyer", "Deshpande", "Nair", "Reddy", "Gupta", "Joshi", "Kulkarni", "Menon", "Chatterjee", "Bhandari", "Rao", "Sheikh", "Gaikwad", "Verma", "Pillai", "Agarwal", "Kadam", "Shetty"];
-const OCCUPATIONS = ["Software Engineer", "Bank Manager", "Doctor", "Shop Owner", "Government Officer", "Homemaker", "Chartered Accountant", "Farmer", "Civil Engineer", "Teacher", "Auto Driver", "Textile Trader"];
+const FIRST_M = [
+  "Aarav",
+  "Vihaan",
+  "Arjun",
+  "Rohan",
+  "Kabir",
+  "Aditya",
+  "Ishaan",
+  "Dhruv",
+  "Rudra",
+  "Karan",
+  "Yash",
+  "Neel",
+  "Om",
+  "Parth",
+  "Sarthak",
+  "Tanish",
+  "Veer",
+  "Ayaan",
+  "Advik",
+  "Nikhil",
+];
+const FIRST_F = [
+  "Ananya",
+  "Diya",
+  "Ishita",
+  "Kavya",
+  "Meher",
+  "Riya",
+  "Saanvi",
+  "Tara",
+  "Aditi",
+  "Pihu",
+  "Anvi",
+  "Myra",
+  "Navya",
+  "Sara",
+  "Trisha",
+  "Ira",
+  "Aarohi",
+  "Vanya",
+  "Shreya",
+  "Nitya",
+];
+const SURNAMES = [
+  "Sharma",
+  "Patil",
+  "Iyer",
+  "Deshpande",
+  "Nair",
+  "Reddy",
+  "Gupta",
+  "Joshi",
+  "Kulkarni",
+  "Menon",
+  "Chatterjee",
+  "Bhandari",
+  "Rao",
+  "Sheikh",
+  "Gaikwad",
+  "Verma",
+  "Pillai",
+  "Agarwal",
+  "Kadam",
+  "Shetty",
+];
+const OCCUPATIONS = [
+  "Software Engineer",
+  "Bank Manager",
+  "Doctor",
+  "Shop Owner",
+  "Government Officer",
+  "Homemaker",
+  "Chartered Accountant",
+  "Farmer",
+  "Civil Engineer",
+  "Teacher",
+  "Auto Driver",
+  "Textile Trader",
+];
 
 function rnd(seed: number) {
   return Math.abs(Math.sin(seed * 12.9898) * 43758.5453) % 1;
@@ -16,7 +92,11 @@ function num(seed: number, min: number, max: number) {
   return Math.round(min + rnd(seed) * (max - min));
 }
 
-function riskFrom(attendance: number, score: number, hw: number): { level: RiskLevel; score: number } {
+function riskFrom(
+  attendance: number,
+  score: number,
+  hw: number,
+): { level: RiskLevel; score: number } {
   const raw = Math.round(100 - (attendance * 0.4 + score * 0.35 + hw * 0.25));
   if (raw >= 40) return { level: "critical", score: raw };
   if (raw >= 32) return { level: "high", score: raw };
@@ -49,7 +129,11 @@ export const STUDENTS: Student[] = (() => {
         gender: female ? "Female" : "Male",
         dob: `${num(n * 4.4, 1, 28)}/${num(n * 5.5, 1, 12)}/${2025 - cls.grade - 5}`,
         guardianName: `${pick(rnd(n * 6) > 0.5 ? FIRST_M : FIRST_F, n * 6.6)} ${surname}`,
-        guardianPhone: `+91 ${num(n * 7.7, 70, 99)}${String(num(n * 8.8, 10000000, 99999999)).padStart(8, "0")}`.slice(0, 18),
+        guardianPhone:
+          `+91 ${num(n * 7.7, 70, 99)}${String(num(n * 8.8, 10000000, 99999999)).padStart(8, "0")}`.slice(
+            0,
+            18,
+          ),
         parentId: `par-${(n % 40) + 1}`,
         attendancePct,
         avgScore,
@@ -80,12 +164,24 @@ export const ALUMNI: Student[] = STUDENTS.slice(0, 24).map((s, i) => ({
 }));
 
 const TEACHER_NAMES = [
-  ["Meera Iyer", "Mathematics"], ["Anil Kulkarni", "Science"], ["Shalini Verma", "English"],
-  ["Rakesh Pillai", "Social Science"], ["Divya Menon", "Hindi"], ["Sanjay Joshi", "Computer Science"],
-  ["Kavita Rao", "Mathematics"], ["Prakash Bhandari", "Physics"], ["Neha Chatterjee", "Biology"],
-  ["Imran Sheikh", "Chemistry"], ["Lata Gaikwad", "Marathi"], ["Suresh Patil", "Science"],
-  ["Ritu Agarwal", "English"], ["Deepak Shetty", "Mathematics"], ["Farah Khan", "Social Science"],
-  ["Mohan Kadam", "Computer Science"], ["Sneha Reddy", "Hindi"], ["Vinod Gupta", "Physics"],
+  ["Meera Iyer", "Mathematics"],
+  ["Anil Kulkarni", "Science"],
+  ["Shalini Verma", "English"],
+  ["Rakesh Pillai", "Social Science"],
+  ["Divya Menon", "Hindi"],
+  ["Sanjay Joshi", "Computer Science"],
+  ["Kavita Rao", "Mathematics"],
+  ["Prakash Bhandari", "Physics"],
+  ["Neha Chatterjee", "Biology"],
+  ["Imran Sheikh", "Chemistry"],
+  ["Lata Gaikwad", "Marathi"],
+  ["Suresh Patil", "Science"],
+  ["Ritu Agarwal", "English"],
+  ["Deepak Shetty", "Mathematics"],
+  ["Farah Khan", "Social Science"],
+  ["Mohan Kadam", "Computer Science"],
+  ["Sneha Reddy", "Hindi"],
+  ["Vinod Gupta", "Physics"],
 ];
 
 export const TEACHERS: Teacher[] = TEACHER_NAMES.map(([name, subject], i) => {
@@ -96,7 +192,9 @@ export const TEACHERS: Teacher[] = TEACHER_NAMES.map(([name, subject], i) => {
     employeeId: `EMP-${2100 + n}`,
     name: name!,
     subjects: [subject!, ...(rnd(n) > 0.7 ? ["Mathematics"] : [])],
-    classes: CLASS_SECTIONS.filter((_, idx) => idx % 18 === i % 18).slice(0, 4).map((c) => c.label),
+    classes: CLASS_SECTIONS.filter((_, idx) => idx % 18 === i % 18)
+      .slice(0, 4)
+      .map((c) => c.label),
     phone: `+91 9${num(n * 2.2, 100000000, 899999999)}`.slice(0, 17),
     email: `${name!.split(" ")[0]!.toLowerCase()}.${name!.split(" ")[1]!.toLowerCase()}@sunrisepublic.edu.in`,
     experienceYears: num(n * 4.4, 2, 26),
@@ -121,7 +219,9 @@ export const PARENTS: Parent[] = Array.from({ length: 40 }, (_, i) => {
     phone: `+91 9${num(n * 5.1, 100000000, 899999999)}`.slice(0, 17),
     email: `${surname.toLowerCase()}.${n}@gmail.com`,
     occupation: pick(OCCUPATIONS, n * 6.2),
-    wardIds: STUDENTS.filter((s) => s.parentId === `par-${n}`).map((s) => s.id).slice(0, 2),
+    wardIds: STUDENTS.filter((s) => s.parentId === `par-${n}`)
+      .map((s) => s.id)
+      .slice(0, 2),
     preferredLanguage: (["en", "hi", "mr", "ta"] as const)[n % 4]!,
     engagementScore: num(n * 7.3, 22, 98),
     photoHue: num(n * 8.4, 0, 359),
@@ -129,10 +229,18 @@ export const PARENTS: Parent[] = Array.from({ length: 40 }, (_, i) => {
 });
 
 const STAFF_ROLES: [string, string][] = [
-  ["Office Superintendent", "Administration"], ["Accountant", "Finance"], ["Lab Assistant", "Science"],
-  ["Librarian", "Library"], ["Sports Coach", "Physical Education"], ["Transport Coordinator", "Transport"],
-  ["Nurse", "Health"], ["Counsellor", "Student Support"], ["IT Support Engineer", "Technology"],
-  ["Housekeeping Supervisor", "Facilities"], ["Security Head", "Facilities"], ["Admissions Executive", "Admissions"],
+  ["Office Superintendent", "Administration"],
+  ["Accountant", "Finance"],
+  ["Lab Assistant", "Science"],
+  ["Librarian", "Library"],
+  ["Sports Coach", "Physical Education"],
+  ["Transport Coordinator", "Transport"],
+  ["Nurse", "Health"],
+  ["Counsellor", "Student Support"],
+  ["IT Support Engineer", "Technology"],
+  ["Housekeeping Supervisor", "Facilities"],
+  ["Security Head", "Facilities"],
+  ["Admissions Executive", "Admissions"],
 ];
 
 export const STAFF: StaffMember[] = STAFF_ROLES.map(([designation, department], i) => {

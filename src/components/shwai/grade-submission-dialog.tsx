@@ -38,7 +38,13 @@ export function GradeSubmissionDialog({
   const mutation = useMutation({
     mutationFn: () =>
       gradeSubmission({
-        data: { role, actorId, submissionId: submission.id, marks: marks ? Number(marks) : undefined, feedback: feedback.trim() || undefined },
+        data: {
+          role,
+          actorId,
+          submissionId: submission.id,
+          marks: marks ? Number(marks) : undefined,
+          feedback: feedback.trim() || undefined,
+        },
       }),
     onSuccess: () => {
       toast.success("Grade saved");
@@ -53,13 +59,16 @@ export function GradeSubmissionDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant={submission.status === "graded" ? "outline" : "default"}>
-          <PenLine className="size-3.5" aria-hidden /> {submission.status === "graded" ? "Edit grade" : "Grade"}
+          <PenLine className="size-3.5" aria-hidden />{" "}
+          {submission.status === "graded" ? "Edit grade" : "Grade"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Grade {submission.studentName}'s work</DialogTitle>
-          <DialogDescription>Marks and feedback are visible to the student immediately.</DialogDescription>
+          <DialogDescription>
+            Marks and feedback are visible to the student immediately.
+          </DialogDescription>
         </DialogHeader>
         <form
           className="space-y-4"
@@ -70,11 +79,24 @@ export function GradeSubmissionDialog({
         >
           <div className="space-y-1.5">
             <Label htmlFor="grade-marks">Marks{totalMarks ? ` (out of ${totalMarks})` : ""}</Label>
-            <Input id="grade-marks" type="number" min={0} max={totalMarks ?? undefined} value={marks} onChange={(e) => setMarks(e.target.value)} />
+            <Input
+              id="grade-marks"
+              type="number"
+              min={0}
+              max={totalMarks ?? undefined}
+              value={marks}
+              onChange={(e) => setMarks(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="grade-feedback">Feedback (optional)</Label>
-            <Textarea id="grade-feedback" value={feedback} onChange={(e) => setFeedback(e.target.value)} className="min-h-20" placeholder="Great work on…" />
+            <Textarea
+              id="grade-feedback"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              className="min-h-20"
+              placeholder="Great work on…"
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={mutation.isPending}>

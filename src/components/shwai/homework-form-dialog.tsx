@@ -16,8 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FilePicker } from "@/components/shwai/file-picker";
-import { createHomework, updateHomework } from "@/server/homework";
-import type { ActorRole } from "@/server/auth-context";
+import { createHomework, updateHomework } from "@/rpc/homework";
+import type { ActorRole } from "@/rpc/auth-context";
 import type { HomeworkItem } from "@/types";
 import { Loader2, Plus } from "lucide-react";
 

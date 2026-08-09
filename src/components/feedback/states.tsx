@@ -53,8 +53,8 @@ export function PermissionDenied({ role }: { role: string }) {
       <ShieldAlert className="mb-3 size-6 text-warning" aria-hidden />
       <h3 className="text-base font-semibold">You do not have access to this module</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        The <span className="font-medium text-foreground">{role}</span> role cannot open this page. Contact a workspace
-        administrator if you need access.
+        The <span className="font-medium text-foreground">{role}</span> role cannot open this page.
+        Contact a workspace administrator if you need access.
       </p>
     </div>
   );
@@ -71,7 +71,8 @@ export function FeatureLocked({ required, current }: { required: PlanId; current
       </span>
       <h3 className="text-lg font-semibold">Upgrade to unlock this module</h3>
       <p className="mt-1 max-w-md text-sm text-muted-foreground">
-        Your school is on the <span className="font-medium text-foreground">{PLAN_BY_ID[current].name}</span> plan. This
+        Your school is on the{" "}
+        <span className="font-medium text-foreground">{PLAN_BY_ID[current].name}</span> plan. This
         module is part of {PLAN_BY_ID[required].name} ({PLAN_BY_ID[required].versions}).
       </p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -118,7 +119,15 @@ export function LoadingTable({ rows = 6 }: { rows?: number }) {
   );
 }
 
-export function ComingSoon({ label, eta, className }: { label: string; eta?: string; className?: string }) {
+export function ComingSoon({
+  label,
+  eta,
+  className,
+}: {
+  label: string;
+  eta?: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(

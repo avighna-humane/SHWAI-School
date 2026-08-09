@@ -12,11 +12,19 @@ function NotificationCentre() {
   return (
     <div className="relative space-y-6">
       <header>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Stay in the loop</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+          Stay in the loop
+        </p>
         <h1 className="text-3xl font-extrabold tracking-tight">Notification centre</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Connected alerts will appear here when available.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Connected alerts will appear here when available.
+        </p>
       </header>
-      <EmptyState title="No notifications yet" description="Alerts will appear here after a connected school system sends them." icon={<Bell className="size-6" aria-hidden />} />
+      <EmptyState
+        title="No notifications yet"
+        description="Alerts will appear here after a connected school system sends them."
+        icon={<Bell className="size-6" aria-hidden />}
+      />
       <FloatingAI />
     </div>
   );

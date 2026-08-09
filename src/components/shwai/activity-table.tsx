@@ -2,7 +2,14 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -25,7 +32,13 @@ const FILTERS = [
   { id: "late", label: "Late" },
 ] as const;
 
-export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; showSubmissions?: boolean }) {
+export function ActivityTable({
+  rows,
+  showSubmissions,
+}: {
+  rows: ActivityRow[];
+  showSubmissions?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
 
@@ -36,8 +49,10 @@ export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; 
         if (filter === "all") return true;
         if (filter === "viewed") return r.viewed;
         if (filter === "not-viewed") return !r.viewed;
-        if (filter === "submitted") return r.extra?.status === "submitted" || r.extra?.status === "late";
-        if (filter === "not-submitted") return r.extra?.status === "pending" || r.extra?.status === "none";
+        if (filter === "submitted")
+          return r.extra?.status === "submitted" || r.extra?.status === "late";
+        if (filter === "not-submitted")
+          return r.extra?.status === "pending" || r.extra?.status === "none";
         if (filter === "late") return r.extra?.status === "late";
         return true;
       });
@@ -48,7 +63,11 @@ export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; 
       <div className="flex flex-wrap items-center gap-2">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
           <TabsList className="flex-wrap rounded-xl bg-muted p-1">
-            {FILTERS.filter((f) => showSubmissions || (f.id !== "submitted" && f.id !== "not-submitted" && f.id !== "late")).map((f) => (
+            {FILTERS.filter(
+              (f) =>
+                showSubmissions ||
+                (f.id !== "submitted" && f.id !== "not-submitted" && f.id !== "late"),
+            ).map((f) => (
               <TabsTrigger key={f.id} value={f.id} className="text-xs">
                 {f.label}
               </TabsTrigger>
@@ -56,8 +75,16 @@ export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; 
           </TabsList>
         </Tabs>
         <div className="relative ml-auto w-full max-w-[220px]">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name…" className="h-8 pl-8 text-xs" />
+          <Search
+            className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name…"
+            className="h-8 pl-8 text-xs"
+          />
         </div>
       </div>
       <div className="surface-panel overflow-hidden">
@@ -73,7 +100,10 @@ export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={showSubmissions ? 4 : 3} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell
+                  colSpan={showSubmissions ? 4 : 3}
+                  className="py-8 text-center text-sm text-muted-foreground"
+                >
                   No matching records.
                 </TableCell>
               </TableRow>
@@ -86,13 +116,17 @@ export function ActivityTable({ rows, showSubmissions }: { rows: ActivityRow[]; 
                       variant="outline"
                       className={cn(
                         "rounded-full text-[11px]",
-                        r.viewed ? "border-success/30 bg-success-soft text-success" : "border-border text-muted-foreground",
+                        r.viewed
+                          ? "border-success/30 bg-success-soft text-success"
+                          : "border-border text-muted-foreground",
                       )}
                     >
                       {r.viewed ? "Yes" : "No"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{formatDateTime(r.firstViewedAt)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDateTime(r.firstViewedAt)}
+                  </TableCell>
                   {showSubmissions ? (
                     <TableCell>
                       {r.extra ? (

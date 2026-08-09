@@ -25,7 +25,8 @@ function ModuleWorkspace() {
     );
   }
   if (!item.roles.includes(role)) return <PermissionDenied role={ROLE_LABEL[role]} />;
-  if (item.plan && !planAllows(plan, item.plan)) return <FeatureLocked required={item.plan} current={plan} />;
+  if (item.plan && !planAllows(plan, item.plan))
+    return <FeatureLocked required={item.plan} current={plan} />;
 
   return (
     <div className="relative space-y-6">
@@ -35,7 +36,9 @@ function ModuleWorkspace() {
         </p>
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-3xl font-extrabold tracking-tight">{item.label}</h1>
-          {item.badge ? <Badge className="rounded-full bg-ai-soft px-2.5 text-ai">{item.badge}</Badge> : null}
+          {item.badge ? (
+            <Badge className="rounded-full bg-ai-soft px-2.5 text-ai">{item.badge}</Badge>
+          ) : null}
         </div>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{item.description}</p>
       </header>

@@ -31,7 +31,13 @@ interface NoticeRow {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  notice_attachments?: { id: string; file_path: string; file_name: string; size_bytes: number; mime_type: string }[];
+  notice_attachments?: {
+    id: string;
+    file_path: string;
+    file_name: string;
+    size_bytes: number;
+    mime_type: string;
+  }[];
 }
 
 function mapNotice(row: NoticeRow): Notice {
@@ -59,27 +65,52 @@ function mapNotice(row: NoticeRow): Notice {
   };
 }
 
-const STUDENT_AUDIENCES: NoticeAudienceType[] = ["all_students", "class", "specific_students", "parents", "school"];
+const STUDENT_AUDIENCES: NoticeAudienceType[] = [
+  "all_students",
+  "class",
+  "specific_students",
+  "parents",
+  "school",
+];
 const TEACHER_AUDIENCES: NoticeAudienceType[] = ["all_teachers", "specific_teachers"];
 
 /** Resolves a notice's concrete recipient list dynamically from current mock rosters. */
-function resolveRecipients(notice: Pick<NoticeRow, "audience_type" | "audience_class_ids" | "audience_teacher_ids" | "audience_student_ids">) {
+function resolveRecipients(
+  notice: Pick<
+    NoticeRow,
+    "audience_type" | "audience_class_ids" | "audience_teacher_ids" | "audience_student_ids"
+  >,
+) {
   switch (notice.audience_type) {
     case "all_students":
     case "school":
-      return STUDENTS.filter((s) => s.status === "active").map((s) => ({ id: s.id, name: s.name, type: "student" as const }));
+      return STUDENTS.filter((s) => s.status === "active").map((s) => ({
+        id: s.id,
+        name: s.name,
+        type: "student" as const,
+      }));
     case "class":
-      return STUDENTS.filter((s) => s.status === "active" && notice.audience_class_ids.includes(s.classId)).map((s) => ({
+      return STUDENTS.filter(
+        (s) => s.status === "active" && notice.audience_class_ids.includes(s.classId),
+      ).map((s) => ({
         id: s.id,
         name: s.name,
         type: "student" as const,
       }));
     case "specific_students":
-      return STUDENTS.filter((s) => notice.audience_student_ids.includes(s.id)).map((s) => ({ id: s.id, name: s.name, type: "student" as const }));
+      return STUDENTS.filter((s) => notice.audience_student_ids.includes(s.id)).map((s) => ({
+        id: s.id,
+        name: s.name,
+        type: "student" as const,
+      }));
     case "all_teachers":
       return TEACHERS.map((t) => ({ id: t.id, name: t.name, type: "teacher" as const }));
     case "specific_teachers":
-      return TEACHERS.filter((t) => notice.audience_teacher_ids.includes(t.id)).map((t) => ({ id: t.id, name: t.name, type: "teacher" as const }));
+      return TEACHERS.filter((t) => notice.audience_teacher_ids.includes(t.id)).map((t) => ({
+        id: t.id,
+        name: t.name,
+        type: "teacher" as const,
+      }));
     case "parents":
       return [];
     default:
@@ -94,8 +125,10 @@ function actorIsRecipient(actor: Actor, notice: NoticeRow): boolean {
   if (actor.role === "teacher") {
     // Teachers see all-teacher/specific-teacher notices, plus any notice targeted at their own classes.
     if (notice.audience_type === "all_teachers") return true;
-    if (notice.audience_type === "specific_teachers") return notice.audience_teacher_ids.includes(actor.id);
-    if (notice.audience_type === "class") return notice.audience_class_ids.some((c) => actor.classIds?.includes(c));
+    if (notice.audience_type === "specific_teachers")
+      return notice.audience_teacher_ids.includes(actor.id);
+    if (notice.audience_type === "class")
+      return notice.audience_class_ids.some((c) => actor.classIds?.includes(c));
     return false;
   }
   return true; // principal sees everything they authored / school-wide
@@ -114,14 +147,21 @@ async function fetchNotices(schoolId: string) {
 
 async function viewCountsFor(noticeIds: string[]) {
   if (noticeIds.length === 0) return new Map<string, number>();
-  const { data, error } = await supabaseAdmin.from("notice_views").select("notice_id").in("notice_id", noticeIds);
+  const { data, error } = await supabaseAdmin
+    .from("notice_views")
+    .select("notice_id")
+    .in("notice_id", noticeIds);
   if (error) throw new Error(error.message);
   const counts = new Map<string, number>();
   for (const row of data ?? []) counts.set(row.notice_id, (counts.get(row.notice_id) ?? 0) + 1);
   return counts;
 }
 
-async function viewedSetFor(noticeIds: string[], viewerType: "student" | "teacher", viewerId: string) {
+async function viewedSetFor(
+  noticeIds: string[],
+  viewerType: "student" | "teacher",
+  viewerId: string,
+) {
   if (noticeIds.length === 0) return new Set<string>();
   const { data, error } = await supabaseAdmin
     .from("notice_views")
@@ -139,10 +179,15 @@ export const listNoticesFor = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
     const all = await fetchNotices(actor.schoolId);
-    const relevant = all.filter((n) => STUDENT_AUDIENCES.includes(n.audience_type) && actorIsRecipient(actor, n));
+    const relevant = all.filter(
+      (n) => STUDENT_AUDIENCES.includes(n.audience_type) && actorIsRecipient(actor, n),
+    );
     const ids = relevant.map((n) => n.id);
     const viewerType = actor.role === "teacher" ? "teacher" : "student";
-    const viewed = actor.role === "principal" ? new Set<string>() : await viewedSetFor(ids, viewerType, actor.id);
+    const viewed =
+      actor.role === "principal"
+        ? new Set<string>()
+        : await viewedSetFor(ids, viewerType, actor.id);
     const counts = actor.role !== "student" ? await viewCountsFor(ids) : new Map<string, number>();
 
     return relevant.map((row) => {
@@ -165,7 +210,9 @@ export const listMyNoticesFor = createServerFn({ method: "GET" })
     const actor = resolveActor(data);
     if (actor.role !== "teacher" && actor.role !== "principal") throw new ForbiddenError();
     const all = await fetchNotices(actor.schoolId);
-    const mine = all.filter((n) => n.author_id === actor.id && STUDENT_AUDIENCES.includes(n.audience_type));
+    const mine = all.filter(
+      (n) => n.author_id === actor.id && STUDENT_AUDIENCES.includes(n.audience_type),
+    );
     const ids = mine.map((n) => n.id);
     const counts = await viewCountsFor(ids);
     return mine.map((row) => {
@@ -184,10 +231,14 @@ export const listTeacherNoticesFor = createServerFn({ method: "GET" })
     const all = await fetchNotices(actor.schoolId);
     const staffNotices = all.filter((n) => TEACHER_AUDIENCES.includes(n.audience_type));
     const relevant =
-      actor.role === "principal" ? staffNotices.filter((n) => n.author_id === actor.id) : staffNotices.filter((n) => actorIsRecipient(actor, n));
+      actor.role === "principal"
+        ? staffNotices.filter((n) => n.author_id === actor.id)
+        : staffNotices.filter((n) => actorIsRecipient(actor, n));
     const ids = relevant.map((n) => n.id);
-    const viewed = actor.role === "teacher" ? await viewedSetFor(ids, "teacher", actor.id) : new Set<string>();
-    const counts = actor.role === "principal" ? await viewCountsFor(ids) : new Map<string, number>();
+    const viewed =
+      actor.role === "teacher" ? await viewedSetFor(ids, "teacher", actor.id) : new Set<string>();
+    const counts =
+      actor.role === "principal" ? await viewCountsFor(ids) : new Map<string, number>();
 
     return relevant.map((row) => {
       const notice = mapNotice(row);
@@ -218,7 +269,8 @@ export const createNotice = createServerFn({ method: "POST" })
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
-    if (actor.role !== "teacher" && actor.role !== "principal") throw new ForbiddenError("Only teachers or the principal can publish notices.");
+    if (actor.role !== "teacher" && actor.role !== "principal")
+      throw new ForbiddenError("Only teachers or the principal can publish notices.");
 
     const audienceType = data.get("audienceType") as NoticeAudienceType;
     const title = String(data.get("title") ?? "").trim();
@@ -226,12 +278,17 @@ export const createNotice = createServerFn({ method: "POST" })
     if (!title || !body) throw new Error("Title and body are required.");
 
     const audienceClassIds = JSON.parse(String(data.get("audienceClassIds") ?? "[]")) as string[];
-    const audienceTeacherIds = JSON.parse(String(data.get("audienceTeacherIds") ?? "[]")) as string[];
-    const audienceStudentIds = JSON.parse(String(data.get("audienceStudentIds") ?? "[]")) as string[];
+    const audienceTeacherIds = JSON.parse(
+      String(data.get("audienceTeacherIds") ?? "[]"),
+    ) as string[];
+    const audienceStudentIds = JSON.parse(
+      String(data.get("audienceStudentIds") ?? "[]"),
+    ) as string[];
 
     // Teachers may only target audiences within classes they teach, and can never target teachers.
     if (actor.role === "teacher") {
-      if (TEACHER_AUDIENCES.includes(audienceType)) throw new ForbiddenError("Only the principal can notify teachers.");
+      if (TEACHER_AUDIENCES.includes(audienceType))
+        throw new ForbiddenError("Only the principal can notify teachers.");
       if (audienceType === "class") {
         for (const classId of audienceClassIds) assertTeacherOwnsClass(actor, classId);
       }
@@ -259,7 +316,9 @@ export const createNotice = createServerFn({ method: "POST" })
     if (file instanceof File && file.size > 0) {
       assertValidFile(file);
       const meta = await uploadToBucket(`notices/${inserted.id}`, file);
-      const { error: attError } = await supabaseAdmin.from("notice_attachments").insert({ notice_id: inserted.id, ...meta });
+      const { error: attError } = await supabaseAdmin
+        .from("notice_attachments")
+        .insert({ notice_id: inserted.id, ...meta });
       if (attError) throw new Error(attError.message);
     }
 
@@ -270,10 +329,18 @@ export const deleteNotice = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; noticeId: string }) => data)
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
-    const { data: row, error } = await supabaseAdmin.from("notices").select("author_id").eq("id", data.noticeId).single();
+    const { data: row, error } = await supabaseAdmin
+      .from("notices")
+      .select("author_id")
+      .eq("id", data.noticeId)
+      .single();
     if (error || !row) throw new NotFoundError("Notice not found.");
-    if (row.author_id !== actor.id) throw new ForbiddenError("You can only delete your own notices.");
-    const { error: delError } = await supabaseAdmin.from("notices").update({ deleted_at: new Date().toISOString() }).eq("id", data.noticeId);
+    if (row.author_id !== actor.id)
+      throw new ForbiddenError("You can only delete your own notices.");
+    const { error: delError } = await supabaseAdmin
+      .from("notices")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", data.noticeId);
     if (delError) throw new Error(delError.message);
     return { ok: true };
   });
@@ -320,9 +387,14 @@ export const getNoticeActivity = createServerFn({ method: "GET" })
     const actor = resolveActor(data);
     if (actor.role !== "teacher" && actor.role !== "principal") throw new ForbiddenError();
 
-    const { data: row, error } = await supabaseAdmin.from("notices").select("*").eq("id", data.noticeId).single();
+    const { data: row, error } = await supabaseAdmin
+      .from("notices")
+      .select("*")
+      .eq("id", data.noticeId)
+      .single();
     if (error || !row) throw new NotFoundError("Notice not found.");
-    if (row.author_id !== actor.id) throw new ForbiddenError("You can only view activity for your own notices.");
+    if (row.author_id !== actor.id)
+      throw new ForbiddenError("You can only view activity for your own notices.");
 
     const recipients = resolveRecipients(row as NoticeRow);
     const viewerType = TEACHER_AUDIENCES.includes(row.audience_type) ? "teacher" : "student";
@@ -354,9 +426,17 @@ export const getNoticeActivity = createServerFn({ method: "GET" })
     };
   });
 
-export async function noticeAttachmentUrl(actorInput: { role: ActorRole; actorId?: string }, noticeId: string, filePath: string): Promise<string> {
+export async function noticeAttachmentUrl(
+  actorInput: { role: ActorRole; actorId?: string },
+  noticeId: string,
+  filePath: string,
+): Promise<string> {
   const actor = resolveActor(actorInput);
-  const { data: row, error } = await supabaseAdmin.from("notices").select("*").eq("id", noticeId).single();
+  const { data: row, error } = await supabaseAdmin
+    .from("notices")
+    .select("*")
+    .eq("id", noticeId)
+    .single();
   if (error || !row) throw new NotFoundError("Notice not found.");
   if (!actorIsRecipient(actor, row as NoticeRow) && row.author_id !== actor.id) {
     throw new ForbiddenError("You cannot access this attachment.");
@@ -365,5 +445,9 @@ export async function noticeAttachmentUrl(actorInput: { role: ActorRole; actorId
 }
 
 export const getNoticeAttachmentUrl = createServerFn({ method: "POST" })
-  .validator((data: { role: ActorRole; actorId?: string; noticeId: string; filePath: string }) => data)
-  .handler(async ({ data }) => ({ url: await noticeAttachmentUrl(data, data.noticeId, data.filePath) }));
+  .validator(
+    (data: { role: ActorRole; actorId?: string; noticeId: string; filePath: string }) => data,
+  )
+  .handler(async ({ data }) => ({
+    url: await noticeAttachmentUrl(data, data.noticeId, data.filePath),
+  }));

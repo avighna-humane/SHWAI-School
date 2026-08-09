@@ -41,9 +41,13 @@ export function AttachmentList({
             <span className="flex items-center gap-2 truncate">
               <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate">{file.fileName}</span>
-              <span className="shrink-0 text-muted-foreground">· {formatFileSize(file.sizeBytes)}</span>
+              <span className="shrink-0 text-muted-foreground">
+                · {formatFileSize(file.sizeBytes)}
+              </span>
             </span>
-            {loadingId === file.id ? <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+            {loadingId === file.id ? (
+              <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+            ) : null}
           </button>
         </li>
       ))}

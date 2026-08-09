@@ -17,14 +17,23 @@ import {
   Send,
   Loader2,
   AlertTriangle,
-  Paperclip
+  Paperclip,
+  Plus,
 } from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { useActorParams } from "@/hooks/use-actor-params";
 import { listHomeworkFor } from "@/rpc/homework";
 import { listNoticesFor } from "@/rpc/notices";
-import { listConversations, getOrCreateConversation, listMessages, sendMessage, markConversationRead } from "@/rpc/chat";
-import { DEMO_CLASS_STUDENTS } from "@/data/mock/people";
+import { listMyAttendance } from "@/rpc/attendance";
+import {
+  listConversations,
+  getOrCreateConversation,
+  listMessages,
+  sendMessage,
+  markConversationRead,
+} from "@/rpc/chat";
+import { DEMO_CLASS_STUDENTS, TEACHERS } from "@/data/mock/people";
+import { cn } from "@/lib/utils";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/feedback/states";
 import { FloatingAI } from "@/components/feedback/floating-ai";
 import { Badge } from "@/components/ui/badge";
@@ -43,9 +52,15 @@ import { AttachmentList } from "@/components/shwai/attachment-list";
 export const Route = createFileRoute("/app/portal/student")({ component: StudentPortalPage });
 
 function statusMeta(hw: any) {
-  if (hw.viewerSubmission?.status === "graded") return { label: `Graded · ${hw.viewerSubmission.marks ?? "—"}${hw.totalMarks ? `/${hw.totalMarks}` : ""}`, tone: "success" as const };
-  if (hw.viewerSubmission?.status === "late") return { label: "Submitted late", tone: "warning" as const };
-  if (hw.viewerSubmission?.status === "submitted") return { label: "Submitted", tone: "success" as const };
+  if (hw.viewerSubmission?.status === "graded")
+    return {
+      label: `Graded · ${hw.viewerSubmission.marks ?? "—"}${hw.totalMarks ? `/${hw.totalMarks}` : ""}`,
+      tone: "success" as const,
+    };
+  if (hw.viewerSubmission?.status === "late")
+    return { label: "Submitted late", tone: "warning" as const };
+  if (hw.viewerSubmission?.status === "submitted")
+    return { label: "Submitted", tone: "success" as const };
   const overdue = new Date(hw.dueAt).getTime() < Date.now();
   if (overdue) return { label: "Overdue", tone: "danger" as const };
   return { label: "Pending", tone: "muted" as const };
@@ -62,7 +77,9 @@ function StudentPortalPage() {
   const { role, studentId } = useAppState();
   const actorParams = useActorParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"overview" | "notices" | "homework" | "grades" | "attendance" | "chat">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "notices" | "homework" | "grades" | "attendance" | "chat"
+  >("overview");
 
   // Get current active student info
   const student = useMemo(() => {
@@ -79,6 +96,12 @@ function StudentPortalPage() {
   const noticesQuery = useQuery({
     queryKey: ["notices", "student-portal", actorParams],
     queryFn: () => listNoticesFor({ data: actorParams! }),
+    enabled: Boolean(actorParams) && role === "student",
+  });
+
+  const attendanceQuery = useQuery({
+    queryKey: ["my-attendance", actorParams, studentId],
+    queryFn: () => listMyAttendance({ data: { role, actorId: actorParams?.actorId, studentId } }),
     enabled: Boolean(actorParams) && role === "student",
   });
 
@@ -105,12 +128,18 @@ function StudentPortalPage() {
       <header className="surface-panel flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <div className="grid size-14 place-items-center rounded-2xl bg-primary-soft text-primary font-bold text-lg border border-primary/20">
-            {student.name.split(" ").map((n) => n[0]).join("")}
+            {student.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-extrabold tracking-tight">{student.name}</h1>
-              <Badge variant="outline" className="rounded-full bg-ai-soft text-ai border-ai/20 text-[10px]">
+              <Badge
+                variant="outline"
+                className="rounded-full bg-ai-soft text-ai border-ai/20 text-[10px]"
+              >
                 Level {student.level} Student
               </Badge>
             </div>
@@ -122,17 +151,23 @@ function StudentPortalPage() {
 
         <div className="flex flex-wrap gap-3">
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Attendance</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Attendance
+            </p>
             <p className="text-lg font-black text-success">{student.attendancePct}%</p>
           </div>
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">XP Earned</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              XP Earned
+            </p>
             <p className="text-lg font-black text-primary flex items-center gap-1 justify-center">
               <Trophy className="size-4 text-warning fill-warning" /> {student.xp}
             </p>
           </div>
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">HW Completed</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              HW Completed
+            </p>
             <p className="text-lg font-black text-info">{student.homeworkCompletion}%</p>
           </div>
         </div>
@@ -141,12 +176,24 @@ function StudentPortalPage() {
       {/* Tabs Layout */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
         <TabsList className="flex flex-wrap rounded-xl bg-card p-1 shadow-sm border border-border/50">
-          <TabsTrigger value="overview" className="text-xs gap-1.5"><Sparkles className="size-3.5" /> Overview</TabsTrigger>
-          <TabsTrigger value="notices" className="text-xs gap-1.5"><Megaphone className="size-3.5" /> Notices ({notices.length})</TabsTrigger>
-          <TabsTrigger value="homework" className="text-xs gap-1.5"><BookOpen className="size-3.5" /> Homework ({pendingCount} pending)</TabsTrigger>
-          <TabsTrigger value="grades" className="text-xs gap-1.5"><ClipboardCheck className="size-3.5" /> Grades & Reports</TabsTrigger>
-          <TabsTrigger value="attendance" className="text-xs gap-1.5"><UserCheck className="size-3.5" /> Attendance</TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs gap-1.5"><MessageSquare className="size-3.5" /> Chat</TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs gap-1.5">
+            <Sparkles className="size-3.5" /> Overview
+          </TabsTrigger>
+          <TabsTrigger value="notices" className="text-xs gap-1.5">
+            <Megaphone className="size-3.5" /> Notices ({notices.length})
+          </TabsTrigger>
+          <TabsTrigger value="homework" className="text-xs gap-1.5">
+            <BookOpen className="size-3.5" /> Homework ({pendingCount} pending)
+          </TabsTrigger>
+          <TabsTrigger value="grades" className="text-xs gap-1.5">
+            <ClipboardCheck className="size-3.5" /> Grades & Reports
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className="text-xs gap-1.5">
+            <UserCheck className="size-3.5" /> Attendance
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="text-xs gap-1.5">
+            <MessageSquare className="size-3.5" /> Chat
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Overview */}
@@ -178,7 +225,10 @@ function StudentPortalPage() {
                     <span>{student.xp % 1000} / 1000 XP</span>
                   </div>
                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${(student.xp % 1000) / 10}%` }} />
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${(student.xp % 1000) / 10}%` }}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -190,19 +240,30 @@ function StudentPortalPage() {
                 <CardTitle className="text-base font-bold flex items-center gap-1.5">
                   <Megaphone className="size-4 text-primary" /> Recent Notices
                 </CardTitle>
-                <CardDescription>Most recent announcements from school and teachers.</CardDescription>
+                <CardDescription>
+                  Most recent announcements from school and teachers.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {notices.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4 text-center">No recent notices.</p>
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No recent notices.
+                  </p>
                 ) : (
                   notices.slice(0, 3).map((n: any) => (
-                    <div key={n.id} className="flex justify-between gap-3 text-sm border-b pb-2.5 last:border-0 last:pb-0">
+                    <div
+                      key={n.id}
+                      className="flex justify-between gap-3 text-sm border-b pb-2.5 last:border-0 last:pb-0"
+                    >
                       <div>
                         <p className="font-semibold line-clamp-1">{n.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{n.body}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {n.body}
+                        </p>
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">{formatDate(n.createdAt)}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
+                        {formatDate(n.createdAt)}
+                      </span>
                     </div>
                   ))
                 )}
@@ -223,20 +284,33 @@ function StudentPortalPage() {
                 <Link to="/app/announcements">Open Notice Center</Link>
               </Button>
               {notices.length === 0 ? (
-                <EmptyState title="No notices" description="There are no notices published for you." icon={<Megaphone className="size-6" />} />
+                <EmptyState
+                  title="No notices"
+                  description="There are no notices published for you."
+                  icon={<Megaphone className="size-6" />}
+                />
               ) : (
                 <div className="space-y-3.5">
                   {notices.map((n: any) => (
-                    <div key={n.id} className="p-4 border rounded-xl flex items-start justify-between gap-4 bg-card hover:bg-muted/10 transition-colors">
+                    <div
+                      key={n.id}
+                      className="p-4 border rounded-xl flex items-start justify-between gap-4 bg-card hover:bg-muted/10 transition-colors"
+                    >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-base text-primary">{n.title}</p>
                           {!n.viewerHasViewed && (
-                            <Badge className="bg-danger-soft text-danger border-danger/20 text-[9px] rounded-full">New</Badge>
+                            <Badge className="bg-danger-soft text-danger border-danger/20 text-[9px] rounded-full">
+                              New
+                            </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{n.body}</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">Published by {n.authorName} on {formatDateTime(n.createdAt)}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {n.body}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Published by {n.authorName} on {formatDateTime(n.createdAt)}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -251,37 +325,65 @@ function StudentPortalPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-bold">Your Homework Assignments</CardTitle>
-              <CardDescription>Assigned homework with dynamic submission history and late checking.</CardDescription>
+              <CardDescription>
+                Assigned homework with dynamic submission history and late checking.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {homeworkQuery.isLoading ? (
                 <LoadingCards count={4} />
               ) : homeworkQuery.isError ? (
-                <ErrorState message={(homeworkQuery.error as Error)?.message} onRetry={() => homeworkQuery.refetch()} />
+                <ErrorState
+                  message={(homeworkQuery.error as Error)?.message}
+                  onRetry={() => homeworkQuery.refetch()}
+                />
               ) : items.length === 0 ? (
-                <EmptyState title="No homework assigned" description="Your teachers haven't assigned any homework yet." icon={<BookOpen className="size-6" />} />
+                <EmptyState
+                  title="No homework assigned"
+                  description="Your teachers haven't assigned any homework yet."
+                  icon={<BookOpen className="size-6" />}
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {items.map((hw: any) => {
                     const status = statusMeta(hw);
                     return (
-                      <div key={hw.id} className="border p-4 rounded-xl flex flex-col gap-3 hover:bg-muted/10 transition-colors bg-card relative">
-                        <Link to="/app/homework/$homeworkId" params={{ homeworkId: hw.id }} className="absolute inset-0 z-0" aria-label={hw.title} />
+                      <div
+                        key={hw.id}
+                        className="border p-4 rounded-xl flex flex-col gap-3 hover:bg-muted/10 transition-colors bg-card relative"
+                      >
+                        <Link
+                          to="/app/homework/$homeworkId"
+                          params={{ homeworkId: hw.id }}
+                          className="absolute inset-0 z-0"
+                          aria-label={hw.title}
+                        />
                         <div className="relative z-10 flex justify-between items-start gap-2">
-                          <Badge variant="outline" className="rounded-full text-[10px] bg-primary-soft text-primary border-primary/20">
+                          <Badge
+                            variant="outline"
+                            className="rounded-full text-[10px] bg-primary-soft text-primary border-primary/20"
+                          >
                             {hw.subject}
                           </Badge>
-                          <Badge variant="outline" className={cn("rounded-full text-[10px]", TONE_CLASSES[status.tone])}>
+                          <Badge
+                            variant="outline"
+                            className={cn("rounded-full text-[10px]", TONE_CLASSES[status.tone])}
+                          >
                             {status.label}
                           </Badge>
                         </div>
                         <div className="relative z-10">
                           <h3 className="font-bold text-base line-clamp-1">{hw.title}</h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">Assigned by {hw.teacherName}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Assigned by {hw.teacherName}
+                          </p>
                         </div>
-                        <p className="relative z-10 text-xs text-muted-foreground line-clamp-2 leading-relaxed">{hw.description}</p>
+                        <p className="relative z-10 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                          {hw.description}
+                        </p>
                         <div className="relative z-10 mt-auto flex items-center gap-1.5 text-xs text-muted-foreground pt-2 border-t border-border/30">
-                          <Clock className="size-3.5 text-muted-foreground" /> Due {formatDate(hw.dueAt)}
+                          <Clock className="size-3.5 text-muted-foreground" /> Due{" "}
+                          {formatDate(hw.dueAt)}
                         </div>
                       </div>
                     );
@@ -297,16 +399,22 @@ function StudentPortalPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-bold">Academic Grades & Student Reports</CardTitle>
-              <CardDescription>Academic evaluations and verified grading summaries.</CardDescription>
+              <CardDescription>
+                Academic evaluations and verified grading summaries.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl border p-4 bg-success-soft/20 border-success/20 flex flex-col gap-1">
-                  <p className="text-xs font-semibold text-success uppercase tracking-wider">Average Score</p>
+                  <p className="text-xs font-semibold text-success uppercase tracking-wider">
+                    Average Score
+                  </p>
                   <p className="text-3xl font-extrabold">{student.avgScore}%</p>
                 </div>
                 <div className="rounded-xl border p-4 bg-info-soft/20 border-info/20 flex flex-col gap-1">
-                  <p className="text-xs font-semibold text-info uppercase tracking-wider">Homework Completion</p>
+                  <p className="text-xs font-semibold text-info uppercase tracking-wider">
+                    Homework Completion
+                  </p>
                   <p className="text-3xl font-extrabold">{student.homeworkCompletion}%</p>
                 </div>
               </div>
@@ -316,8 +424,13 @@ function StudentPortalPage() {
                 {[
                   { subject: "Mathematics", marks: "18 / 20", grade: "A+", status: "Graded" },
                   { subject: "Science", marks: "17 / 20", grade: "A", status: "Graded" },
-                  { subject: "English Literature", marks: "19 / 20", grade: "A+", status: "Graded" },
-                  { subject: "History", marks: "15 / 20", grade: "B", status: "Graded" }
+                  {
+                    subject: "English Literature",
+                    marks: "19 / 20",
+                    grade: "A+",
+                    status: "Graded",
+                  },
+                  { subject: "History", marks: "15 / 20", grade: "B", status: "Graded" },
                 ].map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center p-3.5 px-4">
                     <div>
@@ -351,19 +464,55 @@ function StudentPortalPage() {
               <div className="p-4 rounded-xl border flex items-center justify-between bg-muted/20">
                 <div>
                   <p className="text-sm font-bold">Current Attendance</p>
-                  <p className="text-xs text-muted-foreground">Maintain above 75% for exam eligibility.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Maintain above 75% for exam eligibility.
+                  </p>
                 </div>
                 <p className="text-3xl font-black text-success">{student.attendancePct}%</p>
               </div>
 
-              {/* Mock Calendar Grid */}
-              <div className="grid grid-cols-7 gap-2 border p-4 rounded-xl bg-card">
-                {Array.from({ length: 14 }).map((_, i) => (
-                  <div key={i} className="aspect-square border rounded-lg flex flex-col items-center justify-center bg-success-soft/30 border-success/30 relative">
-                    <span className="text-[10px] font-bold text-success-foreground">{i + 1}</span>
-                    <Badge className="bg-success text-white text-[8px] h-3 px-1 rounded-full border-0 absolute bottom-1">P</Badge>
+              {/* Database-backed Attendance History */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Attendance Register History
+                </p>
+                {attendanceQuery.isLoading ? (
+                  <div className="py-6 text-center">
+                    <Loader2 className="size-5 animate-spin mx-auto" />
                   </div>
-                ))}
+                ) : (attendanceQuery.data ?? []).length === 0 ? (
+                  <div className="p-5 border border-dashed rounded-xl text-center bg-card">
+                    <p className="text-xs text-muted-foreground">
+                      No custom registers marked yet for this term. Default 100% Present status.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border rounded-xl divide-y bg-card overflow-hidden">
+                    {(attendanceQuery.data ?? []).map((row) => (
+                      <div key={row.id} className="flex justify-between items-center p-3 px-4">
+                        <div>
+                          <p className="font-bold text-sm">{formatDate(row.date)}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Class section register
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded-full text-[10px] uppercase font-bold",
+                            row.status === "present"
+                              ? "bg-success-soft text-success border-success/20"
+                              : row.status === "absent"
+                                ? "bg-danger-soft text-danger border-danger/20"
+                                : "bg-warning-soft text-warning border-warning/20",
+                          )}
+                        >
+                          {row.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -403,7 +552,8 @@ function StudentChatSection({ student }: { student: any }) {
 
   // Open conversation mutation
   const openConvoMutation = useMutation({
-    mutationFn: (otherId: string) => getOrCreateConversation({ data: { ...actorParams!, otherId } }),
+    mutationFn: (otherId: string) =>
+      getOrCreateConversation({ data: { ...actorParams!, otherId } }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       setSelectedConvoId(res.id);
@@ -440,12 +590,16 @@ function StudentChatSection({ student }: { student: any }) {
         <CardTitle className="text-lg font-bold flex items-center gap-1.5">
           <MessageSquare className="size-5 text-primary" /> Teacher-Student Chat
         </CardTitle>
-        <CardDescription>Direct authenticated communication with your class teachers.</CardDescription>
+        <CardDescription>
+          Direct authenticated communication with your class teachers.
+        </CardDescription>
       </CardHeader>
       <CardContent className="grid md:grid-cols-3 gap-4">
         {/* Sidebar: conversations list */}
         <div className="md:col-span-1 border rounded-xl p-3 bg-muted/10 space-y-3">
-          <Label className="font-bold text-xs uppercase text-muted-foreground tracking-wide">Open Chat with</Label>
+          <Label className="font-bold text-xs uppercase text-muted-foreground tracking-wide">
+            Open Chat with
+          </Label>
           <div className="flex gap-2">
             <select
               value={convoTeacherId}
@@ -453,7 +607,9 @@ function StudentChatSection({ student }: { student: any }) {
               className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-xs"
             >
               <option value="">Select teacher...</option>
-              {TEACHERS.filter((t) => t.classes.includes(`Grade ${student.grade} — ${student.section}`)).map((t) => (
+              {TEACHERS.filter((t) =>
+                t.classes.includes(`Grade ${student.grade} — ${student.section}`),
+              ).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} ({t.subjects[0]})
                 </option>
@@ -465,7 +621,11 @@ function StudentChatSection({ student }: { student: any }) {
               disabled={!convoTeacherId || openConvoMutation.isPending}
               onClick={() => openConvoMutation.mutate(convoTeacherId)}
             >
-              {openConvoMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {openConvoMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
             </Button>
           </div>
 
@@ -473,7 +633,9 @@ function StudentChatSection({ student }: { student: any }) {
 
           <ScrollArea className="h-64 space-y-2">
             {listConversationsQuery.isLoading ? (
-              <div className="text-center py-4"><Loader2 className="size-4 animate-spin mx-auto text-primary" /></div>
+              <div className="text-center py-4">
+                <Loader2 className="size-4 animate-spin mx-auto text-primary" />
+              </div>
             ) : convos.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">No active chats.</p>
             ) : (
@@ -482,16 +644,22 @@ function StudentChatSection({ student }: { student: any }) {
                   key={c.id}
                   onClick={() => {
                     setSelectedConvoId(c.id);
-                    markConversationRead({ data: { ...actorParams!, conversationId: c.id } }).catch(() => {});
+                    markConversationRead({ data: { ...actorParams!, conversationId: c.id } }).catch(
+                      () => {},
+                    );
                   }}
                   className={cn(
                     "w-full text-left p-3 rounded-lg flex items-center justify-between text-xs transition-colors border border-transparent",
-                    selectedConvoId === c.id ? "bg-primary-soft text-primary border-primary/20" : "hover:bg-muted/40"
+                    selectedConvoId === c.id
+                      ? "bg-primary-soft text-primary border-primary/20"
+                      : "hover:bg-muted/40",
                   )}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-bold truncate">{c.otherName}</p>
-                    <p className="text-muted-foreground truncate mt-0.5">{c.lastMessageBody || "No messages yet."}</p>
+                    <p className="text-muted-foreground truncate mt-0.5">
+                      {c.lastMessageBody || "No messages yet."}
+                    </p>
                   </div>
                   {c.unreadCount > 0 && (
                     <Badge className="bg-danger text-white rounded-full size-4 flex items-center justify-center text-[9px] p-0 shrink-0">
@@ -511,32 +679,51 @@ function StudentChatSection({ student }: { student: any }) {
               {/* Message History */}
               <ScrollArea className="flex-1 pr-2 space-y-3 mb-3">
                 {listMessagesQuery.isLoading ? (
-                  <div className="text-center py-10"><Loader2 className="size-4 animate-spin mx-auto" /></div>
+                  <div className="text-center py-10">
+                    <Loader2 className="size-4 animate-spin mx-auto" />
+                  </div>
                 ) : messages.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-10">Send your first message to start the conversation.</p>
+                  <p className="text-xs text-muted-foreground text-center py-10">
+                    Send your first message to start the conversation.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {messages.map((m) => {
                       const isMine = m.senderType === "student";
                       return (
-                        <div key={m.id} className={cn("flex flex-col max-w-[75%] gap-1", isMine ? "ml-auto items-end" : "mr-auto items-start")}>
+                        <div
+                          key={m.id}
+                          className={cn(
+                            "flex flex-col max-w-[75%] gap-1",
+                            isMine ? "ml-auto items-end" : "mr-auto items-start",
+                          )}
+                        >
                           <div
                             className={cn(
                               "p-3 rounded-2xl text-xs leading-relaxed",
-                              isMine ? "bg-primary text-white rounded-tr-none" : "bg-muted text-foreground rounded-tl-none"
+                              isMine
+                                ? "bg-primary text-white rounded-tr-none"
+                                : "bg-muted text-foreground rounded-tl-none",
                             )}
                           >
                             <p>{m.body}</p>
                             {m.attachment && (
                               <div className="mt-2 border-t border-white/20 pt-1.5 flex items-center gap-1.5 text-[10px]">
                                 <Paperclip className="size-3" />
-                                <a href={m.attachment.filePath} target="_blank" rel="noreferrer" className="underline truncate hover:text-white/80">
+                                <a
+                                  href={m.attachment.filePath}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="underline truncate hover:text-white/80"
+                                >
                                   {m.attachment.fileName}
                                 </a>
                               </div>
                             )}
                           </div>
-                          <span className="text-[9px] text-muted-foreground">{formatDateTime(m.createdAt)}</span>
+                          <span className="text-[9px] text-muted-foreground">
+                            {formatDateTime(m.createdAt)}
+                          </span>
                         </div>
                       );
                     })}
@@ -560,7 +747,10 @@ function StudentChatSection({ student }: { student: any }) {
                     placeholder="Type your message…"
                     className="h-9 text-xs"
                   />
-                  <Label htmlFor="chat-attachment" className="cursor-pointer border rounded-md px-2 flex items-center hover:bg-muted shrink-0 h-9">
+                  <Label
+                    htmlFor="chat-attachment"
+                    className="cursor-pointer border rounded-md px-2 flex items-center hover:bg-muted shrink-0 h-9"
+                  >
                     <Paperclip className="size-4 text-muted-foreground" />
                     <input
                       id="chat-attachment"
@@ -573,8 +763,17 @@ function StudentChatSection({ student }: { student: any }) {
                       }}
                     />
                   </Label>
-                  <Button size="sm" type="submit" disabled={sendMsgMutation.isPending || (!chatInput.trim() && !attachment)} className="h-9">
-                    {sendMsgMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  <Button
+                    size="sm"
+                    type="submit"
+                    disabled={sendMsgMutation.isPending || (!chatInput.trim() && !attachment)}
+                    className="h-9"
+                  >
+                    {sendMsgMutation.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Send className="size-4" />
+                    )}
                   </Button>
                 </div>
                 {attachment && (
@@ -588,7 +787,9 @@ function StudentChatSection({ student }: { student: any }) {
             <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
               <MessageSquare className="size-8 text-muted-foreground opacity-40 mb-2" />
               <p className="text-sm font-bold text-muted-foreground">No active conversation</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Select or open a chat with a teacher to begin.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Select or open a chat with a teacher to begin.
+              </p>
             </div>
           )}
         </div>

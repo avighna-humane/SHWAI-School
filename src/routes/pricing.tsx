@@ -7,9 +7,17 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "SHWAI Pricing — Starter, Professional & Enterprise AI" },
-      { name: "description", content: "Compare SHWAI plans: Starter (₹25–50), Professional (₹75–100) and Enterprise AI (₹150–250) per student per year." },
+      {
+        name: "description",
+        content:
+          "Compare SHWAI plans: Starter (₹25–50), Professional (₹75–100) and Enterprise AI (₹150–250) per student per year.",
+      },
       { property: "og:title", content: "SHWAI Pricing & Plan Comparison" },
-      { property: "og:description", content: "Feature-by-feature comparison across Starter, Professional and Enterprise AI plans." },
+      {
+        property: "og:description",
+        content:
+          "Feature-by-feature comparison across Starter, Professional and Enterprise AI plans.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -18,8 +26,10 @@ export const Route = createFileRoute("/pricing")({
 });
 
 function Cell({ value }: { value: boolean | string }) {
-  if (value === true) return <Check className="mx-auto size-4 text-success" aria-label="Included" />;
-  if (value === false) return <Minus className="mx-auto size-4 text-muted-foreground" aria-label="Not included" />;
+  if (value === true)
+    return <Check className="mx-auto size-4 text-success" aria-label="Included" />;
+  if (value === false)
+    return <Minus className="mx-auto size-4 text-muted-foreground" aria-label="Not included" />;
   return <span className="text-xs">{value}</span>;
 }
 
@@ -45,7 +55,10 @@ function Pricing() {
 
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           {PLANS.map((p) => (
-            <article key={p.id} className={`surface-panel flex flex-col p-6 ${p.highlight ? "ring-2 ring-primary" : ""}`}>
+            <article
+              key={p.id}
+              className={`surface-panel flex flex-col p-6 ${p.highlight ? "ring-2 ring-primary" : ""}`}
+            >
               {p.highlight ? (
                 <span className="mb-3 w-fit rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-semibold text-primary">
                   Most schools start here
@@ -78,7 +91,9 @@ function Pricing() {
           <table className="w-full min-w-[720px] border-separate border-spacing-0 text-sm">
             <thead>
               <tr className="text-left">
-                <th className="sticky left-0 z-10 bg-background px-3 py-2 font-semibold">Feature</th>
+                <th className="sticky left-0 z-10 bg-background px-3 py-2 font-semibold">
+                  Feature
+                </th>
                 {PLANS.map((p) => (
                   <th key={p.id} className="px-3 py-2 text-center font-semibold">
                     {p.name}
@@ -90,16 +105,25 @@ function Pricing() {
               {groups.map((g) => (
                 <>
                   <tr key={g}>
-                    <td colSpan={4} className="bg-muted px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <td
+                      colSpan={4}
+                      className="bg-muted px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {g}
                     </td>
                   </tr>
                   {FEATURE_COMPARISON.filter((r) => r.group === g).map((r) => (
                     <tr key={r.feature} className="border-b border-border">
                       <td className="sticky left-0 z-10 bg-background px-3 py-2.5">{r.feature}</td>
-                      <td className="px-3 py-2.5 text-center"><Cell value={r.starter} /></td>
-                      <td className="px-3 py-2.5 text-center"><Cell value={r.professional} /></td>
-                      <td className="px-3 py-2.5 text-center"><Cell value={r.enterprise} /></td>
+                      <td className="px-3 py-2.5 text-center">
+                        <Cell value={r.starter} />
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <Cell value={r.professional} />
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <Cell value={r.enterprise} />
+                      </td>
                     </tr>
                   ))}
                 </>

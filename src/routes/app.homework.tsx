@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { NotebookPen, Clock, Users, Eye, CheckCircle2, MoreVertical, Trash2, Pencil } from "lucide-react";
+import {
+  NotebookPen,
+  Clock,
+  Users,
+  Eye,
+  CheckCircle2,
+  MoreVertical,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { useActorParams } from "@/hooks/use-actor-params";
 import { listHomeworkFor, deleteHomework } from "@/rpc/homework";
@@ -37,9 +46,15 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/app/homework")({ component: HomeworkList });
 
 function statusMeta(hw: HomeworkItem) {
-  if (hw.viewerSubmission?.status === "graded") return { label: `Graded${hw.viewerSubmission.marks != null ? ` · ${hw.viewerSubmission.marks}${hw.totalMarks ? `/${hw.totalMarks}` : ""}` : ""}`, tone: "success" as const };
-  if (hw.viewerSubmission?.status === "late") return { label: "Submitted late", tone: "warning" as const };
-  if (hw.viewerSubmission?.status === "submitted") return { label: "Submitted", tone: "success" as const };
+  if (hw.viewerSubmission?.status === "graded")
+    return {
+      label: `Graded${hw.viewerSubmission.marks != null ? ` · ${hw.viewerSubmission.marks}${hw.totalMarks ? `/${hw.totalMarks}` : ""}` : ""}`,
+      tone: "success" as const,
+    };
+  if (hw.viewerSubmission?.status === "late")
+    return { label: "Submitted late", tone: "warning" as const };
+  if (hw.viewerSubmission?.status === "submitted")
+    return { label: "Submitted", tone: "success" as const };
   if (isOverdue(hw.dueAt)) return { label: "Overdue", tone: "danger" as const };
   return { label: "Pending", tone: "muted" as const };
 }
@@ -61,7 +76,10 @@ function HomeworkList() {
     if (actorParams?.role !== "teacher") return [];
     const teacher = TEACHERS.find((t) => t.id === actorParams.actorId);
     if (!teacher) return [];
-    return CLASS_SECTIONS.filter((c) => teacher.classes.includes(c.label)).map((c) => ({ id: c.id, label: c.label }));
+    return CLASS_SECTIONS.filter((c) => teacher.classes.includes(c.label)).map((c) => ({
+      id: c.id,
+      label: c.label,
+    }));
   }, [actorParams]);
 
   const query = useQuery({
@@ -92,7 +110,9 @@ function HomeworkList() {
     <div className="relative space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Academics</p>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+            Academics
+          </p>
           <h1 className="text-3xl font-extrabold tracking-tight">Homework</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {actorParams?.role === "student"
@@ -103,16 +123,29 @@ function HomeworkList() {
           </p>
         </div>
         {actorParams?.role === "teacher" ? (
-          <HomeworkFormDialog role="teacher" actorId={actorParams.actorId} classOptions={teacherClassOptions} />
+          <HomeworkFormDialog
+            role="teacher"
+            actorId={actorParams.actorId}
+            classOptions={teacherClassOptions}
+          />
         ) : null}
       </header>
 
       {actorParams?.role === "student" ? (
-        <Tabs value={studentFilter} onValueChange={(v) => setStudentFilter(v as typeof studentFilter)}>
+        <Tabs
+          value={studentFilter}
+          onValueChange={(v) => setStudentFilter(v as typeof studentFilter)}
+        >
           <TabsList className="rounded-xl bg-muted p-1">
-            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-            <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
-            <TabsTrigger value="done" className="text-xs">Submitted</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="text-xs">
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="done" className="text-xs">
+              Submitted
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       ) : null}
@@ -129,7 +162,9 @@ function HomeworkList() {
         <ErrorState message={(query.error as Error)?.message} onRetry={() => query.refetch()} />
       ) : visibleItems.length === 0 ? (
         <EmptyState
-          title={actorParams.role === "teacher" ? "No homework created yet" : "No homework assigned yet"}
+          title={
+            actorParams.role === "teacher" ? "No homework created yet" : "No homework assigned yet"
+          }
           description={
             actorParams.role === "teacher"
               ? "Create your first assignment and it will appear here for your class."
@@ -143,9 +178,17 @@ function HomeworkList() {
             const status = actorParams.role === "student" ? statusMeta(hw) : null;
             return (
               <div key={hw.id} className="surface-panel group relative flex flex-col gap-3 p-5">
-                <Link to="/app/homework/$homeworkId" params={{ homeworkId: hw.id }} className="absolute inset-0 z-0" aria-label={hw.title} />
+                <Link
+                  to="/app/homework/$homeworkId"
+                  params={{ homeworkId: hw.id }}
+                  className="absolute inset-0 z-0"
+                  aria-label={hw.title}
+                />
                 <div className="relative z-10 flex items-start justify-between gap-2">
-                  <Badge variant="outline" className="rounded-full text-[11px] text-primary border-primary/30 bg-primary-soft">
+                  <Badge
+                    variant="outline"
+                    className="rounded-full text-[11px] text-primary border-primary/30 bg-primary-soft"
+                  >
                     {hw.subject}
                   </Badge>
                   {actorParams.role === "teacher" ? (
@@ -172,11 +215,20 @@ function HomeworkList() {
                             </DropdownMenuItem>
                           }
                         />
-                        <ConfirmDeleteHomework title={hw.title} onConfirm={() => deleteMutation.mutate(hw.id)} />
+                        <ConfirmDeleteHomework
+                          title={hw.title}
+                          onConfirm={() => deleteMutation.mutate(hw.id)}
+                        />
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : status ? (
-                    <Badge variant="outline" className={cn("relative z-10 rounded-full text-[11px]", TONE_CLASSES[status.tone])}>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "relative z-10 rounded-full text-[11px]",
+                        TONE_CLASSES[status.tone],
+                      )}
+                    >
                       {status.label}
                     </Badge>
                   ) : null}
@@ -185,9 +237,16 @@ function HomeworkList() {
                   <h3 className="text-balance text-base font-bold leading-snug">{hw.title}</h3>
                   <p className="mt-1 text-xs text-muted-foreground">{hw.classLabel}</p>
                 </div>
-                <p className="relative z-10 line-clamp-2 text-sm text-muted-foreground">{hw.description}</p>
+                <p className="relative z-10 line-clamp-2 text-sm text-muted-foreground">
+                  {hw.description}
+                </p>
                 <div className="relative z-10 mt-auto flex flex-wrap items-center gap-3 pt-2 text-xs text-muted-foreground">
-                  <span className={cn("flex items-center gap-1", isOverdue(hw.dueAt) && actorParams.role !== "student" && "text-danger")}>
+                  <span
+                    className={cn(
+                      "flex items-center gap-1",
+                      isOverdue(hw.dueAt) && actorParams.role !== "student" && "text-danger",
+                    )}
+                  >
                     <Clock className="size-3.5" aria-hidden /> Due {formatDate(hw.dueAt)}
                   </span>
                   {actorParams.role !== "student" ? (
@@ -199,7 +258,8 @@ function HomeworkList() {
                         <Eye className="size-3.5" aria-hidden /> {hw.viewedCount ?? 0} viewed
                       </span>
                       <span className="flex items-center gap-1">
-                        <CheckCircle2 className="size-3.5" aria-hidden /> {hw.submittedCount ?? 0} submitted
+                        <CheckCircle2 className="size-3.5" aria-hidden /> {hw.submittedCount ?? 0}{" "}
+                        submitted
                       </span>
                     </>
                   ) : null}
@@ -231,7 +291,8 @@ function ConfirmDeleteHomework({ title, onConfirm }: { title: string; onConfirm:
         <AlertDialogHeader>
           <AlertDialogTitle>Delete "{title}"?</AlertDialogTitle>
           <AlertDialogDescription>
-            Students will no longer see this assignment. Existing submissions and grades stay in your records but won't be reachable from the app.
+            Students will no longer see this assignment. Existing submissions and grades stay in
+            your records but won't be reachable from the app.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

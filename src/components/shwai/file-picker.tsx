@@ -5,8 +5,7 @@ import { formatFileSize } from "@/lib/format";
 
 /** Mirrors src/server/files.ts limits — server re-validates, this is just UX guidance. */
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
-export const ACCEPTED_FILE_TYPES =
-  ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx";
+export const ACCEPTED_FILE_TYPES = ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx";
 
 /** Multi-file picker used for homework attachments and submission files. Server re-validates every file. */
 export function FilePicker({
@@ -33,17 +32,31 @@ export function FilePicker({
 
   return (
     <div className="space-y-2">
-      <input ref={inputRef} type="file" multiple accept={ACCEPTED_FILE_TYPES} onChange={handlePick} className="hidden" id="file-picker-input" />
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept={ACCEPTED_FILE_TYPES}
+        onChange={handlePick}
+        className="hidden"
+        id="file-picker-input"
+      />
       <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
         <Paperclip className="size-3.5" aria-hidden /> {label}
       </Button>
-      <p className="text-xs text-muted-foreground">PDF, images, Word, Excel or PowerPoint · up to 10MB each</p>
+      <p className="text-xs text-muted-foreground">
+        PDF, images, Word, Excel or PowerPoint · up to 10MB each
+      </p>
       {files.length > 0 ? (
         <ul className="space-y-1.5">
           {files.map((file, i) => (
-            <li key={`${file.name}-${i}`} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-xs">
+            <li
+              key={`${file.name}-${i}`}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-xs"
+            >
               <span className="truncate">
-                {file.name} <span className="text-muted-foreground">· {formatFileSize(file.size)}</span>
+                {file.name}{" "}
+                <span className="text-muted-foreground">· {formatFileSize(file.size)}</span>
               </span>
               <button
                 type="button"

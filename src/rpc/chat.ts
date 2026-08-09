@@ -31,7 +31,12 @@ interface MessageRow {
   read_by_teacher_at: string | null;
   read_by_student_at: string | null;
   created_at: string;
-  message_attachments?: { file_path: string; file_name: string; size_bytes: number; mime_type: string }[];
+  message_attachments?: {
+    file_path: string;
+    file_name: string;
+    size_bytes: number;
+    mime_type: string;
+  }[];
 }
 
 function mapMessage(row: MessageRow): ChatMessage {
@@ -45,7 +50,15 @@ function mapMessage(row: MessageRow): ChatMessage {
     createdAt: row.created_at,
     readByTeacherAt: row.read_by_teacher_at,
     readByStudentAt: row.read_by_student_at,
-    attachment: att ? { id: "", filePath: att.file_path, fileName: att.file_name, sizeBytes: att.size_bytes, mimeType: att.mime_type } : undefined,
+    attachment: att
+      ? {
+          id: "",
+          filePath: att.file_path,
+          fileName: att.file_name,
+          sizeBytes: att.size_bytes,
+          mimeType: att.mime_type,
+        }
+      : undefined,
   };
 }
 
@@ -111,7 +124,10 @@ export const listConversations = createServerFn({ method: "GET" })
     if (actor.role === "principal") return [];
 
     const column = actor.role === "teacher" ? "teacher_id" : "student_id";
-    const { data: rows, error } = await supabaseAdmin.from("conversations").select("*").eq(column, actor.id);
+    const { data: rows, error } = await supabaseAdmin
+      .from("conversations")
+      .select("*")
+      .eq(column, actor.id);
     if (error) throw new Error(error.message);
     const conversations = (rows ?? []) as ConversationRow[];
     if (conversations.length === 0) return [];
@@ -128,13 +144,19 @@ export const listConversations = createServerFn({ method: "GET" })
     for (const m of (messages ?? []) as MessageRow[]) {
       if (!lastByConv.has(m.conversation_id)) lastByConv.set(m.conversation_id, m);
       const isUnreadForActor =
-        actor.role === "teacher" ? m.sender_type === "student" && !m.read_by_teacher_at : m.sender_type === "teacher" && !m.read_by_student_at;
-      if (isUnreadForActor) unreadByConv.set(m.conversation_id, (unreadByConv.get(m.conversation_id) ?? 0) + 1);
+        actor.role === "teacher"
+          ? m.sender_type === "student" && !m.read_by_teacher_at
+          : m.sender_type === "teacher" && !m.read_by_student_at;
+      if (isUnreadForActor)
+        unreadByConv.set(m.conversation_id, (unreadByConv.get(m.conversation_id) ?? 0) + 1);
     }
 
     return conversations.map((c) => {
       const otherId = actor.role === "teacher" ? c.student_id : c.teacher_id;
-      const otherName = actor.role === "teacher" ? studentById(otherId)?.name ?? "Unknown student" : teacherById(otherId)?.name ?? "Unknown teacher";
+      const otherName =
+        actor.role === "teacher"
+          ? (studentById(otherId)?.name ?? "Unknown student")
+          : (teacherById(otherId)?.name ?? "Unknown teacher");
       const last = lastByConv.get(c.id);
       return {
         id: c.id,
@@ -151,10 +173,23 @@ export const listConversations = createServerFn({ method: "GET" })
     });
   });
 
-async function loadConversationOrThrow(actorRole: ActorRole, actorId: string, conversationId: string) {
-  const { data: convo, error } = await supabaseAdmin.from("conversations").select("*").eq("id", conversationId).single();
+async function loadConversationOrThrow(
+  actorRole: ActorRole,
+  actorId: string,
+  conversationId: string,
+) {
+  const { data: convo, error } = await supabaseAdmin
+    .from("conversations")
+    .select("*")
+    .eq("id", conversationId)
+    .single();
   if (error || !convo) throw new NotFoundError("Conversation not found.");
-  const owns = actorRole === "teacher" ? convo.teacher_id === actorId : actorRole === "student" ? convo.student_id === actorId : false;
+  const owns =
+    actorRole === "teacher"
+      ? convo.teacher_id === actorId
+      : actorRole === "student"
+        ? convo.student_id === actorId
+        : false;
   if (!owns) throw new ForbiddenError("You do not have access to this conversation.");
   return convo as ConversationRow;
 }
@@ -186,7 +221,8 @@ export const sendMessage = createServerFn({ method: "POST" })
 
     const body = String(data.get("body") ?? "").trim();
     const file = data.get("attachment");
-    if (!body && !(file instanceof File && file.size > 0)) throw new Error("Enter a message or attach a file.");
+    if (!body && !(file instanceof File && file.size > 0))
+      throw new Error("Enter a message or attach a file.");
 
     const senderType = actor.role;
     const now = new Date().toISOString();
@@ -232,7 +268,9 @@ export const markConversationRead = createServerFn({ method: "POST" })
   });
 
 export const getMessageAttachmentUrl = createServerFn({ method: "POST" })
-  .validator((data: { role: ActorRole; actorId?: string; conversationId: string; filePath: string }) => data)
+  .validator(
+    (data: { role: ActorRole; actorId?: string; conversationId: string; filePath: string }) => data,
+  )
   .handler(async ({ data }) => {
     const actor = resolveActor(data);
     await loadConversationOrThrow(actor.role, actor.id, data.conversationId);

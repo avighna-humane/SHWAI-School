@@ -1,5 +1,5 @@
 import { useAppState } from "@/app/providers/app-state";
-import type { ActorRole } from "@/server/auth-context";
+import type { ActorRole } from "@/rpc/auth-context";
 
 /**
  * Maps the demo app-state role/ids into the {role, actorId} shape every

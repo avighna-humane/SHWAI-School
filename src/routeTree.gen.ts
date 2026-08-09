@@ -14,11 +14,15 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
+import { Route as AppAnnouncementsRouteImport } from './routes/app.announcements'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
 import { Route as AppHomeworkHomeworkIdRouteImport } from './routes/app.homework.$homeworkId'
+import { Route as AppPortalPrincipalRouteImport } from './routes/app.portal.principal'
+import { Route as AppPortalStudentRouteImport } from './routes/app.portal.student'
+import { Route as AppPortalTeacherRouteImport } from './routes/app.portal.teacher'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +47,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppSplatRoute = AppSplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
   getParentRoute: () => AppRoute,
 } as any)
 const AppHomeworkRoute = AppHomeworkRouteImport.update({
@@ -70,29 +79,52 @@ const AppHomeworkHomeworkIdRoute = AppHomeworkHomeworkIdRouteImport.update({
   path: '/$homeworkId',
   getParentRoute: () => AppHomeworkRoute,
 } as any)
+const AppPortalPrincipalRoute = AppPortalPrincipalRouteImport.update({
+  id: '/portal/principal',
+  path: '/portal/principal',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPortalStudentRoute = AppPortalStudentRouteImport.update({
+  id: '/portal/student',
+  path: '/portal/student',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPortalTeacherRoute = AppPortalTeacherRouteImport.update({
+  id: '/portal/teacher',
+  path: '/portal/teacher',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/announcements': typeof AppAnnouncementsRoute
   '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
   '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
+  '/app/portal/principal': typeof AppPortalPrincipalRoute
+  '/app/portal/student': typeof AppPortalStudentRoute
+  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/announcements': typeof AppAnnouncementsRoute
   '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
   '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
+  '/app/portal/principal': typeof AppPortalPrincipalRoute
+  '/app/portal/student': typeof AppPortalStudentRoute
+  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -100,12 +132,16 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/announcements': typeof AppAnnouncementsRoute
   '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
   '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
+  '/app/portal/principal': typeof AppPortalPrincipalRoute
+  '/app/portal/student': typeof AppPortalStudentRoute
+  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -114,35 +150,47 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/announcements'
     | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
     | '/app/homework/$homeworkId'
+    | '/app/portal/principal'
+    | '/app/portal/student'
+    | '/app/portal/teacher'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pricing'
     | '/app/$'
+    | '/app/announcements'
     | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app'
     | '/app/homework/$homeworkId'
+    | '/app/portal/principal'
+    | '/app/portal/student'
+    | '/app/portal/teacher'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/announcements'
     | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
     | '/app/homework/$homeworkId'
+    | '/app/portal/principal'
+    | '/app/portal/student'
+    | '/app/portal/teacher'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/announcements': {
+      id: '/app/announcements'
+      path: '/announcements'
+      fullPath: '/app/announcements'
+      preLoaderRoute: typeof AppAnnouncementsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/homework': {
       id: '/app/homework'
       path: '/homework'
@@ -223,6 +278,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHomeworkHomeworkIdRouteImport
       parentRoute: typeof AppHomeworkRoute
     }
+    '/app/portal/principal': {
+      id: '/app/portal/principal'
+      path: '/portal/principal'
+      fullPath: '/app/portal/principal'
+      preLoaderRoute: typeof AppPortalPrincipalRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/portal/student': {
+      id: '/app/portal/student'
+      path: '/portal/student'
+      fullPath: '/app/portal/student'
+      preLoaderRoute: typeof AppPortalStudentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/portal/teacher': {
+      id: '/app/portal/teacher'
+      path: '/portal/teacher'
+      fullPath: '/app/portal/teacher'
+      preLoaderRoute: typeof AppPortalTeacherRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -240,20 +316,28 @@ const AppHomeworkRouteWithChildren = AppHomeworkRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppHomeworkRoute: typeof AppHomeworkRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppPortalPrincipalRoute: typeof AppPortalPrincipalRoute
+  AppPortalStudentRoute: typeof AppPortalStudentRoute
+  AppPortalTeacherRoute: typeof AppPortalTeacherRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppHomeworkRoute: AppHomeworkRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,
+  AppPortalPrincipalRoute: AppPortalPrincipalRoute,
+  AppPortalStudentRoute: AppPortalStudentRoute,
+  AppPortalTeacherRoute: AppPortalTeacherRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

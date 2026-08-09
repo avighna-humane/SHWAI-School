@@ -15,8 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { gradeSubmission } from "@/server/submissions";
-import type { ActorRole } from "@/server/auth-context";
+import { gradeSubmission } from "@/rpc/submissions";
+import type { ActorRole } from "@/rpc/auth-context";
 import type { SubmissionRecord } from "@/types";
 
 export function GradeSubmissionDialog({

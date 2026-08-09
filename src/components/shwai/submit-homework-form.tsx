@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FilePicker } from "@/components/shwai/file-picker";
-import { submitHomework } from "@/server/submissions";
+import { submitHomework } from "@/rpc/submissions";
 
 export function SubmitHomeworkForm({
   actorId,

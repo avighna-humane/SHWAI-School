@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { NotebookPen, Clock, Users, Eye, CheckCircle2, MoreVertical, Trash2, Pencil } from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { useActorParams } from "@/hooks/use-actor-params";
-import { listHomeworkFor, deleteHomework } from "@/server/homework";
+import { listHomeworkFor, deleteHomework } from "@/rpc/homework";
 import { TEACHERS } from "@/data/mock/people";
 import { CLASS_SECTIONS } from "@/data/mock/core";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/feedback/states";

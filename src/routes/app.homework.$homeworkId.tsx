@@ -9,8 +9,8 @@ import {
   getHomeworkAttachmentUrl,
   getHomeworkById,
   recordHomeworkView,
-} from "@/server/homework";
-import { getSubmissionFileUrl, listSubmissionsFor } from "@/server/submissions";
+} from "@/rpc/homework";
+import { getSubmissionFileUrl, listSubmissionsFor } from "@/rpc/submissions";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/feedback/states";
 import { FloatingAI } from "@/components/feedback/floating-ai";
 import { Badge } from "@/components/ui/badge";

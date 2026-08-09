@@ -8,8 +8,6 @@
 // file. Each module (notices/homework/submissions/chat) wraps signedUrlFor()
 // in its own server function that checks the actor owns/can-see that file
 // first — see e.g. getHomeworkAttachmentUrl, getSubmissionFileUrl.
-import { FILES_BUCKET, supabaseAdmin } from "./supabase-admin";
-
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
 
 const ALLOWED_MIME_TYPES = new Set([
@@ -45,6 +43,7 @@ export interface StoredFileMeta {
 
 /** Uploads an already-validated file to the private bucket under the given prefix. */
 export async function uploadToBucket(prefix: string, file: File): Promise<StoredFileMeta> {
+  const { supabaseAdmin, FILES_BUCKET } = await import("./supabase-admin");
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
   const buffer = await file.arrayBuffer();
@@ -63,6 +62,7 @@ export async function uploadToBucket(prefix: string, file: File): Promise<Stored
 
 /** Issues a short-lived signed URL. Callers must have already authorized the request. */
 export async function signedUrlFor(path: string, expiresInSeconds = 60 * 5): Promise<string> {
+  const { supabaseAdmin, FILES_BUCKET } = await import("./supabase-admin");
   const { data, error } = await supabaseAdmin.storage.from(FILES_BUCKET).createSignedUrl(path, expiresInSeconds);
   if (error || !data) throw new Error(`Could not create a signed URL: ${error?.message ?? "unknown error"}`);
   return data.signedUrl;

@@ -1,8 +1,6 @@
 // SERVER-ONLY. Student homework submission + teacher review/grading.
 import { createServerFn } from "@tanstack/react-start";
 import type { SubmissionRecord } from "@/types";
-import { supabaseAdmin } from "./supabase-admin";
-import { assertValidFile, signedUrlFor, uploadToBucket } from "./files";
 import {
   type ActorRole,
   ForbiddenError,
@@ -51,6 +49,8 @@ function mapSubmission(row: SubmissionRow): SubmissionRecord {
 export const submitHomework = createServerFn({ method: "POST" })
   .validator((data: FormData) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
@@ -129,6 +129,8 @@ export const submitHomework = createServerFn({ method: "POST" })
 export const listSubmissionsFor = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId?: string; studentId?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     let query = supabaseAdmin.from("submissions").select("*, submission_files(*)");
 
@@ -156,6 +158,8 @@ export const listSubmissionsFor = createServerFn({ method: "GET" })
 export const gradeSubmission = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; submissionId: string; marks?: number; feedback?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can grade submissions.");
 
@@ -178,6 +182,8 @@ export const gradeSubmission = createServerFn({ method: "POST" })
   });
 
 export async function submissionFileUrl(actorInput: { role: ActorRole; actorId?: string }, submissionId: string, filePath: string): Promise<string> {
+  const { supabaseAdmin } = await import("./supabase-admin");
+  const { signedUrlFor } = await import("./files");
   const actor = resolveActor(actorInput);
   const { data: sub, error } = await supabaseAdmin.from("submissions").select("student_id, homework_id").eq("id", submissionId).single();
   if (error || !sub) throw new NotFoundError("Submission not found.");

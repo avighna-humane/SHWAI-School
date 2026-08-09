@@ -4,8 +4,6 @@ import { createServerFn } from "@tanstack/react-start";
 import type { HomeworkActivity, HomeworkItem, SubmissionRecord } from "@/types";
 import { STUDENTS } from "@/data/mock/people";
 import { classSectionById } from "./auth-context";
-import { supabaseAdmin } from "./supabase-admin";
-import { assertValidFile, signedUrlFor, uploadToBucket } from "./files";
 import {
   type ActorRole,
   ForbiddenError,
@@ -103,6 +101,8 @@ function classRoster(classId: string) {
 export const listHomeworkFor = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
 
     let query = supabaseAdmin.from("homework").select("*, homework_attachments(*)").eq("school_id", actor.schoolId).is("deleted_at", null);
@@ -159,6 +159,8 @@ export const listHomeworkFor = createServerFn({ method: "GET" })
 export const getHomeworkById = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     const { data: row, error } = await supabaseAdmin
       .from("homework")
@@ -215,6 +217,8 @@ export interface CreateHomeworkInput {
 export const createHomework = createServerFn({ method: "POST" })
   .validator((data: FormData) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
@@ -270,6 +274,8 @@ export const createHomework = createServerFn({ method: "POST" })
 export const updateHomework = createServerFn({ method: "POST" })
   .validator((data: FormData) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
@@ -311,6 +317,8 @@ export const updateHomework = createServerFn({ method: "POST" })
 export const deleteHomeworkAttachment = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string; attachmentId: string; filePath: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can edit homework.");
     const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
@@ -327,6 +335,8 @@ export const deleteHomeworkAttachment = createServerFn({ method: "POST" })
 export const deleteHomework = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role !== "teacher") throw new ForbiddenError("Only teachers can delete homework.");
     const { data: hw, error } = await supabaseAdmin.from("homework").select("teacher_id").eq("id", data.homeworkId).single();
@@ -342,6 +352,8 @@ export const deleteHomework = createServerFn({ method: "POST" })
 export const recordHomeworkView = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; homeworkId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role !== "student") return { ok: true };
 
@@ -413,6 +425,8 @@ export const getHomeworkActivity = createServerFn({ method: "GET" })
   });
 
 export async function homeworkAttachmentUrl(actorInput: { role: ActorRole; actorId?: string }, homeworkId: string, filePath: string): Promise<string> {
+  const { supabaseAdmin } = await import("./supabase-admin");
+  const { signedUrlFor } = await import("./files");
   const actor = resolveActor(actorInput);
   const { data: row, error } = await supabaseAdmin.from("homework").select("class_id, teacher_id").eq("id", homeworkId).single();
   if (error || !row) throw new NotFoundError("Homework not found.");

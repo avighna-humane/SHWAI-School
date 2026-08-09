@@ -4,8 +4,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { ChatMessage, Conversation } from "@/types";
 import { studentById, teacherById } from "./auth-context";
-import { supabaseAdmin } from "./supabase-admin";
-import { assertValidFile, signedUrlFor, uploadToBucket } from "./files";
 import {
   type ActorRole,
   ForbiddenError,
@@ -62,6 +60,8 @@ async function assertRelationship(actorRole: ActorRole, teacherId: string, stude
 export const getOrCreateConversation = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; otherId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     let teacherId: string;
     let studentId: string;
@@ -152,6 +152,7 @@ export const listConversations = createServerFn({ method: "GET" })
   });
 
 async function loadConversationOrThrow(actorRole: ActorRole, actorId: string, conversationId: string) {
+  const { supabaseAdmin } = await import("./supabase-admin");
   const { data: convo, error } = await supabaseAdmin.from("conversations").select("*").eq("id", conversationId).single();
   if (error || !convo) throw new NotFoundError("Conversation not found.");
   const owns = actorRole === "teacher" ? convo.teacher_id === actorId : actorRole === "student" ? convo.student_id === actorId : false;
@@ -162,6 +163,8 @@ async function loadConversationOrThrow(actorRole: ActorRole, actorId: string, co
 export const listMessages = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string; conversationId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     await loadConversationOrThrow(actor.role, actor.id, data.conversationId);
     const { data: rows, error } = await supabaseAdmin
@@ -176,6 +179,8 @@ export const listMessages = createServerFn({ method: "GET" })
 export const sendMessage = createServerFn({ method: "POST" })
   .validator((data: FormData) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
@@ -216,6 +221,8 @@ export const sendMessage = createServerFn({ method: "POST" })
 export const markConversationRead = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; conversationId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     await loadConversationOrThrow(actor.role, actor.id, data.conversationId);
     const now = new Date().toISOString();
@@ -234,6 +241,8 @@ export const markConversationRead = createServerFn({ method: "POST" })
 export const getMessageAttachmentUrl = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; conversationId: string; filePath: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     await loadConversationOrThrow(actor.role, actor.id, data.conversationId);
     return { url: await signedUrlFor(data.filePath) };

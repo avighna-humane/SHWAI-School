@@ -30,6 +30,7 @@ import { useActorParams } from "@/hooks/use-actor-params";
 import { listHomeworkFor } from "@/rpc/homework";
 import { listTeacherNoticesFor } from "@/rpc/notices";
 import { listConversations, getOrCreateConversation, listMessages, sendMessage, markConversationRead } from "@/rpc/chat";
+import { getTeacherProfile } from "@/rpc/profiles";
 import { listSubmissionsFor, gradeSubmission } from "@/rpc/submissions";
 import { DEMO_CLASS_STUDENTS, TEACHERS } from "@/data/mock/people";
 import { CLASS_SECTIONS } from "@/data/mock/core";
@@ -58,10 +59,17 @@ function TeacherPortalPage() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "homework" | "students" | "staff-notices" | "chat">("dashboard");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
-  // Get active teacher info
+  // Get active teacher info from DB
+  const profileQuery = useQuery({
+    queryKey: ["profiles", "teacher", teacherId],
+    queryFn: () => getTeacherProfile({ data: { actorId: teacherId, teacherId } }),
+    enabled: Boolean(teacherId),
+  });
+
   const teacher = useMemo(() => {
+    if (profileQuery.data) return profileQuery.data;
     return TEACHERS.find((t) => t.id === teacherId) || TEACHERS[0];
-  }, [teacherId]);
+  }, [teacherId, profileQuery.data]);
 
   // Options for Create Homework
   const teacherClassOptions = useMemo(() => {

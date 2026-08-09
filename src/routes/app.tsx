@@ -65,6 +65,14 @@ function Shell() {
     .map((p) => NAV_GROUPS.flatMap((g) => g.items).find((i) => i.path === p))
     .filter(Boolean);
 
+  if (pathname === "/app/login" || pathname === "/app/reset-password") {
+    return (
+      <main className="min-h-screen w-full flex items-center justify-center bg-background">
+        <Outlet />
+      </main>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar */}

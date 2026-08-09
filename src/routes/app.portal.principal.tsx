@@ -31,6 +31,7 @@ import {
   deleteNotice,
   getNoticeActivity,
 } from "@/rpc/notices";
+import { getSchoolSummary } from "@/rpc/profiles";
 import { CLASS_SECTIONS } from "@/data/mock/core";
 import { TEACHERS, STUDENTS } from "@/data/mock/people";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/feedback/states";
@@ -51,11 +52,29 @@ import { AttachmentList } from "@/components/shwai/attachment-list";
 export const Route = createFileRoute("/app/portal/principal")({ component: PrincipalPortalPage });
 
 function PrincipalPortalPage() {
-  const { role } = useAppState();
+  const { role, schoolId } = useAppState();
   const actorParams = useActorParams();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"overview" | "notices" | "teacher-posts">("overview");
   const [activityNoticeId, setActivityNoticeId] = useState<string | null>(null);
+
+  // Get school summary statistics from DB
+  const summaryQuery = useQuery({
+    queryKey: ["school-summary", schoolId],
+    queryFn: () => getSchoolSummary({ data: { schoolId } }),
+    enabled: Boolean(schoolId),
+  });
+
+  const stats = useMemo(() => {
+    if (summaryQuery.data) return summaryQuery.data;
+    return {
+      studentsCount: STUDENTS.length,
+      teachersCount: TEACHERS.length,
+      classesCount: CLASS_SECTIONS.length,
+      averageAttendance: 94.8,
+      homeworkCompletion: 91,
+    };
+  }, [summaryQuery.data]);
 
   // Queries
   const noticesQuery = useQuery({
@@ -117,15 +136,15 @@ function PrincipalPortalPage() {
         <div className="flex flex-wrap gap-3">
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Students</p>
-            <p className="text-lg font-black text-primary">{STUDENTS.length}</p>
+            <p className="text-lg font-black text-primary">{stats.studentsCount}</p>
           </div>
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Teachers</p>
-            <p className="text-lg font-black text-success">{TEACHERS.length}</p>
+            <p className="text-lg font-black text-success">{stats.teachersCount}</p>
           </div>
           <div className="rounded-xl border bg-muted/30 p-2.5 px-4 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Classes</p>
-            <p className="text-lg font-black text-info">{CLASS_SECTIONS.length}</p>
+            <p className="text-lg font-black text-info">{stats.classesCount}</p>
           </div>
         </div>
       </header>
@@ -148,7 +167,7 @@ function PrincipalPortalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-black text-success">94.8%</p>
+                <p className="text-3xl font-black text-success">{stats.averageAttendance}%</p>
                 <p className="text-xs text-muted-foreground mt-1">Average school-wide attendance this term.</p>
               </CardContent>
             </Card>
@@ -172,7 +191,7 @@ function PrincipalPortalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-black text-info">91%</p>
+                <p className="text-3xl font-black text-info">{stats.homeworkCompletion}%</p>
                 <p className="text-xs text-muted-foreground mt-1">Average classroom homework completion rate.</p>
               </CardContent>
             </Card>

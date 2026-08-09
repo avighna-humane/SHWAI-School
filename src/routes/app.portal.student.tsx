@@ -24,6 +24,7 @@ import { useActorParams } from "@/hooks/use-actor-params";
 import { listHomeworkFor } from "@/rpc/homework";
 import { listNoticesFor } from "@/rpc/notices";
 import { listConversations, getOrCreateConversation, listMessages, sendMessage, markConversationRead } from "@/rpc/chat";
+import { getStudentProfile } from "@/rpc/profiles";
 import { DEMO_CLASS_STUDENTS } from "@/data/mock/people";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/feedback/states";
 import { FloatingAI } from "@/components/feedback/floating-ai";
@@ -64,10 +65,17 @@ function StudentPortalPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"overview" | "notices" | "homework" | "grades" | "attendance" | "chat">("overview");
 
-  // Get current active student info
+  // Get current active student info from DB
+  const profileQuery = useQuery({
+    queryKey: ["profiles", "student", studentId],
+    queryFn: () => getStudentProfile({ data: { actorId: studentId, studentId } }),
+    enabled: Boolean(studentId),
+  });
+
   const student = useMemo(() => {
+    if (profileQuery.data) return profileQuery.data;
     return DEMO_CLASS_STUDENTS.find((s) => s.id === studentId) || DEMO_CLASS_STUDENTS[0];
-  }, [studentId]);
+  }, [studentId, profileQuery.data]);
 
   // Queries
   const homeworkQuery = useQuery({

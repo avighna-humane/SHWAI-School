@@ -4,8 +4,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { Notice, NoticeActivity, NoticeAudienceType } from "@/types";
 import { STUDENTS, TEACHERS } from "@/data/mock/people";
-import { supabaseAdmin } from "./supabase-admin";
-import { assertValidFile, uploadToBucket, signedUrlFor } from "./files";
 import {
   type Actor,
   type ActorRole,
@@ -102,6 +100,7 @@ function actorIsRecipient(actor: Actor, notice: NoticeRow): boolean {
 }
 
 async function fetchNotices(schoolId: string) {
+  const { supabaseAdmin } = await import("./supabase-admin");
   const { data, error } = await supabaseAdmin
     .from("notices")
     .select("*, notice_attachments(*)")
@@ -114,6 +113,7 @@ async function fetchNotices(schoolId: string) {
 
 async function viewCountsFor(noticeIds: string[]) {
   if (noticeIds.length === 0) return new Map<string, number>();
+  const { supabaseAdmin } = await import("./supabase-admin");
   const { data, error } = await supabaseAdmin.from("notice_views").select("notice_id").in("notice_id", noticeIds);
   if (error) throw new Error(error.message);
   const counts = new Map<string, number>();
@@ -123,6 +123,7 @@ async function viewCountsFor(noticeIds: string[]) {
 
 async function viewedSetFor(noticeIds: string[], viewerType: "student" | "teacher", viewerId: string) {
   if (noticeIds.length === 0) return new Set<string>();
+  const { supabaseAdmin } = await import("./supabase-admin");
   const { data, error } = await supabaseAdmin
     .from("notice_views")
     .select("notice_id")
@@ -137,6 +138,8 @@ async function viewedSetFor(noticeIds: string[], viewerType: "student" | "teache
 export const listNoticesFor = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     const all = await fetchNotices(actor.schoolId);
     const relevant = all.filter((n) => STUDENT_AUDIENCES.includes(n.audience_type) && actorIsRecipient(actor, n));
@@ -162,6 +165,8 @@ export const listNoticesFor = createServerFn({ method: "GET" })
 export const listMyNoticesFor = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role !== "teacher" && actor.role !== "principal") throw new ForbiddenError();
     const all = await fetchNotices(actor.schoolId);
@@ -180,6 +185,8 @@ export const listMyNoticesFor = createServerFn({ method: "GET" })
 export const listTeacherNoticesFor = createServerFn({ method: "GET" })
   .validator((data: { role: ActorRole; actorId?: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     const all = await fetchNotices(actor.schoolId);
     const staffNotices = all.filter((n) => TEACHER_AUDIENCES.includes(n.audience_type));
@@ -215,6 +222,8 @@ export interface CreateNoticeInput {
 export const createNotice = createServerFn({ method: "POST" })
   .validator((data: FormData) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const role = data.get("role") as ActorRole;
     const actorId = (data.get("actorId") as string) || undefined;
     const actor = resolveActor({ role, actorId });
@@ -269,6 +278,8 @@ export const createNotice = createServerFn({ method: "POST" })
 export const deleteNotice = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; noticeId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     const { data: row, error } = await supabaseAdmin.from("notices").select("author_id").eq("id", data.noticeId).single();
     if (error || !row) throw new NotFoundError("Notice not found.");
@@ -282,6 +293,8 @@ export const deleteNotice = createServerFn({ method: "POST" })
 export const recordNoticeView = createServerFn({ method: "POST" })
   .validator((data: { role: ActorRole; actorId?: string; noticeId: string }) => data)
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("./supabase-admin");
+    const { assertValidFile, signedUrlFor, uploadToBucket } = await import("./files");
     const actor = resolveActor(data);
     if (actor.role === "principal") return { ok: true };
     const viewerType = actor.role === "teacher" ? "teacher" : "student";
@@ -355,6 +368,8 @@ export const getNoticeActivity = createServerFn({ method: "GET" })
   });
 
 export async function noticeAttachmentUrl(actorInput: { role: ActorRole; actorId?: string }, noticeId: string, filePath: string): Promise<string> {
+  const { supabaseAdmin } = await import("./supabase-admin");
+  const { signedUrlFor } = await import("./files");
   const actor = resolveActor(actorInput);
   const { data: row, error } = await supabaseAdmin.from("notices").select("*").eq("id", noticeId).single();
   if (error || !row) throw new NotFoundError("Notice not found.");

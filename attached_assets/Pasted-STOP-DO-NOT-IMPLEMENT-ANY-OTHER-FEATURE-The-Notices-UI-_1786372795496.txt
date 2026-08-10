@@ -1,0 +1,58 @@
+STOP. DO NOT IMPLEMENT ANY OTHER FEATURE.
+
+The Notices UI is STILL missing after the previous changes. Do not assume the previous implementation worked.
+
+Your ONLY task is to make the Notices entry points visibly appear in the actual rendered application.
+
+FIRST:
+1. Identify the exact route/component currently rendered when I open the Student Portal.
+2. Identify the exact route/component currently rendered when I open the Teacher Portal.
+3. Identify the exact route/component currently rendered when I open the Principal Portal.
+4. Trace the sidebar/navigation component actually used by each portal.
+5. Find why the Notices navigation item and Create Notice button are not appearing.
+
+THEN FIX IT:
+
+STUDENT:
+- The actual Student Portal must contain a visible "Notices" navigation item.
+- Clicking it must open the existing school-wide Notices section.
+- Student sees notices only.
+- NO Create Notice button.
+
+TEACHER:
+- The actual Teacher Portal must contain a visible "Notices" navigation item.
+- Clicking it must open the existing school-wide Notices section.
+- Teacher can view relevant notices.
+- Teacher MUST NOT have a Create Teacher Notice button.
+- Teacher MUST NOT be able to create Principal → Teacher notices.
+
+PRINCIPAL:
+- The actual Principal Portal must contain a visible "Notices" navigation item.
+- The Notices page must contain a clearly visible "+ Create Notice" button.
+- Principal can create school notices and Principal → Teacher notices.
+
+CRITICAL:
+Do not only modify server/RPC/database code.
+The problem is that the UI controls are not visible in the rendered portals.
+
+Actually trace the rendered component tree and modify the component that is REALLY being displayed.
+
+If the portals currently fall back to a dynamic/placeholder route, fix the routing so the intended portal components are actually rendered.
+
+Do not create duplicate notice systems.
+Reuse the existing notices implementation.
+
+AFTER FIXING:
+- Run the app.
+- Open the actual Student Portal and verify "Notices" is visible.
+- Open the actual Teacher Portal and verify "Notices" is visible.
+- Open the actual Principal Portal and verify "Notices" and "+ Create Notice" are visible.
+- Verify the buttons are rendered based on the actual authenticated role.
+- If a button is still not visible, inspect the conditional rendering/role value and fix it instead of reporting completion.
+
+ONLY modify files required for this issue.
+Do not touch unrelated features.
+Do not install packages.
+Do not refactor.
+Do not stop after modifying backend code.
+DO NOT REPORT SUCCESS UNTIL THE ACTUAL UI HAS BEEN VERIFIED.

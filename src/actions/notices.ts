@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { CLASS_SECTIONS } from '@/data/mock/core';
 
 export interface NoticeRow {
   id: string;
@@ -11,6 +12,7 @@ export interface NoticeRow {
   audience: string[];
   target_classes: string[];
   attachment_name: string;
+  attachment_data: string;
   created_at: string;
 }
 
@@ -18,23 +20,56 @@ export interface NoticeWithRead extends NoticeRow {
   is_read: boolean;
 }
 
-export const AUDIENCE_OPTIONS = [
-  { value: 'entire-school',  label: 'Entire School' },
-  { value: 'all-students',   label: 'All Students' },
-  { value: 'all-teachers',   label: 'All Teachers' },
-  { value: 'all-parents',    label: 'All Parents' },
-  { value: 'class-9A',       label: 'Grade 9 — A' },
-  { value: 'class-9B',       label: 'Grade 9 — B' },
-  { value: 'class-10A',      label: 'Grade 10 — A' },
-  { value: 'class-10B',      label: 'Grade 10 — B' },
-] as const;
+/** Returns audience options the given role is permitted to use when creating a notice. */
+export function getAudienceOptions(role: string): { value: string; label: string }[] {
+  const classOpts = CLASS_SECTIONS.map(c => ({
+    value: `class-${c.grade}${c.section}`,
+    label: c.label,
+  }));
+
+  if (role === 'teacher') {
+    // Teachers can notify students, parents, or specific class sections — not all teachers or whole school
+    return [
+      { value: 'all-students', label: 'All Students' },
+      { value: 'all-parents',  label: 'All Parents' },
+      ...classOpts,
+    ];
+  }
+
+  if (['principal', 'admin', 'owner'].includes(role)) {
+    return [
+      { value: 'entire-school', label: 'Entire School' },
+      { value: 'all-students',  label: 'All Students' },
+      { value: 'all-teachers',  label: 'All Teachers' },
+      { value: 'all-parents',   label: 'All Parents' },
+      ...classOpts,
+    ];
+  }
+
+  return [];
+}
+
+/** Audience values a given role is allowed to include in a notice they create. */
+function allowedAudienceValues(role: string): Set<string> {
+  return new Set(getAudienceOptions(role).map(o => o.value));
+}
 
 function audienceMatchesRole(audience: string[], role: string, classId?: string): boolean {
   if (audience.includes('entire-school')) return true;
-  if (role === 'student') return audience.some(a => a === 'all-students' || (classId && a === `class-${classId.replace('cls-', '')}`));
-  if (role === 'teacher') return audience.some(a => a === 'all-teachers' || a === 'entire-school');
-  if (role === 'principal' || role === 'admin') return true;
-  if (role === 'parent') return audience.some(a => a === 'all-parents' || a === 'entire-school');
+  if (role === 'student') {
+    return audience.some(a =>
+      a === 'all-students' ||
+      (classId && a === `class-${classId.replace('cls-', '')}`)
+    );
+  }
+  if (role === 'teacher') {
+    // Teachers see school-wide teacher notices, plus class-specific notices for any class they may teach
+    return audience.some(a => a === 'all-teachers');
+  }
+  if (role === 'principal' || role === 'admin' || role === 'owner') return true;
+  if (role === 'parent') {
+    return audience.some(a => a === 'all-parents');
+  }
   return false;
 }
 
@@ -47,47 +82,105 @@ export const listNotices = createServerFn({ method: 'POST' })
     const reads = await sql<{ notice_id: string }[]>`
       SELECT notice_id FROM hw_notice_reads WHERE reader_id = ${data.userId}`;
     const readSet = new Set(reads.map(r => r.notice_id));
-    return rows
-      .filter(n => audienceMatchesRole(n.audience, data.role, data.classId))
-      .map(n => ({ ...n, is_read: readSet.has(n.id) })) as NoticeWithRead[];
+
+    // Teachers see: notices they authored + notices addressed to all-teachers
+    // Students see: notices addressed to all-students or their class
+    // Principal/admin/owner see all
+    const { role } = data;
+    let filtered: NoticeRow[];
+    if (role === 'teacher') {
+      filtered = rows.filter(n =>
+        n.author_id === data.userId ||
+        audienceMatchesRole(n.audience, data.role, data.classId)
+      );
+    } else {
+      filtered = rows.filter(n => audienceMatchesRole(n.audience, data.role, data.classId));
+    }
+    return filtered.map(n => ({ ...n, is_read: readSet.has(n.id) })) as NoticeWithRead[];
   });
 
 export const createNotice = createServerFn({ method: 'POST' })
   .validator((d: {
     schoolId: string; authorId: string; authorName: string; authorRole: string;
-    title: string; content: string; audience: string[]; targetClasses: string[];
-    attachmentName: string; role: string;
+    title: string; content: string; audience: string[];
+    attachmentName: string; attachmentData: string; role: string;
   }) => d)
   .handler(async ({ data }) => {
-    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role)) throw new Error('Permission denied');
+    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+      throw new Error('Permission denied');
+
+    // Validate audience values against what this role is allowed to use
+    const allowed = allowedAudienceValues(data.role);
+    const invalid = data.audience.filter(a => !allowed.has(a));
+    if (invalid.length > 0)
+      throw new Error(`Not permitted to target: ${invalid.join(', ')}`);
+
     const { sql } = await import('@/lib/db');
     const rows = await sql<NoticeRow[]>`
       INSERT INTO hw_notices
-        (school_id, author_id, author_name, author_role, title, content, audience, target_classes, attachment_name)
+        (school_id, author_id, author_name, author_role, title, content, audience, target_classes, attachment_name, attachment_data)
       VALUES
         (${data.schoolId}, ${data.authorId}, ${data.authorName}, ${data.authorRole},
-         ${data.title}, ${data.content}, ${data.audience}, ${data.targetClasses}, ${data.attachmentName})
+         ${data.title}, ${data.content}, ${data.audience}, ${[] as string[]},
+         ${data.attachmentName}, ${data.attachmentData})
       RETURNING *`;
     return rows[0]!;
+  });
+
+export const editNotice = createServerFn({ method: 'POST' })
+  .validator((d: {
+    id: string; authorId: string; role: string;
+    title: string; content: string; audience: string[];
+    attachmentName: string; attachmentData: string;
+  }) => d)
+  .handler(async ({ data }) => {
+    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+      throw new Error('Permission denied');
+
+    const allowed = allowedAudienceValues(data.role);
+    const invalid = data.audience.filter(a => !allowed.has(a));
+    if (invalid.length > 0)
+      throw new Error(`Not permitted to target: ${invalid.join(', ')}`);
+
+    const { sql } = await import('@/lib/db');
+    if (data.role === 'teacher') {
+      // Teachers can only edit their own notices
+      await sql`
+        UPDATE hw_notices
+        SET title=${data.title}, content=${data.content}, audience=${data.audience},
+            attachment_name=${data.attachmentName}, attachment_data=${data.attachmentData}
+        WHERE id=${data.id} AND author_id=${data.authorId}`;
+    } else {
+      await sql`
+        UPDATE hw_notices
+        SET title=${data.title}, content=${data.content}, audience=${data.audience},
+            attachment_name=${data.attachmentName}, attachment_data=${data.attachmentData}
+        WHERE id=${data.id}`;
+    }
+    return { ok: true };
   });
 
 export const markNoticeRead = createServerFn({ method: 'POST' })
   .validator((d: { noticeId: string; readerId: string }) => d)
   .handler(async ({ data }) => {
     const { sql } = await import('@/lib/db');
-    await sql`INSERT INTO hw_notice_reads (notice_id, reader_id) VALUES (${data.noticeId}, ${data.readerId}) ON CONFLICT DO NOTHING`;
+    await sql`
+      INSERT INTO hw_notice_reads (notice_id, reader_id)
+      VALUES (${data.noticeId}, ${data.readerId})
+      ON CONFLICT DO NOTHING`;
     return { ok: true };
   });
 
 export const deleteNotice = createServerFn({ method: 'POST' })
   .validator((d: { id: string; authorId: string; role: string }) => d)
   .handler(async ({ data }) => {
-    if (!['teacher', 'principal', 'admin'].includes(data.role)) throw new Error('Permission denied');
+    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+      throw new Error('Permission denied');
     const { sql } = await import('@/lib/db');
     if (data.role === 'teacher') {
-      await sql`DELETE FROM hw_notices WHERE id = ${data.id} AND author_id = ${data.authorId}`;
+      await sql`DELETE FROM hw_notices WHERE id=${data.id} AND author_id=${data.authorId}`;
     } else {
-      await sql`DELETE FROM hw_notices WHERE id = ${data.id}`;
+      await sql`DELETE FROM hw_notices WHERE id=${data.id}`;
     }
     return { ok: true };
   });

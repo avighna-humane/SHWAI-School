@@ -26,6 +26,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Dashboard", path: "/app", icon: "LayoutDashboard", roles: ALL, description: "Role dashboard with summaries, alerts and AI insights" },
       { label: "Calendar", path: "/app/calendar", icon: "CalendarDays", roles: ALL, description: "School calendar, holidays, exams, PTMs and deadlines" },
       { label: "Notifications", path: "/app/notifications", icon: "Bell", roles: ALL, description: "Notification centre with read/unread state" },
+      { label: "Notices", path: "/app/notices", icon: "Megaphone", roles: ALL, badge: "New", description: "School notices, alerts and announcements for all roles" },
     ],
   },
   {
@@ -116,7 +117,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Engagement",
     items: [
-      { label: "Notices", path: "/app/notices", icon: "Megaphone", roles: ALL, badge: "New", description: "School notices, alerts and announcements for all roles" },
       { label: "Chat", path: "/app/chat", icon: "MessageCircle", roles: ["student", "teacher", "principal", "admin"] as Role[], badge: "New", description: "Direct messaging between teachers and students" },
       { label: "Communication", path: "/app/communication", icon: "Send", roles: ALL, description: "Messaging, SMS, WhatsApp-compatible and email" },
       { label: "Announcements", path: "/app/announcements", icon: "Megaphone", roles: ALL, description: "School and class announcements, emergency alerts" },

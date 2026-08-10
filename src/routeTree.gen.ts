@@ -14,9 +14,15 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
+import { Route as AppChatRouteImport } from './routes/app.chat'
+import { Route as AppHomeworkRouteImport } from './routes/app.homework'
+import { Route as AppNoticesRouteImport } from './routes/app.notices'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppStudentsRouteImport } from './routes/app.students'
+import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as AppStudentsStudentIdRouteImport } from './routes/app.students.$studentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,6 +49,21 @@ const AppSplatRoute = AppSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHomeworkRoute = AppHomeworkRouteImport.update({
+  id: '/homework',
+  path: '/homework',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNoticesRoute = AppNoticesRouteImport.update({
+  id: '/notices',
+  path: '/notices',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -53,10 +74,25 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppStudentsRoute = AppStudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubmissionsRoute = AppSubmissionsRouteImport.update({
+  id: '/submissions',
+  path: '/submissions',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   id: '/subscription',
   path: '/subscription',
   getParentRoute: () => AppRoute,
+} as any)
+const AppStudentsStudentIdRoute = AppStudentsStudentIdRouteImport.update({
+  id: '/$studentId',
+  path: '/$studentId',
+  getParentRoute: () => AppStudentsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -64,19 +100,31 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/homework': typeof AppHomeworkRoute
+  '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/students': typeof AppStudentsRouteWithChildren
+  '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/students/$studentId': typeof AppStudentsStudentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/homework': typeof AppHomeworkRoute
+  '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/students': typeof AppStudentsRouteWithChildren
+  '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
+  '/app/students/$studentId': typeof AppStudentsStudentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,10 +132,16 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/homework': typeof AppHomeworkRoute
+  '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/students': typeof AppStudentsRouteWithChildren
+  '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/students/$studentId': typeof AppStudentsStudentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,29 +150,47 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/chat'
+    | '/app/homework'
+    | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
+    | '/app/students'
+    | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/students/$studentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pricing'
     | '/app/$'
+    | '/app/chat'
+    | '/app/homework'
+    | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
+    | '/app/students'
+    | '/app/submissions'
     | '/app/subscription'
     | '/app'
+    | '/app/students/$studentId'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/chat'
+    | '/app/homework'
+    | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
+    | '/app/students'
+    | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/students/$studentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,6 +236,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/homework': {
+      id: '/app/homework'
+      path: '/homework'
+      fullPath: '/app/homework'
+      preLoaderRoute: typeof AppHomeworkRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notices': {
+      id: '/app/notices'
+      path: '/notices'
+      fullPath: '/app/notices'
+      preLoaderRoute: typeof AppNoticesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
@@ -178,6 +271,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/students': {
+      id: '/app/students'
+      path: '/students'
+      fullPath: '/app/students'
+      preLoaderRoute: typeof AppStudentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/submissions': {
+      id: '/app/submissions'
+      path: '/submissions'
+      fullPath: '/app/submissions'
+      preLoaderRoute: typeof AppSubmissionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/subscription': {
       id: '/app/subscription'
       path: '/subscription'
@@ -185,21 +292,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/students/$studentId': {
+      id: '/app/students/$studentId'
+      path: '/$studentId'
+      fullPath: '/app/students/$studentId'
+      preLoaderRoute: typeof AppStudentsStudentIdRouteImport
+      parentRoute: typeof AppStudentsRoute
+    }
   }
 }
 
+interface AppStudentsRouteChildren {
+  AppStudentsStudentIdRoute: typeof AppStudentsStudentIdRoute
+}
+
+const AppStudentsRouteChildren: AppStudentsRouteChildren = {
+  AppStudentsStudentIdRoute: AppStudentsStudentIdRoute,
+}
+
+const AppStudentsRouteWithChildren = AppStudentsRoute._addFileChildren(
+  AppStudentsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppChatRoute: typeof AppChatRoute
+  AppHomeworkRoute: typeof AppHomeworkRoute
+  AppNoticesRoute: typeof AppNoticesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppStudentsRoute: typeof AppStudentsRouteWithChildren
+  AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppChatRoute: AppChatRoute,
+  AppHomeworkRoute: AppHomeworkRoute,
+  AppNoticesRoute: AppNoticesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppStudentsRoute: AppStudentsRouteWithChildren,
+  AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,
 }

@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "postgresql-16", "python-base-3.13"]
 
 [nix]
 channel = "stable-25_05"
@@ -38,3 +38,8 @@ externalPort = 80
 localPort = 5001
 externalPort = 3001
 exposeLocalhost = true
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_DB_URL = "postgresql://postgres:12052012MITAVI127IITBCSE24@db.uggllehytflseyixgwmw.supabase.co:5432/postgres"

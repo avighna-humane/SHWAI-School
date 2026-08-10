@@ -1,0 +1,520 @@
+Build the following real SHWAI workflows and connect the frontend, backend, database/state, and role-based permissions properly.
+
+IMPORTANT:
+Do not create fake/demo-only interactions. These features should actually work within the current application architecture.
+
+==================================================
+1. NOTICES / ANNOUNCEMENTS
+==================================================
+
+Add a "Notices" section to the Student Portal.
+
+Teachers and Principals should be able to create and publish notices.
+
+STUDENT:
+- Students can view notices relevant to them.
+- Show notice title, content, author, date/time, and attachments if available.
+- Clearly distinguish new/unread notices.
+- Students cannot create or edit notices.
+
+TEACHER:
+- Add "Create Notice" / "New Notice" button.
+- Teacher can enter:
+  - Notice title
+  - Notice description/content
+  - Target audience
+  - Optional attachment
+- Teacher should be able to publish the notice.
+- Teacher can see notices they have created.
+- Teacher can edit/delete their own notices if appropriate.
+
+PRINCIPAL:
+- Principal should have the same notice creation functionality.
+- Principal should be able to target:
+  - All students
+  - Specific classes/sections
+  - All teachers
+  - Specific teachers
+  - Parents
+  - Entire school
+- Principal notices should appear in the relevant portals.
+
+==================================================
+2. TEACHER HOMEWORK CREATION
+==================================================
+
+ONLY TEACHERS should have the ability to create and post homework.
+
+Add a "Homework" section to the Teacher Portal.
+
+Add a prominent:
+"+ Create Homework"
+
+button.
+
+The teacher should be able to create:
+
+- Homework title
+- Subject
+- Class
+- Section
+- Description/instructions
+- Due date
+- Optional marks
+- File attachment
+- Optional reference material
+
+The teacher should be able to publish the homework.
+
+After publishing:
+- The homework should immediately appear for the selected students.
+- Students should see the homework in their Student Portal.
+- Show:
+  - Title
+  - Subject
+  - Instructions
+  - Teacher
+  - Posted date
+  - Due date
+  - Attachment
+  - Submission status
+
+Possible statuses:
+
+- Not Started
+- In Progress
+- Submitted
+- Late
+- Reviewed
+
+==================================================
+3. STUDENT HOMEWORK SUBMISSION
+==================================================
+
+When a student opens a homework assignment, provide:
+
+"Submit Assignment"
+
+button.
+
+When clicked, open a submission interface.
+
+Allow students to submit:
+
+- Files
+- PDF
+- Images/photos
+- Documents where supported
+
+The student should be able to:
+- Select/upload a file
+- See the selected file before submission
+- Remove/replace the file
+- Add an optional comment
+- Submit the assignment
+
+After submission:
+- Change status to "Submitted"
+- Record submission date/time
+- Store the submitted file securely
+- Prevent accidental duplicate submissions unless the teacher allows resubmission
+- Show the student what they submitted
+
+If the deadline has passed:
+- Clearly mark the submission as late.
+- Preserve the exact submission timestamp.
+
+==================================================
+4. TEACHER STUDENT MANAGEMENT
+==================================================
+
+In the Teacher Portal, create/upgrade the "Students" section.
+
+This should be the central place where a teacher can see students belonging to their assigned classes/sections.
+
+Display students in a clean table/card interface with:
+
+- Student name
+- Class
+- Section
+- Homework status
+- Recent submission
+- Attendance summary
+- Academic/grade summary
+- Overall progress
+
+Clicking a student should open a detailed Student Profile.
+
+==================================================
+5. STUDENT PROFILE FOR TEACHERS
+==================================================
+
+The teacher's Student Profile should contain multiple sections/tabs:
+
+Overview
+- Student information
+- Academic overview
+- Recent activity
+- Current homework status
+
+Homework
+- All assigned homework
+- Submitted homework
+- Pending homework
+- Late homework
+- Submission history
+
+Submissions
+- Submitted files
+- Submission date/time
+- Assignment name
+- Submission status
+- Teacher review status
+
+Grades
+- Relevant grades/marks
+- Assessment history
+
+Attendance
+- Attendance information available to that teacher
+
+Progress
+- Academic progress
+- Subject performance
+- Relevant learning analytics
+
+Chat
+- Option to communicate with the student where permitted by the school's communication rules.
+
+==================================================
+6. SUBMITTED ASSIGNMENTS MUST APPEAR IN STUDENT PROFILE
+==================================================
+
+This is important.
+
+When Student A submits Homework X:
+
+Student A's teacher should be able to open:
+
+Students → Student A → Homework/Submissions
+
+and see the actual submitted assignment.
+
+Display:
+
+Assignment:
+[Homework title]
+
+Submitted by:
+[Student name]
+
+Submitted:
+[Date + time]
+
+Status:
+Submitted / Late
+
+Files:
+[Uploaded file(s)]
+
+Actions:
+- View
+- Download
+- Review
+- Grade
+- Add feedback
+- Chat
+
+Do NOT simply show "Submitted".
+
+The actual uploaded file must be associated with the correct student and assignment.
+
+==================================================
+7. TEACHER ↔ STUDENT CHAT
+==================================================
+
+Inside the Student Profile, add:
+
+"Chat"
+
+button.
+
+Allow the teacher and student to communicate through the SHWAI messaging system.
+
+The chat should be associated with the correct student/teacher relationship.
+
+Include:
+
+- Message history
+- Text messages
+- Timestamp
+- Read/unread status
+- Optional file attachment if supported by the existing messaging architecture
+
+Do not allow a teacher to access students who are not assigned to that teacher.
+
+==================================================
+8. PRINCIPAL → TEACHER NOTICES
+==================================================
+
+Add a dedicated "Teacher Notices" / "Staff Notices" area to the Teacher Portal.
+
+The Principal should be able to create notices specifically for teachers.
+
+Principal flow:
+
+Principal Portal
+→ Notices
+→ New Notice
+→ Audience: Teachers
+→ Write notice
+→ Publish
+
+Teacher flow:
+
+Teacher Portal
+→ Notices
+→ View Principal/School Notices
+
+Teachers should clearly be able to distinguish:
+
+- School-wide notices
+- Principal notices
+- Notices directed specifically to them
+
+==================================================
+9. ROLE-BASED PERMISSIONS
+==================================================
+
+Implement proper role-based access.
+
+STUDENT:
+- View notices
+- View assigned homework
+- Submit homework
+- View own submissions
+- Chat with permitted teachers
+- Cannot create homework
+- Cannot create school notices
+
+TEACHER:
+- Create homework
+- View assigned students
+- View student profiles
+- View student submissions
+- Review submissions
+- Grade/feedback where the existing gradebook supports it
+- Create teacher notices
+- Receive Principal notices
+- Chat with assigned students
+
+PRINCIPAL:
+- Create school notices
+- Create teacher/staff notices
+- View/manage teachers
+- View/manage students according to school permissions
+- View student submissions
+- Access school-wide information
+
+Do not expose unauthorized actions simply by hiding buttons. Enforce permissions in the backend as well.
+
+==================================================
+10. SIDEBAR CHANGES
+==================================================
+
+Update each portal's sidebar appropriately.
+
+STUDENT SIDEBAR:
+
+Dashboard
+Homework
+AI Homework Helper
+Practice
+Grades
+Attendance
+Timetable
+Notices
+Calendar
+Progress
+Chat
+Profile
+
+TEACHER SIDEBAR:
+
+Dashboard
+Students
+Homework
+Submissions
+Gradebook
+Quizzes
+Attendance
+Timetable
+Notices
+Teacher Notices
+Calendar
+Analytics
+Chat
+Profile
+
+PRINCIPAL SIDEBAR:
+
+Dashboard
+Students
+Teachers
+Classes & Sections
+Homework
+Submissions
+Gradebook
+Attendance
+Timetable
+Notices
+Teacher Notices
+Calendar
+Analytics
+Reports
+Connectors
+Settings
+
+Use the existing SHWAI navigation system and don't unnecessarily duplicate pages.
+
+==================================================
+11. DATABASE / DATA RELATIONSHIPS
+==================================================
+
+Create the necessary data relationships so the workflow is persistent.
+
+At minimum, homework should be associated with:
+
+- School
+- Teacher
+- Subject
+- Class
+- Section
+- Assignment
+- Due date
+
+Submissions should be associated with:
+
+- Assignment
+- Student
+- Uploaded file
+- Submission timestamp
+- Status
+- Optional comment
+- Review status
+
+Notices should be associated with:
+
+- School
+- Author
+- Author role
+- Target audience
+- Target class/section where applicable
+- Creation timestamp
+- Content
+- Attachments where applicable
+
+Chat messages should be associated with:
+
+- Sender
+- Receiver
+- School
+- Timestamp
+- Conversation
+
+Ensure school-level data isolation so one school's users cannot access another school's data.
+
+==================================================
+12. UI/UX
+==================================================
+
+Keep the SHWAI interface:
+
+- Light theme only
+- No dark mode
+- Clean
+- Modern
+- Professional
+- Highly visual
+- Responsive
+- Easy for students, teachers, and principals to understand
+
+Use clear status badges such as:
+
+Submitted
+Pending
+Late
+Reviewed
+Unread
+
+Use confirmation states after important actions.
+
+Example:
+
+"Homework submitted successfully."
+
+"Notice published successfully."
+
+"File uploaded successfully."
+
+==================================================
+13. IMPORTANT IMPLEMENTATION RULE
+==================================================
+
+Do not build this as disconnected mock pages.
+
+The complete workflow must work:
+
+TEACHER:
+Create Homework
+↓
+Publish
+↓
+Student receives homework
+
+STUDENT:
+Open Homework
+↓
+Read instructions
+↓
+Upload PDF/photo/file
+↓
+Submit
+↓
+Submission saved
+
+TEACHER:
+Students
+↓
+Open Student
+↓
+Homework/Submissions
+↓
+See submitted assignment
+↓
+Open submitted file
+↓
+Review/grade/feedback
+↓
+Chat with student if necessary
+
+PRINCIPAL:
+Create Teacher Notice
+↓
+Publish
+↓
+Teacher receives notice
+
+Also test the complete flow using at least:
+- 1 Principal
+- 1 Teacher
+- 2 Students
+- 1 Homework assignment
+- 1 submission
+- 1 Principal → Teacher notice
+
+Make sure the data shown in each role is actually connected to the actions performed by the other roles.
+
+Do not add fake statistics, fake users, fake school counts, or claims such as "trusted by 500+ schools."
+
+Overwrite any existing implementations. Supabase Database URL : postgresql://postgres:12052012MITAVI127IITBCSE24@db.uggllehytflseyixgwmw.supabase.co:5432/postgres

@@ -32,6 +32,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Academics",
     items: [
       { label: "Homework", path: "/app/homework", icon: "NotebookPen", roles: ALL, description: "Assignments, submissions, AI generation and tracking" },
+      { label: "Submissions", path: "/app/submissions", icon: "FileCheck", roles: STAFFISH, badge: "New", description: "Review, grade and give feedback on student homework submissions" },
       { label: "Gradebook", path: "/app/gradebook", icon: "ClipboardCheck", roles: STAFFISH, description: "Marks entry, rubric grading, AI feedback, report cards" },
       { label: "Exams", path: "/app/exams", icon: "FileSpreadsheet", roles: ALL, description: "Exam schedules, papers, evaluation and results" },
       { label: "Quizzes", path: "/app/quizzes", icon: "ListChecks", roles: ALL, description: "Quiz builder, question bank and AI quiz generation" },
@@ -115,6 +116,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Engagement",
     items: [
+      { label: "Notices", path: "/app/notices", icon: "Megaphone", roles: ALL, badge: "New", description: "School notices, alerts and announcements for all roles" },
+      { label: "Chat", path: "/app/chat", icon: "MessageCircle", roles: ["student", "teacher", "principal", "admin"] as Role[], badge: "New", description: "Direct messaging between teachers and students" },
       { label: "Communication", path: "/app/communication", icon: "Send", roles: ALL, description: "Messaging, SMS, WhatsApp-compatible and email" },
       { label: "Announcements", path: "/app/announcements", icon: "Megaphone", roles: ALL, description: "School and class announcements, emergency alerts" },
       { label: "Live classes", path: "/app/live-classes", icon: "Video", roles: ALL, description: "Live classes, recordings, whiteboard and polls" },
@@ -162,8 +165,8 @@ export function findNavItem(path: string): NavItem | undefined {
 
 /** Mobile bottom-bar destinations per role. */
 export const MOBILE_NAV: Record<Role, string[]> = {
-  student: ["/app", "/app/homework", "/app/ai/tutor", "/app/timetable", "/app/notifications"],
-  teacher: ["/app", "/app/attendance", "/app/gradebook", "/app/ai/teacher-assistant", "/app/notifications"],
+  student: ["/app", "/app/homework", "/app/notices", "/app/chat", "/app/notifications"],
+  teacher: ["/app", "/app/homework", "/app/submissions", "/app/chat", "/app/notifications"],
   parent: ["/app", "/app/portal/parent", "/app/fees", "/app/communication", "/app/notifications"],
   admin: ["/app", "/app/students", "/app/attendance", "/app/fees", "/app/notifications"],
   principal: ["/app", "/app/intelligence/school", "/app/interventions", "/app/teachers", "/app/notifications"],

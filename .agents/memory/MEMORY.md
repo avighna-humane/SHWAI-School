@@ -1,0 +1,2 @@
+- [TanStack Start import protection](tanstack-import-protection.md) — server functions must live in `src/actions/`, NOT `src/server/` (blocked by `**/server/**` pattern)
+- [DB server functions pattern](db-server-fn-pattern.md) — all DB imports must use `await import('@/lib/db')` inside each handler body, not top-level

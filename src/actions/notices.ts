@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { CLASS_SECTIONS } from '@/data/mock/core';
+import { TEACHERS } from '@/data/mock/people';
 
 export interface NoticeRow {
   id: string;
@@ -37,11 +38,16 @@ export function getAudienceOptions(role: string): { value: string; label: string
   }
 
   if (['principal', 'admin', 'owner'].includes(role)) {
+    const teacherOpts = TEACHERS.map(t => ({
+      value: `teacher-${t.id}`,
+      label: t.name,
+    }));
     return [
       { value: 'entire-school', label: 'Entire School' },
       { value: 'all-students',  label: 'All Students' },
       { value: 'all-teachers',  label: 'All Teachers' },
       { value: 'all-parents',   label: 'All Parents' },
+      ...teacherOpts,
       ...classOpts,
     ];
   }
@@ -54,7 +60,12 @@ function allowedAudienceValues(role: string): Set<string> {
   return new Set(getAudienceOptions(role).map(o => o.value));
 }
 
-function audienceMatchesRole(audience: string[], role: string, classId?: string): boolean {
+function audienceMatchesRole(
+  audience: string[],
+  role: string,
+  classId?: string,
+  userId?: string,
+): boolean {
   if (audience.includes('entire-school')) return true;
   if (role === 'student') {
     return audience.some(a =>
@@ -63,13 +74,14 @@ function audienceMatchesRole(audience: string[], role: string, classId?: string)
     );
   }
   if (role === 'teacher') {
-    // Teachers see school-wide teacher notices, plus class-specific notices for any class they may teach
-    return audience.some(a => a === 'all-teachers');
+    // Sees notices to all-teachers OR notices targeted at them specifically
+    return audience.some(a =>
+      a === 'all-teachers' ||
+      (userId && a === `teacher-${userId}`)
+    );
   }
   if (role === 'principal' || role === 'admin' || role === 'owner') return true;
-  if (role === 'parent') {
-    return audience.some(a => a === 'all-parents');
-  }
+  if (role === 'parent') return audience.some(a => a === 'all-parents');
   return false;
 }
 
@@ -91,10 +103,12 @@ export const listNotices = createServerFn({ method: 'POST' })
     if (role === 'teacher') {
       filtered = rows.filter(n =>
         n.author_id === data.userId ||
-        audienceMatchesRole(n.audience, data.role, data.classId)
+        audienceMatchesRole(n.audience, data.role, data.classId, data.userId)
       );
     } else {
-      filtered = rows.filter(n => audienceMatchesRole(n.audience, data.role, data.classId));
+      filtered = rows.filter(n =>
+        audienceMatchesRole(n.audience, data.role, data.classId, data.userId)
+      );
     }
     return filtered.map(n => ({ ...n, is_read: readSet.has(n.id) })) as NoticeWithRead[];
   });

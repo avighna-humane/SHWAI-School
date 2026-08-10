@@ -1,0 +1,37 @@
+Change the structure so that "Notices" and "Student Portal" are completely separate areas.
+
+NOTICES:
+- Notices is the SCHOOL-WIDE communication system.
+- It is not part of the Student Portal or its task-specific functionality.
+- Add a separate "Notices" option in the main school navigation.
+- Use Notices for school announcements, important updates, events, instructions, and other official communication.
+- Students can view notices relevant to them.
+- Principal/Admin can create and publish school-wide notices and target relevant groups such as all students, specific classes/sections, all teachers, or specific teachers.
+- Teachers can create general notices only where their existing permissions allow it.
+
+PRINCIPAL → TEACHER NOTICES:
+- Only the Principal/Admin can create and publish notices specifically for teachers.
+- In the Principal Portal, provide an option to create a Teacher Notice.
+- The Principal can target all teachers or specific teachers.
+- In the Teacher Portal, teachers can VIEW and read these Principal → Teacher notices.
+- Teachers MUST NOT have a "Create Teacher Notice", "New Teacher Notice", or equivalent option.
+- Teachers cannot create, edit, or publish Principal → Teacher notices.
+- Enforce this restriction in both the UI and backend/database/RLS, not just by hiding the button.
+
+STUDENT PORTAL:
+- The Student Portal is a separate area specifically for student tasks and academic workflows.
+- It should contain student-specific functionality such as homework, submissions, grades, attendance, progress, timetable, etc.
+- Do NOT put the general school-wide Notices system inside the Student Portal.
+- Students should access Notices through the separate main "Notices" section.
+
+IMPORTANT:
+- Do not create duplicate notice systems.
+- Reuse the existing notice database, routes, components, APIs, and permissions wherever possible.
+- Preserve the existing design and navigation.
+- Only change the organization and permissions required above.
+- Do not modify unrelated functionality.
+
+Final permission model:
+Student → View relevant notices only.
+Teacher → View school notices and Principal → Teacher notices; cannot create Principal → Teacher notices.
+Principal/Admin → Create and manage school notices and Principal → Teacher notices.

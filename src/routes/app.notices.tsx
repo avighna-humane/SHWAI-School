@@ -148,11 +148,12 @@ function NoticesPage() {
 
   const unreadCount = notices.filter(n => !n.is_read).length;
 
-  // ── Audience option groups for principal ─────────────────────────────────
+  // ── Audience option groups ────────────────────────────────────────────────
   const schoolWideOpts = audienceOpts.filter(o =>
     ['entire-school', 'all-students', 'all-teachers', 'all-parents'].includes(o.value)
   );
-  const classOpts = audienceOpts.filter(o => o.value.startsWith('class-'));
+  const specificTeacherOpts = audienceOpts.filter(o => o.value.startsWith('teacher-'));
+  const classOpts           = audienceOpts.filter(o => o.value.startsWith('class-'));
 
   // ── Shared form body ─────────────────────────────────────────────────────
   function NoticeFormBody({ fileInputRef }: { fileInputRef: React.RefObject<HTMLInputElement | null> }) {
@@ -196,11 +197,31 @@ function NoticesPage() {
               </div>
             )}
 
+            {/* Specific teachers (principal/admin only) */}
+            {specificTeacherOpts.length > 0 && (
+              <>
+                <p className="text-xs text-muted-foreground pt-1">Specific teacher</p>
+                <ScrollArea className="h-28 rounded-lg border p-2">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {specificTeacherOpts.map(opt => (
+                      <button key={opt.value} type="button" onClick={() => toggleAudience(opt.value)}
+                        className={`rounded-md border px-2 py-1.5 text-left text-xs transition-colors
+                          ${form.audience.includes(opt.value)
+                            ? 'border-primary bg-primary/10 text-primary font-medium'
+                            : 'hover:bg-muted/50'}`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+
             {/* Class sections */}
             {classOpts.length > 0 && (
               <>
                 <p className="text-xs text-muted-foreground pt-1">Specific class / section</p>
-                <ScrollArea className="h-40 rounded-lg border p-2">
+                <ScrollArea className="h-36 rounded-lg border p-2">
                   <div className="grid grid-cols-3 gap-1.5">
                     {classOpts.map(opt => (
                       <button key={opt.value} type="button" onClick={() => toggleAudience(opt.value)}

@@ -120,7 +120,7 @@ export const createNotice = createServerFn({ method: 'POST' })
     attachmentName: string; attachmentData: string; role: string;
   }) => d)
   .handler(async ({ data }) => {
-    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+    if (!['principal', 'admin', 'owner'].includes(data.role))
       throw new Error('Permission denied');
 
     // Validate audience values against what this role is allowed to use
@@ -148,7 +148,7 @@ export const editNotice = createServerFn({ method: 'POST' })
     attachmentName: string; attachmentData: string;
   }) => d)
   .handler(async ({ data }) => {
-    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+    if (!['principal', 'admin', 'owner'].includes(data.role))
       throw new Error('Permission denied');
 
     const allowed = allowedAudienceValues(data.role);
@@ -157,20 +157,11 @@ export const editNotice = createServerFn({ method: 'POST' })
       throw new Error(`Not permitted to target: ${invalid.join(', ')}`);
 
     const { sql } = await import('@/lib/db');
-    if (data.role === 'teacher') {
-      // Teachers can only edit their own notices
-      await sql`
-        UPDATE hw_notices
-        SET title=${data.title}, content=${data.content}, audience=${data.audience},
-            attachment_name=${data.attachmentName}, attachment_data=${data.attachmentData}
-        WHERE id=${data.id} AND author_id=${data.authorId}`;
-    } else {
-      await sql`
-        UPDATE hw_notices
-        SET title=${data.title}, content=${data.content}, audience=${data.audience},
-            attachment_name=${data.attachmentName}, attachment_data=${data.attachmentData}
-        WHERE id=${data.id}`;
-    }
+    await sql`
+      UPDATE hw_notices
+      SET title=${data.title}, content=${data.content}, audience=${data.audience},
+          attachment_name=${data.attachmentName}, attachment_data=${data.attachmentData}
+      WHERE id=${data.id}`;
     return { ok: true };
   });
 
@@ -188,13 +179,9 @@ export const markNoticeRead = createServerFn({ method: 'POST' })
 export const deleteNotice = createServerFn({ method: 'POST' })
   .validator((d: { id: string; authorId: string; role: string }) => d)
   .handler(async ({ data }) => {
-    if (!['teacher', 'principal', 'admin', 'owner'].includes(data.role))
+    if (!['principal', 'admin', 'owner'].includes(data.role))
       throw new Error('Permission denied');
     const { sql } = await import('@/lib/db');
-    if (data.role === 'teacher') {
-      await sql`DELETE FROM hw_notices WHERE id=${data.id} AND author_id=${data.authorId}`;
-    } else {
-      await sql`DELETE FROM hw_notices WHERE id=${data.id}`;
-    }
+    await sql`DELETE FROM hw_notices WHERE id=${data.id}`;
     return { ok: true };
   });

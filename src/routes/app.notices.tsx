@@ -25,7 +25,9 @@ function fmtDate(d: string) {
   });
 }
 
-const CAN_CREATE = ['teacher', 'principal', 'admin', 'owner'];
+// Only school leadership can publish from this shared school-wide Notices area.
+// Teachers can read their relevant notices, including principal-to-teacher notices.
+const CAN_CREATE = ['principal', 'admin', 'owner'];
 
 type FormState = {
   title: string;
@@ -141,10 +143,8 @@ function NoticesPage() {
     setEditOpen(true);
   }
 
-  const canEdit = selected &&
-    (selected.author_id === userId || ['principal', 'admin', 'owner'].includes(role));
-  const canDelete = selected &&
-    (selected.author_id === userId || ['principal', 'admin', 'owner'].includes(role));
+  const canEdit = selected && ['principal', 'admin', 'owner'].includes(role);
+  const canDelete = selected && ['principal', 'admin', 'owner'].includes(role);
 
   const unreadCount = notices.filter(n => !n.is_read).length;
 
@@ -299,7 +299,7 @@ function NoticesPage() {
             )}
             {canCreate && (
               <Button size="sm" onClick={openCreate}>
-                <Icons.Plus className="mr-1.5 size-3.5" />New Notice
+                <Icons.Plus className="mr-1.5 size-3.5" />Create Notice
               </Button>
             )}
           </div>

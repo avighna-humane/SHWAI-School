@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import * as Icons from 'lucide-react';
@@ -27,7 +28,7 @@ function fmtDate(d: string) {
 
 // Only school leadership can publish from this shared school-wide Notices area.
 // Teachers can read their relevant notices, including principal-to-teacher notices.
-const CAN_CREATE = ['principal', 'admin', 'owner'];
+const CAN_CREATE = ['teacher', 'principal', 'admin', 'owner'];
 
 type FormState = {
   title: string;
@@ -445,14 +446,50 @@ function NoticesPage() {
 
       {/* ── Create Notice Dialog ── */}
       <Dialog open={createOpen} onOpenChange={v => { setCreateOpen(v); if (!v) setForm(EMPTY_FORM); }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Icons.Megaphone className="size-5" />
-              New Notice
+              Create Notice
             </DialogTitle>
           </DialogHeader>
-          <NoticeFormBody fileInputRef={fileRef} />
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="notice-title">Notice Title <span className="text-destructive">*</span></Label>
+              <Input
+                id="notice-title"
+                placeholder="e.g. Parent-Teacher Meeting on Friday"
+                value={form.title}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="notice-desc">Notice Description <span className="text-destructive">*</span></Label>
+              <Textarea
+                id="notice-desc"
+                rows={4}
+                placeholder="Write the notice details here…"
+                value={form.content}
+                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="notice-class">Class / Section <span className="text-destructive">*</span></Label>
+              <Select
+                value={form.audience[0] ?? ''}
+                onValueChange={val => setForm(f => ({ ...f, audience: [val] }))}
+              >
+                <SelectTrigger id="notice-class">
+                  <SelectValue placeholder="Select a class or section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classOpts.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button
@@ -460,7 +497,7 @@ function NoticesPage() {
               disabled={!form.title || !form.content || form.audience.length === 0 || createMut.isPending}
             >
               {createMut.isPending && <Icons.Loader2 className="mr-2 size-4 animate-spin" />}
-              Post Notice
+              Publish Notice
             </Button>
           </DialogFooter>
         </DialogContent>

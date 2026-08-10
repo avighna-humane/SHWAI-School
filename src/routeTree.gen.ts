@@ -14,20 +14,9 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
-import { Route as AppAnnouncementsRouteImport } from './routes/app.announcements'
-import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
-import { Route as AppCalendarRouteImport } from './routes/app.calendar'
-import { Route as AppDocumentsRouteImport } from './routes/app.documents'
-import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
-import { Route as AppHomeworkHomeworkIdRouteImport } from './routes/app.homework.$homeworkId'
-import { Route as AppPortalParentRouteImport } from './routes/app.portal.parent'
-import { Route as AppPortalPrincipalRouteImport } from './routes/app.portal.principal'
-import { Route as AppPortalStaffRouteImport } from './routes/app.portal.staff'
-import { Route as AppPortalStudentRouteImport } from './routes/app.portal.student'
-import { Route as AppPortalTeacherRouteImport } from './routes/app.portal.teacher'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,31 +43,6 @@ const AppSplatRoute = AppSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAttendanceRoute = AppAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCalendarRoute = AppCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDocumentsRoute = AppDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppHomeworkRoute = AppHomeworkRouteImport.update({
-  id: '/homework',
-  path: '/homework',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -94,77 +58,25 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   path: '/subscription',
   getParentRoute: () => AppRoute,
 } as any)
-const AppHomeworkHomeworkIdRoute = AppHomeworkHomeworkIdRouteImport.update({
-  id: '/$homeworkId',
-  path: '/$homeworkId',
-  getParentRoute: () => AppHomeworkRoute,
-} as any)
-const AppPortalParentRoute = AppPortalParentRouteImport.update({
-  id: '/portal/parent',
-  path: '/portal/parent',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPortalPrincipalRoute = AppPortalPrincipalRouteImport.update({
-  id: '/portal/principal',
-  path: '/portal/principal',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPortalStaffRoute = AppPortalStaffRouteImport.update({
-  id: '/portal/staff',
-  path: '/portal/staff',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPortalStudentRoute = AppPortalStudentRouteImport.update({
-  id: '/portal/student',
-  path: '/portal/student',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPortalTeacherRoute = AppPortalTeacherRouteImport.update({
-  id: '/portal/teacher',
-  path: '/portal/teacher',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
-  '/app/announcements': typeof AppAnnouncementsRoute
-  '/app/attendance': typeof AppAttendanceRoute
-  '/app/calendar': typeof AppCalendarRoute
-  '/app/documents': typeof AppDocumentsRoute
-  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
-  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
-  '/app/portal/parent': typeof AppPortalParentRoute
-  '/app/portal/principal': typeof AppPortalPrincipalRoute
-  '/app/portal/staff': typeof AppPortalStaffRoute
-  '/app/portal/student': typeof AppPortalStudentRoute
-  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
-  '/app/announcements': typeof AppAnnouncementsRoute
-  '/app/attendance': typeof AppAttendanceRoute
-  '/app/calendar': typeof AppCalendarRoute
-  '/app/documents': typeof AppDocumentsRoute
-  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
-  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
-  '/app/portal/parent': typeof AppPortalParentRoute
-  '/app/portal/principal': typeof AppPortalPrincipalRoute
-  '/app/portal/staff': typeof AppPortalStaffRoute
-  '/app/portal/student': typeof AppPortalStudentRoute
-  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,21 +84,10 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
-  '/app/announcements': typeof AppAnnouncementsRoute
-  '/app/attendance': typeof AppAttendanceRoute
-  '/app/calendar': typeof AppCalendarRoute
-  '/app/documents': typeof AppDocumentsRoute
-  '/app/homework': typeof AppHomeworkRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
-  '/app/homework/$homeworkId': typeof AppHomeworkHomeworkIdRoute
-  '/app/portal/parent': typeof AppPortalParentRoute
-  '/app/portal/principal': typeof AppPortalPrincipalRoute
-  '/app/portal/staff': typeof AppPortalStaffRoute
-  '/app/portal/student': typeof AppPortalStudentRoute
-  '/app/portal/teacher': typeof AppPortalTeacherRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,62 +96,29 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
-    | '/app/announcements'
-    | '/app/attendance'
-    | '/app/calendar'
-    | '/app/documents'
-    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
-    | '/app/homework/$homeworkId'
-    | '/app/portal/parent'
-    | '/app/portal/principal'
-    | '/app/portal/staff'
-    | '/app/portal/student'
-    | '/app/portal/teacher'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/pricing'
     | '/app/$'
-    | '/app/announcements'
-    | '/app/attendance'
-    | '/app/calendar'
-    | '/app/documents'
-    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app'
-    | '/app/homework/$homeworkId'
-    | '/app/portal/parent'
-    | '/app/portal/principal'
-    | '/app/portal/staff'
-    | '/app/portal/student'
-    | '/app/portal/teacher'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/pricing'
     | '/app/$'
-    | '/app/announcements'
-    | '/app/attendance'
-    | '/app/calendar'
-    | '/app/documents'
-    | '/app/homework'
     | '/app/notifications'
     | '/app/settings'
     | '/app/subscription'
     | '/app/'
-    | '/app/homework/$homeworkId'
-    | '/app/portal/parent'
-    | '/app/portal/principal'
-    | '/app/portal/staff'
-    | '/app/portal/student'
-    | '/app/portal/teacher'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -296,41 +164,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSplatRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/announcements': {
-      id: '/app/announcements'
-      path: '/announcements'
-      fullPath: '/app/announcements'
-      preLoaderRoute: typeof AppAnnouncementsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/attendance': {
-      id: '/app/attendance'
-      path: '/attendance'
-      fullPath: '/app/attendance'
-      preLoaderRoute: typeof AppAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/calendar': {
-      id: '/app/calendar'
-      path: '/calendar'
-      fullPath: '/app/calendar'
-      preLoaderRoute: typeof AppCalendarRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/documents': {
-      id: '/app/documents'
-      path: '/documents'
-      fullPath: '/app/documents'
-      preLoaderRoute: typeof AppDocumentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/homework': {
-      id: '/app/homework'
-      path: '/homework'
-      fullPath: '/app/homework'
-      preLoaderRoute: typeof AppHomeworkRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
@@ -352,97 +185,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/homework/$homeworkId': {
-      id: '/app/homework/$homeworkId'
-      path: '/$homeworkId'
-      fullPath: '/app/homework/$homeworkId'
-      preLoaderRoute: typeof AppHomeworkHomeworkIdRouteImport
-      parentRoute: typeof AppHomeworkRoute
-    }
-    '/app/portal/parent': {
-      id: '/app/portal/parent'
-      path: '/portal/parent'
-      fullPath: '/app/portal/parent'
-      preLoaderRoute: typeof AppPortalParentRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/portal/principal': {
-      id: '/app/portal/principal'
-      path: '/portal/principal'
-      fullPath: '/app/portal/principal'
-      preLoaderRoute: typeof AppPortalPrincipalRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/portal/staff': {
-      id: '/app/portal/staff'
-      path: '/portal/staff'
-      fullPath: '/app/portal/staff'
-      preLoaderRoute: typeof AppPortalStaffRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/portal/student': {
-      id: '/app/portal/student'
-      path: '/portal/student'
-      fullPath: '/app/portal/student'
-      preLoaderRoute: typeof AppPortalStudentRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/portal/teacher': {
-      id: '/app/portal/teacher'
-      path: '/portal/teacher'
-      fullPath: '/app/portal/teacher'
-      preLoaderRoute: typeof AppPortalTeacherRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
-interface AppHomeworkRouteChildren {
-  AppHomeworkHomeworkIdRoute: typeof AppHomeworkHomeworkIdRoute
-}
-
-const AppHomeworkRouteChildren: AppHomeworkRouteChildren = {
-  AppHomeworkHomeworkIdRoute: AppHomeworkHomeworkIdRoute,
-}
-
-const AppHomeworkRouteWithChildren = AppHomeworkRoute._addFileChildren(
-  AppHomeworkRouteChildren,
-)
-
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
-  AppAnnouncementsRoute: typeof AppAnnouncementsRoute
-  AppAttendanceRoute: typeof AppAttendanceRoute
-  AppCalendarRoute: typeof AppCalendarRoute
-  AppDocumentsRoute: typeof AppDocumentsRoute
-  AppHomeworkRoute: typeof AppHomeworkRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppPortalParentRoute: typeof AppPortalParentRoute
-  AppPortalPrincipalRoute: typeof AppPortalPrincipalRoute
-  AppPortalStaffRoute: typeof AppPortalStaffRoute
-  AppPortalStudentRoute: typeof AppPortalStudentRoute
-  AppPortalTeacherRoute: typeof AppPortalTeacherRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
-  AppAnnouncementsRoute: AppAnnouncementsRoute,
-  AppAttendanceRoute: AppAttendanceRoute,
-  AppCalendarRoute: AppCalendarRoute,
-  AppDocumentsRoute: AppDocumentsRoute,
-  AppHomeworkRoute: AppHomeworkRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,
-  AppPortalParentRoute: AppPortalParentRoute,
-  AppPortalPrincipalRoute: AppPortalPrincipalRoute,
-  AppPortalStaffRoute: AppPortalStaffRoute,
-  AppPortalStudentRoute: AppPortalStudentRoute,
-  AppPortalTeacherRoute: AppPortalTeacherRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -3,7 +3,6 @@ import { Link, Outlet, createFileRoute, useRouterState } from "@tanstack/react-r
 import * as Icons from "lucide-react";
 import { AppStateProvider, useAppState } from "@/app/providers/app-state";
 import { MOBILE_NAV, NAV_GROUPS, findNavItem, navForRole } from "@/config/navigation";
-import { signIn, signUp, requestPasswordReset } from "@/rpc/auth";
 import { ROLE_LABEL } from "@/config/roles";
 import { planAllows } from "@/config/plans";
 import { ACADEMIC_YEARS } from "@/data/mock/core";
@@ -13,7 +12,6 @@ import { LANGUAGES } from "@/data/mock/core";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -107,15 +105,8 @@ function Shell() {
                               className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[status=active]:bg-primary-soft data-[status=active]:font-semibold data-[status=active]:text-primary"
                             >
                               <Icon name={item.icon} className="size-[18px] shrink-0" />
-                              {!collapsed && (
-                                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                              )}
-                              {!collapsed && locked && (
-                                <Icons.Lock
-                                  className="size-3.5 shrink-0 text-muted-foreground"
-                                  aria-label="Locked in your plan"
-                                />
-                              )}
+                              {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+                              {!collapsed && locked && <Icons.Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="Locked in your plan" />}
                               {!collapsed && !locked && item.badge && (
                                 <span className="shrink-0 rounded bg-ai-soft px-1.5 py-0.5 text-[10px] font-semibold text-ai">
                                   {item.badge}
@@ -137,17 +128,8 @@ function Shell() {
           </nav>
         </ScrollArea>
         <div className="border-t border-sidebar-border p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start"
-            onClick={() => setCollapsed((c) => !c)}
-          >
-            {collapsed ? (
-              <Icons.PanelLeftOpen className="size-4" aria-hidden />
-            ) : (
-              <Icons.PanelLeftClose className="size-4" aria-hidden />
-            )}
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setCollapsed((c) => !c)}>
+            {collapsed ? <Icons.PanelLeftOpen className="size-4" aria-hidden /> : <Icons.PanelLeftClose className="size-4" aria-hidden />}
             {!collapsed && <span>Collapse</span>}
           </Button>
         </div>
@@ -160,12 +142,7 @@ function Shell() {
             <div className="flex min-w-0 items-center gap-2">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="lg:hidden"
-                    aria-label="Open navigation"
-                  >
+                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
                     <Icons.Menu className="size-5" aria-hidden />
                   </Button>
                 </SheetTrigger>
@@ -176,15 +153,9 @@ function Shell() {
                   <ScrollArea className="h-[calc(100vh-64px)] px-2 py-3">
                     {groups.map((g) => (
                       <div key={g.label} className="mb-3">
-                        <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          {g.label}
-                        </p>
+                        <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{g.label}</p>
                         {g.items.map((i) => (
-                          <Link
-                            key={i.path}
-                            to={i.path}
-                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent data-[status=active]:bg-primary-soft data-[status=active]:text-primary"
-                          >
+                          <Link key={i.path} to={i.path} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent data-[status=active]:bg-primary-soft data-[status=active]:text-primary">
                             <Icon name={i.icon} className="size-4" />
                             {i.label}
                           </Link>
@@ -202,9 +173,7 @@ function Shell() {
               >
                 <Icons.Search className="size-4 shrink-0" aria-hidden />
                 <span className="truncate">Search students, classes, modules…</span>
-                <kbd className="ml-auto hidden shrink-0 rounded border border-border px-1.5 text-[10px] sm:block">
-                  ⌘K
-                </kbd>
+                <kbd className="ml-auto hidden shrink-0 rounded border border-border px-1.5 text-[10px] sm:block">⌘K</kbd>
               </button>
             </div>
 
@@ -213,12 +182,7 @@ function Shell() {
               <NotificationsMenu />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShortcutsOpen(true)}
-                    aria-label="Help and keyboard shortcuts"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => setShortcutsOpen(true)} aria-label="Help and keyboard shortcuts">
                     <Icons.CircleQuestionMark className="size-5" aria-hidden />
                   </Button>
                 </TooltipTrigger>
@@ -229,10 +193,7 @@ function Shell() {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border px-4 py-2 text-xs lg:px-6">
-            <nav
-              aria-label="Breadcrumb"
-              className="flex min-w-0 items-center gap-1.5 text-muted-foreground"
-            >
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
               <Link to="/app" className="hover:text-foreground">
                 Home
               </Link>
@@ -245,12 +206,7 @@ function Shell() {
             </nav>
             <span className="ml-auto flex items-center gap-3">
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <span
-                  className={cn(
-                    "size-2 rounded-full",
-                    SYSTEM_STATUS.state === "operational" ? "bg-success" : "bg-warning",
-                  )}
-                />
+                <span className={cn("size-2 rounded-full", SYSTEM_STATUS.state === "operational" ? "bg-success" : "bg-warning")} />
                 {SYSTEM_STATUS.message}
               </span>
               <span className="hidden items-center gap-1.5 text-muted-foreground sm:flex">
@@ -261,11 +217,7 @@ function Shell() {
                   checked={state.offline}
                   onCheckedChange={(v) => {
                     state.setOffline(v);
-                    toast[v ? "warning" : "success"](
-                      v
-                        ? "Offline mode on — changes will queue for sync"
-                        : "Back online — queued changes synced",
-                    );
+                    toast[v ? "warning" : "success"](v ? "Offline mode on — changes will queue for sync" : "Back online — queued changes synced");
                   }}
                   aria-label="Toggle offline mode"
                 />
@@ -276,14 +228,23 @@ function Shell() {
         </header>
 
         <main className="min-w-0 flex-1 px-4 pb-24 pt-5 lg:px-6 lg:pb-8">
+          {/* Sandbox Mock Data Alert Banner */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning-soft bg-warning-soft/30 px-4 py-2.5 text-xs text-[#854d0e] shadow-sm">
+            <div className="flex items-center gap-2">
+              <Icons.Info className="size-4 shrink-0 text-amber-600" />
+              <p className="leading-relaxed">
+                <strong className="font-semibold">Demo Sandbox:</strong> This workspace renders illustrative preview mock data. No real student databases, fee reconciliation pipelines, or live school systems are connected.
+              </p>
+            </div>
+            <span className="rounded bg-warning-soft border border-warning/30 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 shrink-0">
+              Illustrative Preview
+            </span>
+          </div>
           <Outlet />
         </main>
 
         {/* Mobile bottom nav */}
-        <nav
-          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card lg:hidden"
-          aria-label="Primary"
-        >
+        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card lg:hidden" aria-label="Primary">
           {mobileItems.map((i) => (
             <Link
               key={i!.path}
@@ -313,17 +274,15 @@ function Shell() {
               ["?", "Open this dialog"],
               ["Esc", "Close dialogs and drawers"],
             ].map(([k, v]) => (
-              <li
-                key={k}
-                className="flex items-center justify-between gap-4 rounded-lg bg-muted px-3 py-2"
-              >
+              <li key={k} className="flex items-center justify-between gap-4 rounded-lg bg-muted px-3 py-2">
                 <span className="text-muted-foreground">{v}</span>
-                <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-xs font-medium">
-                  {k}
-                </kbd>
+                <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-xs font-medium">{k}</kbd>
               </li>
             ))}
           </ul>
+          <p className="text-xs text-muted-foreground">
+            This is a frontend demo — all data is mock data and no changes leave your browser.
+          </p>
         </DialogContent>
       </Dialog>
     </div>
@@ -348,14 +307,10 @@ function SchoolYearSelectors() {
           <DropdownMenuLabel>Current school</DropdownMenuLabel>
           {SCHOOLS.map((s) => (
             <DropdownMenuItem key={s.id} onClick={() => setSchoolId(s.id)} className="gap-2">
-              <span className="grid size-6 place-items-center rounded bg-muted text-[10px] font-bold">
-                {s.logoInitials}
-              </span>
+              <span className="grid size-6 place-items-center rounded bg-muted text-[10px] font-bold">{s.logoInitials}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">{s.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {s.board} · {s.city}
-                </span>
+              <span className="block truncate text-xs text-muted-foreground">{s.board} · {s.city}</span>
               </span>
             </DropdownMenuItem>
           ))}
@@ -381,9 +336,7 @@ function SchoolYearSelectors() {
           {ACADEMIC_YEARS.map((y) => (
             <DropdownMenuItem key={y.id} onClick={() => setYearId(y.id)}>
               {y.label}
-              <Badge variant="secondary" className="ml-auto text-[10px] capitalize">
-                {y.status}
-              </Badge>
+              <Badge variant="secondary" className="ml-auto text-[10px] capitalize">{y.status}</Badge>
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
@@ -406,12 +359,7 @@ function NotificationsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          aria-label={`Notifications, ${unreadCount} unread`}
-        >
+        <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications, ${unreadCount} unread`}>
           <Icons.Bell className="size-5" aria-hidden />
           {unreadCount > 0 && (
             <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-danger-foreground">
@@ -438,23 +386,13 @@ function NotificationsMenu() {
               <span
                 className={cn(
                   "mt-1 size-2 shrink-0 rounded-full",
-                  n.severity === "critical"
-                    ? "bg-danger"
-                    : n.severity === "warning"
-                      ? "bg-warning"
-                      : n.severity === "success"
-                        ? "bg-success"
-                        : "bg-primary",
+                  n.severity === "critical" ? "bg-danger" : n.severity === "warning" ? "bg-warning" : n.severity === "success" ? "bg-success" : "bg-primary",
                   isRead(n.id) && "opacity-25",
                 )}
               />
               <span className="min-w-0">
-                <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>
-                  {n.title}
-                </span>
-                <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
-                  {n.body}
-                </span>
+                <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>{n.title}</span>
+                <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">{n.body}</span>
                 <span className="mt-1 block text-[11px] text-muted-foreground">{n.createdAt}</span>
               </span>
             </button>
@@ -472,245 +410,47 @@ function NotificationsMenu() {
 }
 
 function ProfileMenu() {
-  const { role, actor, session, setSession } = useAppState();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authTab, setAuthTab] = useState<"login" | "signup" | "reset">("login");
-  const [loading, setLoading] = useState(false);
-
-  // Form states
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
-  const [signupRole, setSignupRole] = useState<Role>("student");
-  const [schoolId, setSchoolId] = useState("sch-1");
-
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setLoading(true);
-    try {
-      if (authTab === "login") {
-        const userSess = await signIn({
-          data: { email, password, mockRole: role, mockSchoolId: "sch-1" },
-        });
-        setSession(userSess);
-        toast.success(`Successfully signed in as ${userSess.fullName}`);
-        setAuthOpen(false);
-      } else if (authTab === "signup") {
-        if (!fullName) throw new Error("Full name is required.");
-        const userSess = await signUp({ data: { email, fullName, role: signupRole, schoolId } });
-        setSession(userSess);
-        toast.success(`Account registered! Signed in as ${userSess.fullName}`);
-        setAuthOpen(false);
-      } else {
-        const res = await requestPasswordReset({ data: { email } });
-        toast.success(res.message);
-        setAuthTab("login");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Authentication error occurred.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const { role } = useAppState();
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-9 gap-2 px-1.5" aria-label="Account and role menu">
-            <span className="grid size-7 place-items-center rounded-full bg-primary-soft text-primary">
-              <Icons.UserRound className="size-4" aria-hidden />
-            </span>
-            <span className="hidden text-left sm:block">
-              <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">
-                {actor.name}
-              </span>
-              <span className="block text-[10px] leading-tight text-muted-foreground">
-                {session ? "Authenticated" : ROLE_LABEL[role]}
-              </span>
-            </span>
-            <Icons.ChevronDown className="size-3.5" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
-          {session ? (
-            <>
-              <DropdownMenuLabel>
-                <p className="text-sm">{session.fullName}</p>
-                <p className="text-xs font-normal text-muted-foreground">{session.email}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>
-                <p className="text-xs font-normal text-muted-foreground">Role</p>
-                <p className="text-sm font-medium capitalize">{ROLE_LABEL[session.role]}</p>
-              </DropdownMenuLabel>
-            </>
-          ) : (
-            <>
-              <DropdownMenuLabel>
-                <p className="text-sm">{actor.name}</p>
-                <p className="text-xs font-normal text-muted-foreground">Sandbox Demo Account</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setAuthTab("login");
-                  setAuthOpen(true);
-                }}
-              >
-                <Icons.LogIn className="size-4 mr-2" /> Connect Real Account
-              </DropdownMenuItem>
-            </>
-          )}
-          <DropdownMenuSeparator />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-9 gap-2 px-1.5" aria-label="Account and role menu">
+          <span className="grid size-7 place-items-center rounded-full bg-primary-soft text-primary">
+            <Icons.UserRound className="size-4" aria-hidden />
+          </span>
+          <span className="hidden text-left sm:block">
+            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">Account</span>
+            <span className="block text-[10px] leading-tight text-muted-foreground">{ROLE_LABEL[role]}</span>
+          </span>
+          <Icons.ChevronDown className="size-3.5" aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuLabel>
+          <p className="text-sm">Account</p>
+          <p className="text-xs font-normal text-muted-foreground">Authenticated workspace access</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>
+          <p className="text-xs font-normal text-muted-foreground">Current role</p>
+          <p className="text-sm font-medium">{ROLE_LABEL[role]}</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/app/settings">Settings</Link>
+        </DropdownMenuItem>
+        {role === "owner" ? (
           <DropdownMenuItem asChild>
-            <Link to="/app/settings">Settings</Link>
+            <Link to="/app/subscription">Subscription</Link>
           </DropdownMenuItem>
-          {role === "owner" ? (
-            <DropdownMenuItem asChild>
-              <Link to="/app/subscription">Subscription</Link>
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setSession(null);
-              localStorage.removeItem("shwai.demo.state");
-              toast.info("Signed out successfully.");
-            }}
-          >
-            <Icons.LogOut className="size-4 mr-2" /> Sign Out / Log Out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Auth Dialog */}
-      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-extrabold tracking-tight">
-              {authTab === "login"
-                ? "Sign In"
-                : authTab === "signup"
-                  ? "Create Account"
-                  : "Reset Password"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleAuthSubmit} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="auth-email">Email Address</Label>
-              <Input
-                id="auth-email"
-                type="email"
-                placeholder="e.g. name@school.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            {authTab === "signup" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="auth-name">Full Name</Label>
-                <Input
-                  id="auth-name"
-                  placeholder="e.g. Vikram Nair"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            {authTab !== "reset" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="auth-password">Password</Label>
-                <Input
-                  id="auth-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            )}
-
-            {authTab === "signup" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="auth-role">Role</Label>
-                  <select
-                    id="auth-role"
-                    value={signupRole}
-                    onChange={(e) => setSignupRole(e.target.value as Role)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
-                  >
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                    <option value="principal">Principal</option>
-                    <option value="parent">Parent</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="auth-school">School</Label>
-                  <select
-                    id="auth-school"
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
-                  >
-                    <option value="sch-1">Sunrise Public School</option>
-                    <option value="sch-2">Vidya Niketan School</option>
-                    <option value="sch-3">Gyan Deep Academy</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full h-10 font-bold" disabled={loading}>
-              {loading && <Icons.Loader2 className="size-4 animate-spin mr-1" />}
-              {authTab === "login"
-                ? "Sign In"
-                : authTab === "signup"
-                  ? "Sign Up"
-                  : "Send reset link"}
-            </Button>
-
-            <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
-              {authTab === "login" ? (
-                <>
-                  <button
-                    type="button"
-                    className="hover:underline"
-                    onClick={() => setAuthTab("signup")}
-                  >
-                    Create account
-                  </button>
-                  <button
-                    type="button"
-                    className="hover:underline"
-                    onClick={() => setAuthTab("reset")}
-                  >
-                    Forgot password?
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="hover:underline w-full text-center"
-                  onClick={() => setAuthTab("login")}
-                >
-                  Already have an account? Sign In
-                </button>
-              )}
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+        ) : null}
+        <DropdownMenuItem asChild>
+          <Link to="/" onClick={() => localStorage.removeItem("shwai.demo.state")}>
+            Log out
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -732,22 +472,14 @@ function CommandPalette({
           <DialogTitle>Global search and command palette</DialogTitle>
         </DialogHeader>
         <Command>
-          <CommandInput
-            placeholder="Search modules, students, actions…"
-            value={query}
-            onValueChange={setQuery}
-          />
+          <CommandInput placeholder="Search modules, students, actions…" value={query} onValueChange={setQuery} />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             {groups.map((g) => (
               <CommandGroup key={g.label} heading={g.label}>
                 {g.items.map((i) => (
                   <CommandItem key={i.path} value={`${i.label} ${i.description}`} asChild>
-                    <Link
-                      to={i.path}
-                      onClick={() => onOpenChange(false)}
-                      className="flex items-center gap-2"
-                    >
+                    <Link to={i.path} onClick={() => onOpenChange(false)} className="flex items-center gap-2">
                       <Icon name={i.icon} className="size-4" />
                       <span>{i.label}</span>
                     </Link>

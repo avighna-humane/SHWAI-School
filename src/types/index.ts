@@ -273,15 +273,7 @@ export interface AdmissionEnquiry {
   parentName: string;
   phone: string;
   source: "Walk-in" | "Website" | "Referral" | "Advertisement";
-  stage:
-    | "enquiry"
-    | "application"
-    | "documents"
-    | "entrance-test"
-    | "interview"
-    | "offer"
-    | "enrolled"
-    | "dropped";
+  stage: "enquiry" | "application" | "documents" | "entrance-test" | "interview" | "offer" | "enrolled" | "dropped";
   createdOn: string;
   followUpOn: string;
   documentsVerified: number;
@@ -491,8 +483,7 @@ export interface WorkloadRecommendation {
   detail: string;
   impact: string;
   teachersAffected: string[];
-  category:
-    "reschedule" | "shared-rubric" | "resources" | "support-staff" | "remove-report" | "balance";
+  category: "reschedule" | "shared-rubric" | "resources" | "support-staff" | "remove-report" | "balance";
   savingHours: number;
 }
 
@@ -523,8 +514,7 @@ export interface HelpMatch {
   studentName: string;
   topic: string;
   subject: string;
-  matchType:
-    "peer-tutor" | "office-hour" | "remedial-group" | "library" | "external" | "counsellor";
+  matchType: "peer-tutor" | "office-hour" | "remedial-group" | "library" | "external" | "counsellor";
   matchName: string;
   language: string;
   slot: string;
@@ -585,20 +575,12 @@ export interface Scenario {
   id: string;
   name: string;
   question: string;
-  category:
-    "timetable" | "staffing" | "attendance" | "rooms" | "remedial" | "intervention" | "resources";
+  category: "timetable" | "staffing" | "attendance" | "rooms" | "remedial" | "intervention" | "resources";
   createdBy: string;
   createdOn: string;
   assumptions: string[];
   risks: string[];
-  outcomes: {
-    metric: string;
-    baseline: number;
-    projected: number;
-    unit: string;
-    ciLow: number;
-    ciHigh: number;
-  }[];
+  outcomes: { metric: string; baseline: number; projected: number; unit: string; ciLow: number; ciHigh: number }[];
   confidence: number;
   status: "draft" | "simulated" | "adopted" | "rejected";
 }
@@ -652,8 +634,7 @@ export interface CalendarEvent {
   title: string;
   date: string;
   endDate?: string;
-  type:
-    "holiday" | "exam" | "ptm" | "event" | "sports" | "function" | "assignment-due" | "exam-due";
+  type: "holiday" | "exam" | "ptm" | "event" | "sports" | "function" | "assignment-due" | "exam-due";
   audience: string[];
   location?: string;
 }
@@ -696,152 +677,4 @@ export interface FutureProduct {
   category: "learning" | "guidance";
   stage: "preview" | "in-design" | "planned";
   eta: string;
-}
-
-// ── Real, DB-backed SHWAI workflows (notices, homework, submissions, chat) ──
-// These mirror the Supabase rows (see src/server/*) and intentionally stay
-// separate from the mock Assignment/Submission types above, which power the
-// unrelated gradebook/exam mock UI.
-
-export type NoticeAudienceType =
-  | "all_students"
-  | "class"
-  | "all_teachers"
-  | "specific_teachers"
-  | "specific_students"
-  | "parents"
-  | "school";
-
-export interface FileMeta {
-  id: string;
-  filePath: string;
-  fileName: string;
-  sizeBytes: number;
-  mimeType: string;
-}
-
-export interface Notice {
-  id: string;
-  schoolId: string;
-  authorId: string;
-  authorName: string;
-  authorRole: "teacher" | "principal";
-  title: string;
-  body: string;
-  audienceType: NoticeAudienceType;
-  audienceClassIds: string[];
-  audienceTeacherIds: string[];
-  audienceStudentIds: string[];
-  createdAt: string;
-  updatedAt: string;
-  attachments: FileMeta[];
-  /** Populated only in viewer-scoped lists (student/teacher own status). */
-  viewerHasViewed?: boolean;
-  /** Populated only in author-scoped "my notices" lists. */
-  recipientCount?: number;
-  viewedCount?: number;
-}
-
-export interface NoticeActivityRow {
-  viewerId: string;
-  viewerName: string;
-  viewed: boolean;
-  firstViewedAt: string | null;
-  lastViewedAt: string | null;
-  viewCount: number;
-}
-
-export interface NoticeActivity {
-  recipientCount: number;
-  viewedCount: number;
-  rows: NoticeActivityRow[];
-}
-
-export type HomeworkStatus = "draft" | "published" | "closed";
-export type SubmissionStatus = "submitted" | "late" | "graded";
-
-export interface HomeworkItem {
-  id: string;
-  schoolId: string;
-  teacherId: string;
-  teacherName: string;
-  subject: string;
-  classId: string;
-  classLabel: string;
-  title: string;
-  description: string;
-  dueAt: string;
-  totalMarks: number | null;
-  allowResubmission: boolean;
-  status: HomeworkStatus;
-  createdAt: string;
-  attachments: FileMeta[];
-  /** Populated only for the student viewer. */
-  viewerHasViewed?: boolean;
-  viewerSubmission?: SubmissionRecord | null;
-  /** Populated only for the teacher/principal viewer (activity rollup). */
-  assignedCount?: number;
-  viewedCount?: number;
-  submittedCount?: number;
-  lateCount?: number;
-}
-
-export interface HomeworkActivityRow {
-  studentId: string;
-  studentName: string;
-  viewed: boolean;
-  firstViewedAt: string | null;
-  submitted: boolean;
-  submissionStatus: SubmissionStatus | null;
-  submittedAt: string | null;
-}
-
-export interface HomeworkActivity {
-  assignedCount: number;
-  viewedCount: number;
-  notViewedCount: number;
-  submittedCount: number;
-  notSubmittedCount: number;
-  lateCount: number;
-  rows: HomeworkActivityRow[];
-}
-
-export interface SubmissionRecord {
-  id: string;
-  homeworkId: string;
-  homeworkTitle?: string;
-  studentId: string;
-  studentName: string;
-  comment: string | null;
-  status: SubmissionStatus;
-  submittedAt: string;
-  marks: number | null;
-  feedback: string | null;
-  reviewedAt: string | null;
-  files: FileMeta[];
-}
-
-export interface Conversation {
-  id: string;
-  schoolId: string;
-  teacherId: string;
-  studentId: string;
-  otherId: string;
-  otherName: string;
-  lastMessageBody?: string;
-  lastMessageAt?: string;
-  unreadCount: number;
-  createdAt: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  conversationId: string;
-  senderType: "teacher" | "student";
-  senderId: string;
-  body: string;
-  createdAt: string;
-  readByTeacherAt: string | null;
-  readByStudentAt: string | null;
-  attachment?: FileMeta;
 }

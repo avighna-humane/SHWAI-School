@@ -22,9 +22,7 @@ export function delay<T>(value: T, ms = LATENCY_MS): Promise<T> {
 }
 
 /** Simulated failure — used by "Retry" demos on error states. */
-export function failing<T>(
-  message = "Could not reach the school server. Check your connection and retry.",
-): Promise<T> {
+export function failing<T>(message = "Could not reach the school server. Check your connection and retry."): Promise<T> {
   return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), LATENCY_MS));
 }
 
@@ -46,11 +44,7 @@ export const mockService = {
   // --- academics --------------------------------------------------------
   assignments: () => delay(academics.ASSIGNMENTS),
   submissions: (assignmentId?: string) =>
-    delay(
-      assignmentId
-        ? academics.SUBMISSIONS.filter((s) => s.assignmentId === assignmentId)
-        : academics.SUBMISSIONS,
-    ),
+    delay(assignmentId ? academics.SUBMISSIONS.filter((s) => s.assignmentId === assignmentId) : academics.SUBMISSIONS),
   grades: () => delay(academics.GRADE_ENTRIES),
   exams: () => delay(academics.EXAMS),
   quizzes: () => delay(academics.QUIZZES),
@@ -96,18 +90,13 @@ export const mockService = {
     delay({ ok: true, saved: records.length }, 700),
 
   gradeSubmission: (submissionId: string, marks: number, feedback: string) =>
-    delay<{ ok: true; submission: Partial<Submission> }>(
-      { ok: true, submission: { id: submissionId, marks, feedback, status: "graded" } },
-      600,
-    ),
+    delay<{ ok: true; submission: Partial<Submission> }>({ ok: true, submission: { id: submissionId, marks, feedback, status: "graded" } }, 600),
 
-  createAssignment: (payload: Record<string, unknown>) =>
-    delay({ ok: true, id: `asg-${Date.now()}`, payload }, 800),
+  createAssignment: (payload: Record<string, unknown>) => delay({ ok: true, id: `asg-${Date.now()}`, payload }, 800),
 
   generateReport: (reportId: string) => delay({ ok: true, reportId, url: "#mock-report" }, 1200),
 
-  exportData: (entity: string, format: string) =>
-    delay({ ok: true, entity, format, rows: 128 }, 900),
+  exportData: (entity: string, format: string) => delay({ ok: true, entity, format, rows: 128 }, 900),
 
   syncOffline: (count: number) => delay({ ok: true, synced: count }, 1500),
 
@@ -146,11 +135,7 @@ export const mockService = {
         answer:
           "Grade 9 — C is the weakest cohort this term: attendance is 84% against a school average of 93%, and Mathematics fell 11 marks between UT1 and UT2. Two of the four teachers assigned to the section are showing sustained workload above 85. The strongest single lever is a two-period prerequisite block in Mathematics plus an attendance contract for the nine students below 75%.",
         question,
-        sources: [
-          "Unit Test 2 results",
-          "Attendance register (30-day window)",
-          "Teacher workload signals",
-        ],
+        sources: ["Unit Test 2 results", "Attendance register (30-day window)", "Teacher workload signals"],
         confidence: 0.83,
         provenanceId: "prv-1",
       },

@@ -1,25 +1,10 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS } from "@/data/mock/platform";
-import { DEMO_PRINCIPAL_ACTOR, DEMO_USER } from "@/config/roles";
-import { DEMO_CLASS_STUDENTS, DEMO_STUDENT, DEMO_TEACHER, TEACHERS } from "@/data/mock/people";
-import type { UserSession } from "@/rpc/auth";
+import { DEMO_USER } from "@/config/roles";
 
 const STORAGE_KEY = "shwai.demo.state";
-
-/** Teachers assigned to Grade 9 — A, used by the "Acting as" picker in Settings. */
-export const ACTABLE_TEACHERS = TEACHERS.filter((t) => t.classes.includes("Grade 9 — A"));
-/** First 5 Grade 9-A students, used by the "Acting as" picker in Settings. */
-export const ACTABLE_STUDENTS = DEMO_CLASS_STUDENTS.slice(0, 5);
 
 interface PersistedState {
   role: Role;
@@ -30,9 +15,6 @@ interface PersistedState {
   locale: Locale;
   offline: boolean;
   readIds: string[];
-  studentId: string;
-  teacherId: string;
-  session: UserSession | null;
 }
 
 const DEFAULTS: PersistedState = {
@@ -44,22 +26,12 @@ const DEFAULTS: PersistedState = {
   locale: "en",
   offline: false,
   readIds: NOTIFICATIONS.filter((n) => n.read).map((n) => n.id),
-  studentId: DEMO_STUDENT.id,
-  teacherId: DEMO_TEACHER.id,
-  session: null,
 };
-
-export interface Actor {
-  id: string;
-  name: string;
-  schoolId: string;
-}
 
 interface AppStateValue extends PersistedState {
   user: { name: string; sub: string; initials: string };
   school: (typeof SCHOOLS)[number];
   year: (typeof ACADEMIC_YEARS)[number];
-  actor: Actor;
   setRole: (r: Role) => void;
   setSchoolId: (id: string) => void;
   setCampusId: (id: string) => void;
@@ -67,14 +39,11 @@ interface AppStateValue extends PersistedState {
   setPlan: (p: PlanId) => void;
   setLocale: (l: Locale) => void;
   setOffline: (v: boolean) => void;
-  setStudentId: (id: string) => void;
-  setTeacherId: (id: string) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   markUnread: (id: string) => void;
   unreadCount: number;
   isRead: (id: string) => boolean;
-  setSession: (sess: UserSession | null) => void;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -87,11 +56,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const stored = JSON.parse(raw) as PersistedState;
-        setState({
-          ...DEFAULTS,
-          ...stored,
-          role: stored.role === "admin" ? "principal" : stored.role,
-        });
+        setState({ ...DEFAULTS, ...stored, role: stored.role === "admin" ? "principal" : stored.role });
       }
     } catch {
       /* demo-only persistence */
@@ -111,54 +76,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppStateValue>(() => {
-    // If authenticated session exists, force values from session profile
-    const activeRole = state.session ? state.session.role : state.role;
-    const activeSchoolId = state.session ? state.session.schoolId : state.schoolId;
-
-    const school = SCHOOLS.find((s) => s.id === activeSchoolId) ?? SCHOOLS[0];
+    const school = SCHOOLS.find((s) => s.id === state.schoolId) ?? SCHOOLS[0];
     const year = ACADEMIC_YEARS.find((y) => y.id === state.yearId) ?? ACADEMIC_YEARS[0];
     const readSet = new Set(state.readIds);
-
-    const actor: Actor =
-      activeRole === "student"
-        ? (() => {
-            const s = ACTABLE_STUDENTS.find((x) => x.id === state.studentId) ?? DEMO_STUDENT;
-            return { id: s.id, name: state.session?.fullName ?? s.name, schoolId: activeSchoolId };
-          })()
-        : activeRole === "teacher"
-          ? (() => {
-              const t = ACTABLE_TEACHERS.find((x) => x.id === state.teacherId) ?? DEMO_TEACHER;
-              return {
-                id: t.id,
-                name: state.session?.fullName ?? t.name,
-                schoolId: activeSchoolId,
-              };
-            })()
-          : {
-              id: state.session?.userId ?? DEMO_PRINCIPAL_ACTOR.id,
-              name: state.session?.fullName ?? DEMO_PRINCIPAL_ACTOR.name,
-              schoolId: activeSchoolId,
-            };
-
-    const userObj = state.session
-      ? {
-          name: state.session.fullName,
-          sub: `${state.session.role.toUpperCase()} · ${school.name}`,
-          initials: state.session.fullName
-            .split(" ")
-            .map((x) => x[0])
-            .join(""),
-        }
-      : DEMO_USER[state.role];
-
     return {
       ...state,
-      role: activeRole,
-      schoolId: activeSchoolId,
-      user: userObj,
+       user: DEMO_USER[state.role],
       school,
       year,
-      actor,
       setRole: (role) => update({ role }),
       setSchoolId: (schoolId) => {
         const s = SCHOOLS.find((x) => x.id === schoolId);
@@ -169,20 +94,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setPlan: (plan) => update({ plan }),
       setLocale: (locale) => update({ locale }),
       setOffline: (offline) => update({ offline }),
-      setStudentId: (studentId) => update({ studentId }),
-      setTeacherId: (teacherId) => update({ teacherId }),
       markRead: (id) => update({ readIds: Array.from(new Set([...state.readIds, id])) }),
       markUnread: (id) => update({ readIds: state.readIds.filter((x) => x !== id) }),
       markAllRead: () => update({ readIds: NOTIFICATIONS.map((n) => n.id) }),
       isRead: (id) => readSet.has(id),
-      unreadCount: NOTIFICATIONS.filter((n) => n.roles.includes(activeRole) && !readSet.has(n.id))
-        .length,
-      setSession: (session) =>
-        update({
-          session,
-          role: session ? session.role : "principal",
-          schoolId: session ? session.schoolId : "sch-1",
-        }),
+      unreadCount: NOTIFICATIONS.filter((n) => n.roles.includes(state.role) && !readSet.has(n.id)).length,
     };
   }, [state, update]);
 

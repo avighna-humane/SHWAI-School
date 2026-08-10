@@ -79,18 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SHWAI — AI-Native School Operating System" },
-      {
-        name: "description",
-        content:
-          "SHWAI unifies school administration, academics, AI teaching support and school intelligence.",
-      },
+      { name: "description", content: "SHWAI unifies school administration, academics, AI teaching support and school intelligence." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "SHWAI — AI-Native School Operating System" },
-      {
-        property: "og:description",
-        content:
-          "One operating system for school operations, AI learning and decision intelligence.",
-      },
+      { property: "og:description", content: "One operating system for school operations, AI learning and decision intelligence." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -102,10 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap",
-      },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" },
     ],
   }),
   shellComponent: RootShell,

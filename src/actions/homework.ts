@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireAuth, requireRole } from "@/lib/auth";
+import { consumeSecurityRateLimit, validateAttachment } from "@/lib/security";
 
 // ── Types (exported for use in route files via `import type`) ─────────────────
 export interface HomeworkRow {
@@ -49,10 +51,9 @@ export type SubmissionWithHomework = SubmissionRow & {
 // ── Server Functions (all db access via dynamic import to avoid client-bundle issues) ──
 
 export const listHomework = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; role: string; userId: string; classId?: string }) => d)
+  .validator(z.object({ classId: z.string().trim().min(1).max(160).optional() }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
-    if (data.schoolId !== context.schoolId) throw new Error("Cross-school access denied");
     const { sql } = await import("@/lib/db");
     const schoolId = context.schoolId;
     const role = context.role;
@@ -89,27 +90,21 @@ export const listHomework = createServerFn({ method: "POST" })
 
 export const createHomework = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      schoolId: string;
-      role: string;
-      teacherId: string;
-      teacherName: string;
-      title: string;
-      subject: string;
-      classId: string;
-      classLabel: string;
-      section: string;
-      description: string;
-      dueDate: string;
-      totalMarks: number;
-      referenceMaterial: string;
-    }) => d,
+    z.object({
+      title: z.string().trim().min(2).max(180),
+      subject: z.string().trim().min(1).max(120),
+      classId: z.string().trim().min(1).max(160),
+      classLabel: z.string().trim().min(1).max(120),
+      section: z.string().trim().max(120).default(""),
+      description: z.string().trim().max(5000).default(""),
+      dueDate: z.string().datetime(),
+      totalMarks: z.number().int().positive().max(10000),
+      referenceMaterial: z.string().trim().max(12000).default(""),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requireRole(context, ["teacher", "principal", "admin"]);
-    if (data.schoolId !== context.schoolId) throw new Error("Cross-school access denied");
-    if (data.teacherId !== context.userId) throw new Error("Teacher identity mismatch");
     const { sql } = await import("@/lib/db");
     if (context.role === "teacher") {
       const assignment = await sql`
@@ -132,12 +127,10 @@ export const createHomework = createServerFn({ method: "POST" })
   });
 
 export const deleteHomework = createServerFn({ method: "POST" })
-  .validator((d: { id: string; teacherId: string; role: string }) => d)
+  .validator(z.object({ id: z.string().trim().min(1).max(160) }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requireRole(context, ["teacher", "principal", "admin"]);
-    if (data.teacherId !== context.userId && context.role === "teacher")
-      throw new Error("Teacher identity mismatch");
     const { sql } = await import("@/lib/db");
     const rows = await sql<{ id: string }[]>`
       DELETE FROM hw_homework
@@ -150,27 +143,26 @@ export const deleteHomework = createServerFn({ method: "POST" })
 
 export const submitHomework = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      homeworkId: string;
-      studentId: string;
-      studentName: string;
-      schoolId: string;
-      comment: string;
-      fileName: string;
-      fileSize: number;
-      fileType: string;
-      fileData: string;
-      dueDate: string;
-    }) => d,
+    z.object({
+      homeworkId: z.string().trim().min(1).max(160),
+      comment: z.string().trim().max(5000).default(""),
+      fileName: z.string().max(180),
+      fileSize: z.number().int(),
+      fileType: z.string().max(120),
+      fileData: z.string().max(7_000_000),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requireRole(context, ["student"]);
-    if (data.schoolId !== context.schoolId || data.studentId !== context.userId)
-      throw new Error("Student identity or school mismatch");
-    if (data.fileSize < 0 || data.fileSize > 5_000_000)
-      throw new Error("Attachment exceeds the 5 MB limit");
     const { sql } = await import("@/lib/db");
+    const attachment = validateAttachment(data);
+    await consumeSecurityRateLimit(sql, {
+      scope: "homework_submit_user",
+      subject: context.userId,
+      limit: 30,
+      windowSeconds: 60 * 60,
+    });
     const homework = await sql<
       {
         due_date: string;
@@ -196,19 +188,17 @@ export const submitHomework = createServerFn({ method: "POST" })
         (homework_id, student_id, student_name, school_id, status, comment, content, file_name, file_size, file_type, file_data, attempt_no, is_late, grading_status, grade_published)
       VALUES
         (${data.homeworkId}, ${context.userId}, ${context.name}, ${context.schoolId},
-         ${isLate ? "late" : "submitted"}, ${data.comment}, ${data.comment}, ${data.fileName}, ${data.fileSize}, ${data.fileType}, ${data.fileData}, ${attempt[0]!.next_attempt}, ${isLate}, 'pending', FALSE)
+         ${isLate ? "late" : "submitted"}, ${data.comment}, ${data.comment}, ${attachment.fileName}, ${attachment.fileSize}, ${attachment.fileType}, ${attachment.fileData}, ${attempt[0]!.next_attempt}, ${isLate}, 'pending', FALSE)
       RETURNING *`;
     await sql`INSERT INTO hw_audit_events (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail) VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'create', 'submission', ${rows[0]!.id}, 'Homework submission recorded with server-side enrollment and due-date checks')`;
     return rows[0]!;
   });
 
 export const listStudentSubmissions = createServerFn({ method: "POST" })
-  .validator((d: { studentId: string; schoolId: string }) => d)
-  .handler(async ({ data }) => {
+  .validator(z.object({}))
+  .handler(async () => {
     const context = await requireAuth();
     requireRole(context, ["student"]);
-    if (data.studentId !== context.userId || data.schoolId !== context.schoolId)
-      throw new Error("Student identity or school mismatch");
     const { sql } = await import("@/lib/db");
     return sql<SubmissionWithHomework[]>`
       SELECT s.*, h.title AS homework_title, h.subject AS homework_subject,
@@ -220,11 +210,10 @@ export const listStudentSubmissions = createServerFn({ method: "POST" })
   });
 
 export const listAllSubmissions = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; role: string; userId: string }) => d)
-  .handler(async ({ data }) => {
+  .validator(z.object({}))
+  .handler(async () => {
     const context = await requireAuth();
     requireRole(context, ["teacher", "principal", "admin", "owner"]);
-    if (data.schoolId !== context.schoolId) throw new Error("Cross-school access denied");
     const { sql } = await import("@/lib/db");
     if (context.role === "teacher") {
       return sql<SubmissionWithHomework[]>`
@@ -244,7 +233,11 @@ export const listAllSubmissions = createServerFn({ method: "POST" })
 
 export const gradeSubmission = createServerFn({ method: "POST" })
   .validator(
-    (d: { submissionId: string; grade: number | null; feedback: string; role: string }) => d,
+    z.object({
+      submissionId: z.string().trim().min(1).max(160),
+      grade: z.number().int().min(0).nullable(),
+      feedback: z.string().trim().max(5000).default(""),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();

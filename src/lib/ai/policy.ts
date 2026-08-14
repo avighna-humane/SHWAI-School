@@ -1,6 +1,12 @@
 import type { AuthContext } from "@/lib/auth";
 import { requireDatabase } from "@/lib/db";
 import type { AiProviderResult } from "@/lib/ai/provider";
+import {
+  consumeSecurityRateLimit,
+  getRequestSecurityContext,
+  recordSecurityEvent,
+  SecurityPolicyError,
+} from "@/lib/security";
 
 type SqlClient = ReturnType<typeof requireDatabase>;
 
@@ -30,13 +36,27 @@ export function requireAiRole(context: AuthContext, feature: "student" | "teache
 }
 
 export function assertPromptSafe(input: string) {
-  const normalized = input.toLowerCase();
+  const normalized = input
+    .normalize("NFKC")
+    .split("")
+    .map((character) => {
+      const code = character.charCodeAt(0);
+      return code < 32 || code === 127 || (code >= 0x200b && code <= 0x200d) || code === 0xfeff
+        ? " "
+        : character;
+    })
+    .join("")
+    .toLowerCase();
   const blockedPatterns = [
     /sexual.{0,40}(minor|child|student)/,
     /(minor|child|student).{0,40}sexual/,
     /how to (make|build|buy).{0,40}(weapon|explosive|poison)/,
     /instructions? for (self[- ]harm|suicide)/,
     /how to (hack|steal|bypass|break into)/,
+    /ignore (all|any|the|previous|prior).{0,60}(instructions|rules|policy|safety)/,
+    /(reveal|show|print|dump).{0,60}(system|developer|hidden).{0,60}(prompt|message|instruction)/,
+    /(jailbreak|dan mode|developer mode|bypass).{0,40}(safety|guardrail|policy|restriction)/,
+    /<\/?(system|developer|tool|function)>/,
   ];
   if (blockedPatterns.some((pattern) => pattern.test(normalized)))
     throw new AiPolicyError(
@@ -80,6 +100,43 @@ export async function enforceAiUsage(
   feature: string,
   inputChars: number,
 ) {
+  const security = getRequestSecurityContext();
+  try {
+    await consumeSecurityRateLimit(sql, {
+      scope: "ai_user_minute",
+      subject: `${context.schoolId}:${context.userId}`,
+      limit: AI_REQUESTS_PER_MINUTE,
+      windowSeconds: 60,
+    });
+    await consumeSecurityRateLimit(sql, {
+      scope: "ai_school_minute",
+      subject: context.schoolId,
+      limit: AI_REQUESTS_PER_MINUTE * 20,
+      windowSeconds: 60,
+    });
+    if (security.ipHash) {
+      await consumeSecurityRateLimit(sql, {
+        scope: "ai_ip_minute",
+        subject: security.ipHash,
+        limit: 60,
+        windowSeconds: 60,
+      });
+    }
+  } catch (error) {
+    if (error instanceof SecurityPolicyError) {
+      await recordSecurityEvent(sql, {
+        eventType: "ai_rate_limit",
+        outcome: "blocked",
+        severity: "warning",
+        context,
+        requestId: security.requestId,
+        resource: feature,
+        detail: { code: error.code, inputChars },
+      });
+      throw new AiPolicyError("AI request limit reached. Please try again later.", "AI_RATE_LIMIT");
+    }
+    throw error;
+  }
   const recent =
     await sql`SELECT COUNT(*)::int AS count FROM hw_ai_usage WHERE school_id = ${context.schoolId} AND user_id = ${context.userId} AND created_at > NOW() - INTERVAL '1 minute'`;
   if (Number(recent[0]?.count ?? 0) >= AI_REQUESTS_PER_MINUTE)

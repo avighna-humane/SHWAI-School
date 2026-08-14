@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
+import { consumeSecurityRateLimit } from "@/lib/security";
 
 export interface ChatMessage {
   id: string;
@@ -25,11 +26,9 @@ export interface Conversation {
 }
 
 export const listConversations = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; userId: string }) => d)
-  .handler(async ({ data }) => {
+  .validator(z.object({}))
+  .handler(async () => {
     const context = await requireAuth();
-    if (data.schoolId !== context.schoolId || data.userId !== context.userId)
-      throw new Error("Authenticated identity mismatch");
     const { sql } = await import("@/lib/db");
     return sql<Conversation[]>`
       WITH partners AS (
@@ -59,11 +58,9 @@ export const listConversations = createServerFn({ method: "POST" })
   });
 
 export const getMessages = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; userId: string; partnerId: string }) => d)
+  .validator(z.object({ partnerId: z.string().trim().min(1).max(160) }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
-    if (data.schoolId !== context.schoolId || data.userId !== context.userId)
-      throw new Error("Authenticated identity mismatch");
     const { sql } = await import("@/lib/db");
     await sql`
       UPDATE hw_chat_messages SET is_read = TRUE
@@ -80,27 +77,36 @@ export const getMessages = createServerFn({ method: "POST" })
 
 export const sendMessage = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      schoolId: string;
-      senderId: string;
-      senderName: string;
-      senderRole: string;
-      receiverId: string;
-      receiverName: string;
-      body: string;
-    }) => ({ ...d, body: z.string().trim().min(1).max(5000).parse(d.body) }),
+    z.object({
+      receiverId: z.string().trim().min(1).max(160),
+      body: z.string().trim().min(1).max(5000),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();
-    if (data.schoolId !== context.schoolId || data.senderId !== context.userId)
-      throw new Error("Authenticated identity mismatch");
     const { sql } = await import("@/lib/db");
+    await consumeSecurityRateLimit(sql, {
+      scope: "chat_send_user",
+      subject: context.userId,
+      limit: 60,
+      windowSeconds: 60,
+    });
+    const recipients = await sql<{ id: string; name: string }[]>`
+      SELECT u.id, u.name
+      FROM hw_users u
+      JOIN hw_memberships m ON m.user_id = u.id AND m.school_id = ${context.schoolId} AND m.active = TRUE
+      JOIN hw_schools s ON s.id = m.school_id AND s.active = TRUE
+      WHERE u.id = ${data.receiverId} AND u.active = TRUE
+      LIMIT 1`;
+    const recipient = recipients[0];
+    if (!recipient || recipient.id === context.userId)
+      throw new Error("Recipient is not available in this school");
     const rows = await sql<ChatMessage[]>`
       INSERT INTO hw_chat_messages
         (school_id, sender_id, sender_name, sender_role, receiver_id, receiver_name, body)
       VALUES
         (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role},
-         ${data.receiverId}, ${data.receiverName}, ${data.body})
+         ${data.receiverId}, ${recipient.name}, ${data.body})
       RETURNING *`;
     return rows[0]!;
   });

@@ -136,17 +136,13 @@ function TeacherView({
 
   const { data: homework = [], isLoading } = useQuery({
     queryKey: ["homework", schoolId, role, userId],
-    queryFn: () => listHomework({ data: { schoolId, role, userId } }),
+    queryFn: () => listHomework({ data: {} }),
   });
 
   const createMut = useMutation({
     mutationFn: (d: typeof form) =>
       createHomework({
         data: {
-          schoolId,
-          role,
-          teacherId: userId,
-          teacherName: userName,
           title: d.title,
           subject: d.subject,
           classId: d.classId,
@@ -168,7 +164,7 @@ function TeacherView({
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteHomework({ data: { id, teacherId: userId, role } }),
+    mutationFn: (id: string) => deleteHomework({ data: { id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["homework"] });
       toast.success("Deleted.");
@@ -182,7 +178,6 @@ function TeacherView({
           submissionId: selectedSub!.id,
           grade: gradeVal ? Number(gradeVal) : null,
           feedback: feedbackVal,
-          role,
         },
       }),
     onSuccess: () => {
@@ -466,12 +461,12 @@ function StudentView({
 
   const { data: homework = [], isLoading } = useQuery({
     queryKey: ["homework", schoolId, role, userId],
-    queryFn: () => listHomework({ data: { schoolId, role, userId } }),
+    queryFn: () => listHomework({ data: {} }),
   });
 
   const { data: mySubmissions = [] } = useQuery({
     queryKey: ["my-submissions", userId, schoolId],
-    queryFn: () => listStudentSubmissions({ data: { studentId: userId, schoolId } }),
+    queryFn: () => listStudentSubmissions({ data: {} }),
   });
 
   const submissionMap = useMemo(
@@ -503,15 +498,11 @@ function StudentView({
       return submitHomework({
         data: {
           homeworkId: selectedHw!.id,
-          studentId: userId,
-          studentName: userName,
-          schoolId,
           comment,
           fileName,
           fileSize,
           fileType,
           fileData,
-          dueDate: selectedHw!.due_date,
         },
       });
     },

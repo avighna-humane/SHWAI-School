@@ -12,7 +12,7 @@ export const sql = postgres(DB_URL, {
   max: 5,
   idle_timeout: 30,
   connect_timeout: 10,
-  ssl: DB_URL.includes("supabase") ? "require" : undefined,
+  ssl: process.env.NODE_ENV === "production" || DB_URL.includes("supabase") ? "require" : undefined,
 });
 
 export function requireDatabase() {

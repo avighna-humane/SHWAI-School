@@ -5,6 +5,7 @@ import {
   setCookie,
 } from "@tanstack/react-start/server";
 import { requireDatabase } from "@/lib/db";
+import { constantTimeEqual } from "@/lib/security";
 
 export const SESSION_COOKIE = "shwai_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
@@ -58,32 +59,43 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, stored: string) {
-  const [algorithm, iterationsRaw, saltRaw, expected] = stored.split("$");
-  if (algorithm !== "pbkdf2-sha256" || !iterationsRaw || !saltRaw || !expected) return false;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: base64ToBytes(saltRaw),
-      iterations: Number(iterationsRaw),
-      hash: "SHA-256",
-    },
-    key,
-    256,
-  );
-  return bytesToBase64(new Uint8Array(bits)) === expected;
+  const [algorithm, iterationsRaw, saltRaw, expectedRaw] = stored.split("$");
+  const iterations = Number(iterationsRaw);
+  if (
+    algorithm !== "pbkdf2-sha256" ||
+    !Number.isInteger(iterations) ||
+    iterations < 100_000 ||
+    iterations > 600_000 ||
+    !saltRaw ||
+    !expectedRaw
+  )
+    return false;
+  try {
+    const salt = base64ToBytes(saltRaw);
+    const expected = base64ToBytes(expectedRaw);
+    if (salt.length < 16 || expected.length !== 32) return false;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+      key,
+      256,
+    );
+    return constantTimeEqual(new Uint8Array(bits), expected);
+  } catch {
+    return false;
+  }
 }
 
 function sessionCookieOptions() {
   return {
     httpOnly: true,
-    secure: getRequestProtocol() === "https",
+    secure: process.env.NODE_ENV === "production" || getRequestProtocol() === "https",
     sameSite: "lax" as const,
     path: "/",
     maxAge: SESSION_TTL_SECONDS,

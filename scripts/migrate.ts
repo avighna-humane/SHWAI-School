@@ -55,6 +55,36 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_security_rate_limits (
+      scope TEXT NOT NULL,
+      subject_hash TEXT NOT NULL,
+      window_start TIMESTAMPTZ NOT NULL,
+      request_count INTEGER NOT NULL CHECK (request_count > 0),
+      expires_at TIMESTAMPTZ NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (scope, subject_hash, window_start)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_security_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT REFERENCES hw_schools(id) ON DELETE SET NULL,
+      actor_id TEXT,
+      actor_role TEXT,
+      event_type TEXT NOT NULL,
+      outcome TEXT NOT NULL CHECK (outcome IN ('allowed','denied','blocked','failed','observed')),
+      severity TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info','warning','high','critical')),
+      request_id TEXT,
+      resource TEXT,
+      detail JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_security_rate_limits_expiry_idx ON hw_security_rate_limits (expires_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_security_events_school_created_idx ON hw_security_events (school_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_security_events_type_created_idx ON hw_security_events (event_type, created_at DESC)`;
+
   await sql`CREATE INDEX IF NOT EXISTS hw_memberships_school_idx ON hw_memberships (school_id, role)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_sessions_expiry_idx ON hw_sessions (expires_at)`;
 
@@ -1121,8 +1151,11 @@ async function migrate() {
   await sql`
     CREATE TABLE IF NOT EXISTS hw_ai_knowledge_chunks (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, source_id UUID NOT NULL REFERENCES hw_ai_knowledge_sources(id) ON DELETE CASCADE,
-      chunk_index INTEGER NOT NULL, content TEXT NOT NULL, embedding_reference TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (source_id, chunk_index)
+      chunk_index INTEGER NOT NULL, content TEXT NOT NULL, content_hash TEXT NOT NULL DEFAULT '', embedding_reference TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, ingested_by TEXT, ingested_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (source_id, chunk_index)
     )`;
+  await sql`ALTER TABLE hw_ai_knowledge_chunks ADD COLUMN IF NOT EXISTS content_hash TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE hw_ai_knowledge_chunks ADD COLUMN IF NOT EXISTS ingested_by TEXT`;
+  await sql`ALTER TABLE hw_ai_knowledge_chunks ADD COLUMN IF NOT EXISTS ingested_at TIMESTAMPTZ`;
   await sql`
     CREATE TABLE IF NOT EXISTS hw_ai_knowledge_queries (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, requester_id TEXT NOT NULL, query TEXT NOT NULL, answer TEXT NOT NULL DEFAULT '', citation_ids UUID[] NOT NULL DEFAULT '{}', evidence JSONB NOT NULL DEFAULT '[]'::JSONB, confidence TEXT NOT NULL DEFAULT 'unknown', uncertainty JSONB NOT NULL DEFAULT '{}'::JSONB, missing_data JSONB NOT NULL DEFAULT '[]'::JSONB, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','answered','no_approved_source','configuration_required','failed')), provenance_id UUID REFERENCES hw_ai_provenance_records(id) ON DELETE SET NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

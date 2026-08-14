@@ -23,14 +23,37 @@ declare global {
   }
 }
 
+function redactClientMessage(value: string) {
+  return value
+    .replace(/https?:\/\/[^\s]+/gi, "[url]")
+    .replace(/(?:postgres|mysql|supabase):[^\s]+/gi, "[connection]")
+    .replace(
+      /(?:password|secret|token|authorization|cookie|api.?key)\s*[=:]\s*[^\s]+/gi,
+      "$1=[redacted]",
+    )
+    .replace(/\/(?:home|Users|workspace|app|tmp)\/[^\s]+/g, "[path]")
+    .slice(0, 240);
+}
+
 export function reportLovableError(error: unknown, context: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
+  const safeMessage = redactClientMessage(
+    error instanceof Response
+      ? `Response ${error.status}`
+      : error instanceof Error
+        ? error.message
+        : String(error),
+  );
   window.__lovableEvents?.captureException?.(
-    error,
+    new Error(safeMessage),
     {
       source: "react_error_boundary",
       route: window.location.pathname,
-      ...context,
+      ...Object.fromEntries(
+        Object.entries(context).filter(
+          ([key, value]) => key.length < 80 && typeof value !== "object",
+        ),
+      ),
     },
     {
       mechanism: "react_error_boundary",
@@ -43,16 +66,8 @@ export function reportLovableError(error: unknown, context: Record<string, unkno
   // which is present only inside the editor preview.
   // Loaders and server fns commonly throw a raw Response; String(it) is the
   // opaque "[object Response]", so pull out the status and URL instead.
-  const message =
-    error instanceof Response
-      ? `Response ${error.status}${error.url ? ` at ${error.url}` : ""}`
-      : error instanceof Error
-        ? error.message
-        : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
   window.__lovableReportRuntimeError?.({
-    message,
-    ...(stack !== undefined && { stack }),
+    message: safeMessage,
     filename: window.location.pathname,
   });
 }

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { requireDatabase } from "@/lib/db";
+import { validateSafeStorageKey } from "@/lib/security";
 
 const staffRoles = ["staff", "teacher", "principal", "admin", "owner"] as const;
 const leadershipRoles = ["principal", "admin", "owner"] as const;
@@ -83,13 +84,14 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
 export const listDocuments = createServerFn({ method: "GET" }).handler(async () => {
   const context = await requireAuth();
   const sql = requireDatabase();
-  if (staffRoles.includes(context.role as (typeof staffRoles)[number])) {
+  if (leadershipRoles.includes(context.role as (typeof leadershipRoles)[number])) {
     return sql<DocumentRow[]>`
       SELECT * FROM hw_documents WHERE school_id = ${context.schoolId} ORDER BY created_at DESC LIMIT 500`;
   }
   return sql<DocumentRow[]>`
     SELECT * FROM hw_documents
-    WHERE school_id = ${context.schoolId} AND audience && ARRAY['entire-school', ${context.role}]::TEXT[]
+    WHERE school_id = ${context.schoolId}
+      AND (audience && ARRAY['entire-school', ${context.role}]::TEXT[] OR created_by = ${context.userId})
     ORDER BY created_at DESC LIMIT 500`;
 });
 
@@ -108,11 +110,24 @@ export const createDocumentMetadata = createServerFn({ method: "POST" })
     const context = await requireAuth();
     requireRole(context, staffRoles);
     const sql = requireDatabase();
+    const allowedMimeTypes = new Set([
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/png",
+      "image/jpeg",
+      "text/plain",
+    ]);
+    const storageKey = data.storageKey ? validateSafeStorageKey(data.storageKey) : null;
+    const mimeType = data.mimeType?.toLowerCase() ?? null;
+    if (mimeType && !allowedMimeTypes.has(mimeType))
+      throw new Error("Document MIME type is not allowed");
+    if (storageKey && !mimeType) throw new Error("Document MIME type is required for stored files");
     const rows = await sql<DocumentRow[]>`
       INSERT INTO hw_documents
         (school_id, title, category, storage_key, mime_type, size_bytes, audience, created_by)
       VALUES
-        (${context.schoolId}, ${data.title}, ${data.category}, ${data.storageKey ?? null}, ${data.mimeType ?? null}, ${data.sizeBytes}, ${data.audience}, ${context.userId})
+        (${context.schoolId}, ${data.title}, ${data.category}, ${storageKey}, ${mimeType}, ${data.sizeBytes}, ${data.audience}, ${context.userId})
       RETURNING *`;
     return rows[0]!;
   });

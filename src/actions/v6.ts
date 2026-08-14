@@ -11,6 +11,7 @@ import {
   recordAiAudit,
   recordAiUsage,
 } from "@/lib/ai/policy";
+import { hashIdentifier } from "@/lib/security";
 import {
   canManageV6Governance,
   canRequestPrediction,
@@ -201,12 +202,17 @@ export const ingestKnowledgeChunk = createServerFn({ method: "POST" })
     if (!canManageV6Governance(context.role))
       throw new Error("Only school governance roles can ingest knowledge chunks");
     const sql = requireDatabase();
-    const source =
-      await sql`SELECT 1 FROM hw_ai_knowledge_sources WHERE id = ${data.sourceId} AND school_id = ${context.schoolId}`;
-    if (!source[0]) throw new Error("Knowledge source not found");
+    const source = await sql<{ approval_state: string; active: boolean }[]>`
+      SELECT approval_state, active FROM hw_ai_knowledge_sources
+      WHERE id = ${data.sourceId} AND school_id = ${context.schoolId}`;
+    if (!source[0] || !source[0].active || source[0].approval_state === "archived")
+      throw new Error("Knowledge source is not active in this school");
+    if (data.embeddingReference && !/^[A-Za-z0-9._:/-]{1,240}$/.test(data.embeddingReference))
+      throw new Error("Embedding reference is invalid");
+    const contentHash = await hashIdentifier(data.content);
     const rows = await sql<
       { id: string }[]
-    >`INSERT INTO hw_ai_knowledge_chunks (school_id, source_id, chunk_index, content, embedding_reference) VALUES (${context.schoolId}, ${data.sourceId}, ${data.chunkIndex}, ${data.content}, ${data.embeddingReference}) ON CONFLICT (source_id, chunk_index) DO UPDATE SET content = EXCLUDED.content, embedding_reference = EXCLUDED.embedding_reference, active = TRUE RETURNING id`;
+    >`INSERT INTO hw_ai_knowledge_chunks (school_id, source_id, chunk_index, content, content_hash, embedding_reference, ingested_by, ingested_at) VALUES (${context.schoolId}, ${data.sourceId}, ${data.chunkIndex}, ${data.content}, ${contentHash}, ${data.embeddingReference}, ${context.userId}, NOW()) ON CONFLICT (source_id, chunk_index) DO UPDATE SET content = EXCLUDED.content, content_hash = EXCLUDED.content_hash, embedding_reference = EXCLUDED.embedding_reference, active = TRUE, ingested_by = EXCLUDED.ingested_by, ingested_at = NOW() RETURNING id`;
     await audit(context, "write", "ai_knowledge_chunk", rows[0]!.id, "Knowledge chunk ingested");
     return { id: rows[0]!.id };
   });
@@ -355,12 +361,114 @@ const predictionSchema = z.object({
   targetEntityType: z.enum(["student", "teacher", "class", "school", "intervention"]),
   targetEntityId: z.string().min(1).max(160),
   horizon: z.string().trim().max(120).default("current_review_window"),
-  observationCount: z.number().int().nonnegative(),
-  featureSnapshot: z.record(z.unknown()).default({}),
-  stale: z.boolean().default(false),
-  missingAttendance: z.boolean().default(false),
-  missingAssessments: z.boolean().default(false),
+  // Kept optional for backward-compatible clients; server-side evidence below ignores these values.
+  observationCount: z.number().int().nonnegative().optional(),
+  featureSnapshot: z.record(z.unknown()).optional(),
+  stale: z.boolean().optional(),
+  missingAttendance: z.boolean().optional(),
+  missingAssessments: z.boolean().optional(),
 });
+
+async function resolvePredictionEvidence(
+  sql: ReturnType<typeof requireDatabase>,
+  context: AuthContext,
+  targetEntityType: string,
+  targetEntityId: string,
+) {
+  const missingTarget = () => {
+    throw new Error("Prediction target was not found in this school");
+  };
+  if (targetEntityType === "student") {
+    const target = await sql<{ attendance: number; grades: number; submissions: number }[]>`
+      SELECT
+        (SELECT COUNT(*)::int FROM hw_attendance WHERE school_id = ${context.schoolId} AND student_id = ${targetEntityId}) AS attendance,
+        (SELECT COUNT(*)::int FROM hw_grades WHERE school_id = ${context.schoolId} AND student_id = ${targetEntityId} AND publication_status = 'published') AS grades,
+        (SELECT COUNT(*)::int FROM hw_submissions WHERE school_id = ${context.schoolId} AND student_id = ${targetEntityId}) AS submissions
+      WHERE EXISTS (SELECT 1 FROM hw_students WHERE id = ${targetEntityId} AND school_id = ${context.schoolId})`;
+    if (!target[0]) missingTarget();
+    const attendance = Number(target[0]!.attendance);
+    const grades = Number(target[0]!.grades);
+    const submissions = Number(target[0]!.submissions);
+    return {
+      observationCount: attendance + grades + submissions,
+      missingAttendance: attendance === 0,
+      missingAssessments: grades === 0,
+      featureSnapshot: {
+        source: "server_persisted_school_records",
+        attendance,
+        grades,
+        submissions,
+      },
+    };
+  }
+  if (targetEntityType === "teacher") {
+    const target = await sql<{ homework: number; assessments: number }[]>`
+      SELECT
+        (SELECT COUNT(*)::int FROM hw_homework WHERE school_id = ${context.schoolId} AND teacher_id IN (${targetEntityId}, COALESCE((SELECT user_id FROM hw_teachers WHERE id = ${targetEntityId} AND school_id = ${context.schoolId}), ${targetEntityId}))) AS homework,
+        (SELECT COUNT(*)::int FROM hw_assessments WHERE school_id = ${context.schoolId} AND teacher_id = ${targetEntityId}) AS assessments
+      WHERE EXISTS (SELECT 1 FROM hw_teachers WHERE school_id = ${context.schoolId} AND (id = ${targetEntityId} OR user_id = ${targetEntityId}))`;
+    if (!target[0]) missingTarget();
+    const homework = Number(target[0]!.homework);
+    const assessments = Number(target[0]!.assessments);
+    return {
+      observationCount: homework + assessments,
+      missingAttendance: false,
+      missingAssessments: assessments === 0,
+      featureSnapshot: { source: "server_persisted_school_records", homework, assessments },
+    };
+  }
+  if (targetEntityType === "class") {
+    const target = await sql<{ enrollments: number; attendance: number }[]>`
+      SELECT
+        (SELECT COUNT(*)::int FROM hw_enrollments WHERE school_id = ${context.schoolId} AND class_id = ${targetEntityId}) AS enrollments,
+        (SELECT COUNT(*)::int FROM hw_attendance WHERE school_id = ${context.schoolId} AND class_id = ${targetEntityId}) AS attendance
+      WHERE EXISTS (SELECT 1 FROM hw_classes WHERE id = ${targetEntityId} AND school_id = ${context.schoolId} AND active = TRUE)`;
+    if (!target[0]) missingTarget();
+    const enrollments = Number(target[0]!.enrollments);
+    const attendance = Number(target[0]!.attendance);
+    return {
+      observationCount: enrollments + attendance,
+      missingAttendance: attendance === 0,
+      missingAssessments: false,
+      featureSnapshot: { source: "server_persisted_school_records", enrollments, attendance },
+    };
+  }
+  if (targetEntityType === "school") {
+    if (targetEntityId !== context.schoolId) missingTarget();
+    const rows = await sql<{ attendance: number; grades: number; submissions: number }[]>`
+      SELECT
+        (SELECT COUNT(*)::int FROM hw_attendance WHERE school_id = ${context.schoolId}) AS attendance,
+        (SELECT COUNT(*)::int FROM hw_grades WHERE school_id = ${context.schoolId} AND publication_status = 'published') AS grades,
+        (SELECT COUNT(*)::int FROM hw_submissions WHERE school_id = ${context.schoolId}) AS submissions`;
+    const attendance = Number(rows[0]?.attendance ?? 0);
+    const grades = Number(rows[0]?.grades ?? 0);
+    const submissions = Number(rows[0]?.submissions ?? 0);
+    return {
+      observationCount: attendance + grades + submissions,
+      missingAttendance: attendance === 0,
+      missingAssessments: grades === 0,
+      featureSnapshot: {
+        source: "server_persisted_school_records",
+        attendance,
+        grades,
+        submissions,
+      },
+    };
+  }
+  if (targetEntityType === "intervention") {
+    const rows = await sql<{ evidence: number }[]>`
+      SELECT 1 AS evidence FROM hw_interventions WHERE id = ${targetEntityId} AND school_id = ${context.schoolId}`;
+    if (!rows[0]) missingTarget();
+    return {
+      observationCount: 1,
+      missingAttendance: true,
+      missingAssessments: true,
+      featureSnapshot: { source: "server_persisted_intervention_record", evidence: 1 },
+    };
+  }
+  return missingTarget();
+}
+
 export const requestV6Prediction = createServerFn({ method: "POST" })
   .validator(predictionSchema)
   .handler(async ({ data }) => {
@@ -373,11 +481,17 @@ export const requestV6Prediction = createServerFn({ method: "POST" })
     >`SELECT enable_predictions FROM hw_ai_settings WHERE school_id = ${context.schoolId}`;
     if (settings[0] && !settings[0].enable_predictions)
       throw new Error("Predictive analytics is disabled by school AI settings");
-    const status = predictionAvailability(data.observationCount);
-    const warnings = warningForDataQuality(data);
+    const evidence = await resolvePredictionEvidence(
+      sql,
+      context,
+      data.targetEntityType,
+      data.targetEntityId,
+    );
+    const status = predictionAvailability(evidence.observationCount);
+    const warnings = warningForDataQuality({ ...evidence, stale: false });
     const rows = await sql<
       { id: string }[]
-    >`INSERT INTO hw_ai_predictions (school_id, prediction_type, target_entity_type, target_entity_id, confidence, feature_snapshot, horizon, status, created_by) VALUES (${context.schoolId}, ${data.predictionType}, ${data.targetEntityType}, ${data.targetEntityId}, ${status === "insufficient_data" ? "low" : "unknown"}, ${JSON.stringify(data.featureSnapshot)}::JSONB, ${data.horizon}, ${status}, ${context.userId}) RETURNING id`;
+    >`INSERT INTO hw_ai_predictions (school_id, prediction_type, target_entity_type, target_entity_id, confidence, feature_snapshot, horizon, status, created_by) VALUES (${context.schoolId},       ${data.predictionType}, ${data.targetEntityType}, ${data.targetEntityId}, ${status === "insufficient_data" ? "low" : "unknown"}, ${JSON.stringify(evidence.featureSnapshot)}::JSONB, ${data.horizon}, ${status}, ${context.userId}) RETURNING id`;
     for (const warning of warnings)
       await sql`INSERT INTO hw_ai_warnings (school_id, prediction_id, warning_type, severity, detail) VALUES (${context.schoolId}, ${rows[0]!.id}, ${warning.type}, ${warning.severity}, ${warning.detail})`;
     await audit(

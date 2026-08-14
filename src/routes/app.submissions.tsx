@@ -61,7 +61,7 @@ function SubmissionsPage() {
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["all-submissions", schoolId, role, userId],
-    queryFn: () => listAllSubmissions({ data: { schoolId, role, userId } }),
+    queryFn: () => listAllSubmissions({ data: {} }),
     enabled: canGrade && typeof window !== "undefined",
   });
 
@@ -72,7 +72,6 @@ function SubmissionsPage() {
           submissionId: selected!.id,
           grade: gradeVal ? Number(gradeVal) : null,
           feedback: feedbackVal,
-          role,
         },
       }),
     onSuccess: () => {

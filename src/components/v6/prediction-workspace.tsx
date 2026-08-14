@@ -18,7 +18,6 @@ export function V6PredictionWorkspace() {
   const [predictionType, setPredictionType] = React.useState("student_performance");
   const [targetType, setTargetType] = React.useState("student");
   const [targetId, setTargetId] = React.useState("");
-  const [observations, setObservations] = React.useState("0");
   const requestMutation = useMutation({
     mutationFn: () =>
       requestV6Prediction({
@@ -27,11 +26,6 @@ export function V6PredictionWorkspace() {
           targetEntityType: targetType as "student",
           targetEntityId: targetId,
           horizon: "next_review_window",
-          observationCount: Number(observations),
-          featureSnapshot: { source: "explicit_request" },
-          stale: false,
-          missingAttendance: false,
-          missingAssessments: false,
         },
       }),
     onSuccess: () => {
@@ -68,7 +62,7 @@ export function V6PredictionWorkspace() {
             <h2 className="mt-1 text-xl font-bold">Create an auditable request</h2>
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <select
             value={predictionType}
             onChange={(event) => setPredictionType(event.target.value)}
@@ -99,13 +93,10 @@ export function V6PredictionWorkspace() {
             placeholder="Target ID"
             className="h-10 rounded-md border border-border bg-background px-3 text-sm"
           />
-          <input
-            value={observations}
-            onChange={(event) => setObservations(event.target.value)}
-            inputMode="numeric"
-            placeholder="Historical observations"
-            className="h-10 rounded-md border border-border bg-background px-3 text-sm"
-          />
+          <p className="flex items-center rounded-md border border-border bg-muted/30 px-3 text-xs leading-5 text-muted-foreground">
+            Historical evidence counts and data-quality warnings are computed server-side from this
+            school’s persisted records.
+          </p>
         </div>
         <Button
           className="mt-3"

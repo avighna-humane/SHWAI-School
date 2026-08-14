@@ -8,7 +8,7 @@ export function ParentHomeworkView() {
   const { schoolId, role, userId } = useAppState();
   const query = useQuery({
     queryKey: ["parent-homework", schoolId, userId],
-    queryFn: () => listHomework({ data: { schoolId, role, userId } }),
+    queryFn: () => listHomework({ data: {} }),
     enabled: typeof window !== "undefined",
   });
   return (

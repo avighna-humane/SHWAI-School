@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { CLASS_SECTIONS } from "@/data/mock/core";
 import { TEACHERS } from "@/data/mock/people";
 import { requireAuth, requireRole } from "@/lib/auth";
+import { z } from "zod";
 
 export interface NoticeRow {
   id: string;
@@ -83,11 +84,9 @@ function audienceMatchesRole(
 }
 
 export const listNotices = createServerFn({ method: "POST" })
-  .validator((d: { schoolId: string; role: string; userId: string; classId?: string }) => d)
+  .validator(z.object({ classId: z.string().trim().min(1).max(160).optional() }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
-    if (data.schoolId !== context.schoolId || data.userId !== context.userId)
-      throw new Error("Authenticated identity mismatch");
     const { sql } = await import("@/lib/db");
     const rows = await sql<NoticeRow[]>`
       SELECT * FROM hw_notices WHERE school_id = ${context.schoolId} ORDER BY created_at DESC`;
@@ -116,24 +115,24 @@ export const listNotices = createServerFn({ method: "POST" })
 
 export const createNotice = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      schoolId: string;
-      authorId: string;
-      authorName: string;
-      authorRole: string;
-      title: string;
-      content: string;
-      audience: string[];
-      attachmentName: string;
-      attachmentData: string;
-      role: string;
-    }) => d,
+    z.object({
+      title: z.string().trim().min(2).max(160),
+      content: z.string().trim().min(1).max(12000),
+      audience: z.array(z.string().trim().min(1).max(160)).min(1).max(20),
+      attachmentName: z.string().trim().max(180).default(""),
+      attachmentData: z
+        .string()
+        .max(2_800_000)
+        .refine(
+          (value) => !value || /^[A-Za-z0-9+/]+={0,2}$/.test(value),
+          "Attachment data is invalid",
+        )
+        .default(""),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requireRole(context, ["principal", "admin", "owner"]);
-    if (data.schoolId !== context.schoolId) throw new Error("Cross-school access denied");
-
     // Validate audience values against what this role is allowed to use
     const allowed = allowedAudienceValues(context.role);
     const invalid = data.audience.filter((a) => !allowed.has(a));
@@ -165,16 +164,21 @@ export const createNotice = createServerFn({ method: "POST" })
 
 export const editNotice = createServerFn({ method: "POST" })
   .validator(
-    (d: {
-      id: string;
-      authorId: string;
-      role: string;
-      title: string;
-      content: string;
-      audience: string[];
-      attachmentName: string;
-      attachmentData: string;
-    }) => d,
+    z.object({
+      id: z.string().trim().min(1).max(160),
+      title: z.string().trim().min(2).max(160),
+      content: z.string().trim().min(1).max(12000),
+      audience: z.array(z.string().trim().min(1).max(160)).min(1).max(20),
+      attachmentName: z.string().trim().max(180).default(""),
+      attachmentData: z
+        .string()
+        .max(2_800_000)
+        .refine(
+          (value) => !value || /^[A-Za-z0-9+/]+={0,2}$/.test(value),
+          "Attachment data is invalid",
+        )
+        .default(""),
+    }),
   )
   .handler(async ({ data }) => {
     const context = await requireAuth();
@@ -194,10 +198,9 @@ export const editNotice = createServerFn({ method: "POST" })
   });
 
 export const markNoticeRead = createServerFn({ method: "POST" })
-  .validator((d: { noticeId: string; readerId: string }) => d)
+  .validator(z.object({ noticeId: z.string().trim().min(1).max(160) }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
-    if (data.readerId !== context.userId) throw new Error("Authenticated identity mismatch");
     const { sql } = await import("@/lib/db");
     await sql`
       INSERT INTO hw_notice_reads (notice_id, reader_id)
@@ -208,7 +211,7 @@ export const markNoticeRead = createServerFn({ method: "POST" })
   });
 
 export const deleteNotice = createServerFn({ method: "POST" })
-  .validator((d: { id: string; authorId: string; role: string }) => d)
+  .validator(z.object({ id: z.string().trim().min(1).max(160) }))
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requireRole(context, ["principal", "admin", "owner"]);

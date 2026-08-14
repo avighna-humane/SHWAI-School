@@ -2,6 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { executeAutomationRulesForSchool, executeIntelligenceScan } from "@/actions/intelligence";
 import { requireDatabase } from "@/lib/db";
 import type { AuthContext } from "@/lib/auth";
+import {
+  consumeSecurityRateLimit,
+  constantTimeEqual,
+  hashIdentifier,
+  recordSecurityEvent,
+} from "@/lib/security";
 
 export const Route = createFileRoute("/api/intelligence/run")({
   server: {
@@ -13,12 +19,33 @@ export const Route = createFileRoute("/api/intelligence/run")({
             { error: "Scheduled intelligence is not configured" },
             { status: 503 },
           );
-        if (request.headers.get("x-shwai-intelligence-secret") !== configuredSecret)
-          return Response.json(
-            { error: "Unauthorized scheduled intelligence request" },
-            { status: 401 },
-          );
+        const suppliedSecret = request.headers.get("x-shwai-intelligence-secret") ?? "";
+        if (
+          !constantTimeEqual(
+            new TextEncoder().encode(suppliedSecret),
+            new TextEncoder().encode(configuredSecret),
+          )
+        )
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
         const sql = requireDatabase();
+        const source =
+          request.headers.get("cf-connecting-ip") ??
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          "unknown";
+        await consumeSecurityRateLimit(sql, {
+          scope: "intelligence_cron_ip",
+          subject: await hashIdentifier(source),
+          limit: 10,
+          windowSeconds: 60,
+        });
+        await recordSecurityEvent(sql, {
+          eventType: "scheduled_intelligence",
+          outcome: "allowed",
+          severity: "info",
+          requestId: request.headers.get("x-request-id") ?? undefined,
+          resource: "/api/intelligence/run",
+          detail: { method: request.method },
+        });
         const schools = await sql<{ id: string; name: string }[]>`
           SELECT id, name FROM hw_schools WHERE active = TRUE ORDER BY id`;
         const results: Array<{
@@ -53,7 +80,7 @@ export const Route = createFileRoute("/api/intelligence/run")({
             results.push({
               schoolId: school.id,
               status: "failed",
-              error: error instanceof Error ? error.message : "Intelligence scan failed",
+              error: "School intelligence scan failed; inspect server logs using the request ID.",
             });
           }
         }

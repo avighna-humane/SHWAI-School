@@ -14,6 +14,240 @@ async function migrate() {
   await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
 
   await sql`
+    CREATE TABLE IF NOT EXISTS hw_schools (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      slug TEXT NOT NULL UNIQUE,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_memberships (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      role TEXT NOT NULL CHECK (role IN ('student', 'teacher', 'parent', 'staff', 'admin', 'principal', 'owner')),
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (user_id, school_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      token_hash TEXT NOT NULL UNIQUE,
+      user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      membership_id UUID NOT NULL REFERENCES hw_memberships(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_memberships_school_idx ON hw_memberships (school_id, role)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_sessions_expiry_idx ON hw_sessions (expires_at)`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_academic_years (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      label TEXT NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('planned', 'active', 'closed')),
+      UNIQUE (school_id, label)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_classes (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      grade INTEGER NOT NULL CHECK (grade BETWEEN 1 AND 12),
+      label TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      UNIQUE (school_id, label)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_sections (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      class_id TEXT NOT NULL REFERENCES hw_classes(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      UNIQUE (class_id, name)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_subjects (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      UNIQUE (school_id, name)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_students (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      user_id TEXT REFERENCES hw_users(id) ON DELETE SET NULL,
+      admission_no TEXT NOT NULL,
+      name TEXT NOT NULL,
+      dob DATE,
+      gender TEXT,
+      guardian_name TEXT,
+      guardian_phone TEXT,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'alumni')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (school_id, admission_no)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_teachers (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      user_id TEXT REFERENCES hw_users(id) ON DELETE SET NULL,
+      employee_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      UNIQUE (school_id, employee_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_parents (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      user_id TEXT REFERENCES hw_users(id) ON DELETE SET NULL,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_staff (
+      id TEXT PRIMARY KEY,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      user_id TEXT REFERENCES hw_users(id) ON DELETE SET NULL,
+      name TEXT NOT NULL,
+      designation TEXT NOT NULL,
+      department TEXT,
+      active BOOLEAN NOT NULL DEFAULT TRUE
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_parent_students (
+      parent_id TEXT NOT NULL REFERENCES hw_parents(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      relation TEXT NOT NULL DEFAULT 'guardian',
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      PRIMARY KEY (parent_id, student_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_teacher_assignments (
+      teacher_id TEXT NOT NULL REFERENCES hw_teachers(id) ON DELETE CASCADE,
+      class_id TEXT NOT NULL REFERENCES hw_classes(id) ON DELETE CASCADE,
+      subject_id TEXT NOT NULL REFERENCES hw_subjects(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      academic_year_id TEXT REFERENCES hw_academic_years(id) ON DELETE SET NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      PRIMARY KEY (teacher_id, class_id, subject_id, academic_year_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_enrollments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id) ON DELETE CASCADE,
+      class_id TEXT NOT NULL REFERENCES hw_classes(id) ON DELETE CASCADE,
+      section_id TEXT NOT NULL REFERENCES hw_sections(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'active',
+      UNIQUE (student_id, academic_year_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_leave_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      requester_id TEXT NOT NULL,
+      requester_role TEXT NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+      reviewed_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_calendar_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      event_type TEXT NOT NULL,
+      starts_at TIMESTAMPTZ NOT NULL,
+      ends_at TIMESTAMPTZ,
+      audience TEXT[] NOT NULL DEFAULT '{}',
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_documents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL,
+      storage_key TEXT,
+      mime_type TEXT,
+      size_bytes INTEGER DEFAULT 0,
+      audience TEXT[] NOT NULL DEFAULT '{}',
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_id_cards (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id) ON DELETE CASCADE,
+      generated_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (student_id, academic_year_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_alumni (
+      student_id TEXT PRIMARY KEY REFERENCES hw_students(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      graduation_year_id TEXT REFERENCES hw_academic_years(id) ON DELETE SET NULL,
+      graduation_date DATE,
+      destination TEXT,
+      notes TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
     CREATE TABLE IF NOT EXISTS hw_homework (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       school_id TEXT NOT NULL,
@@ -75,6 +309,23 @@ async function migrate() {
       read_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (notice_id, reader_id)
     )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_notifications (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      recipient_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      severity TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info', 'success', 'warning', 'critical')),
+      source_entity TEXT,
+      source_id TEXT,
+      read_at TIMESTAMPTZ,
+      created_by TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_notifications_recipient_idx ON hw_notifications (school_id, recipient_id, created_at DESC)`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_chat_messages (

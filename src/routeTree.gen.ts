@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
 import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
@@ -24,6 +26,7 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as AppPortalParentRouteImport } from './routes/app.portal.parent'
 import { Route as AppPortalStaffRouteImport } from './routes/app.portal.staff'
 import { Route as AppPortalStudentRouteImport } from './routes/app.portal.student'
 import { Route as AppPortalTeacherRouteImport } from './routes/app.portal.teacher'
@@ -39,9 +42,19 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -104,6 +117,11 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   path: '/subscription',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPortalParentRoute = AppPortalParentRouteImport.update({
+  id: '/portal/parent',
+  path: '/portal/parent',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPortalStaffRoute = AppPortalStaffRouteImport.update({
   id: '/portal/staff',
   path: '/portal/staff',
@@ -128,7 +146,9 @@ const AppStudentsStudentIdRoute = AppStudentsStudentIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
@@ -141,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
   '/app/portal/teacher': typeof AppPortalTeacherRoute
@@ -148,7 +169,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
@@ -161,6 +184,7 @@ export interface FileRoutesByTo {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
+  '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
   '/app/portal/teacher': typeof AppPortalTeacherRoute
@@ -170,7 +194,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/register': typeof RegisterRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
@@ -183,6 +209,7 @@ export interface FileRoutesById {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
   '/app/portal/teacher': typeof AppPortalTeacherRoute
@@ -193,7 +220,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/login'
     | '/pricing'
+    | '/register'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
@@ -206,6 +235,7 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
     | '/app/portal/teacher'
@@ -213,7 +243,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/pricing'
+    | '/register'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
@@ -226,6 +258,7 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app'
+    | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
     | '/app/portal/teacher'
@@ -234,7 +267,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/login'
     | '/pricing'
+    | '/register'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
@@ -247,6 +282,7 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
     | '/app/portal/teacher'
@@ -256,7 +292,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -275,11 +313,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -366,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/portal/parent': {
+      id: '/app/portal/parent'
+      path: '/portal/parent'
+      fullPath: '/app/portal/parent'
+      preLoaderRoute: typeof AppPortalParentRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/portal/staff': {
       id: '/app/portal/staff'
       path: '/portal/staff'
@@ -422,6 +481,7 @@ interface AppRouteChildren {
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppPortalParentRoute: typeof AppPortalParentRoute
   AppPortalStaffRoute: typeof AppPortalStaffRoute
   AppPortalStudentRoute: typeof AppPortalStudentRoute
   AppPortalTeacherRoute: typeof AppPortalTeacherRoute
@@ -440,6 +500,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,
+  AppPortalParentRoute: AppPortalParentRoute,
   AppPortalStaffRoute: AppPortalStaffRoute,
   AppPortalStudentRoute: AppPortalStudentRoute,
   AppPortalTeacherRoute: AppPortalTeacherRoute,
@@ -450,7 +511,9 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

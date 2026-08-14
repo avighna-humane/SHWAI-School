@@ -1,14 +1,23 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS } from "@/data/mock/platform";
-import { DEMO_USER } from "@/config/roles";
+import { ROLE_LABEL } from "@/config/roles";
+import { currentUser, type AuthenticatedUser } from "@/actions/auth";
+import { withTimeout } from "@/lib/request-timeout";
 
-const STORAGE_KEY = "shwai.demo.state";
+const STORAGE_KEY = "shwai.user.preferences";
 
-interface PersistedState {
-  role: Role;
-  schoolId: string;
+interface PersistedPreferences {
   campusId: string;
   yearId: string;
   plan: PlanId;
@@ -17,28 +26,35 @@ interface PersistedState {
   readIds: string[];
 }
 
-const DEFAULTS: PersistedState = {
-  role: "principal",
-  schoolId: "sch-1",
+const DEFAULTS: PersistedPreferences = {
   campusId: "cmp-1",
   yearId: "ay-2025",
   plan: "enterprise",
   locale: "en",
   offline: false,
-  readIds: NOTIFICATIONS.filter((n) => n.read).map((n) => n.id),
+  readIds: NOTIFICATIONS.filter((notification) => notification.read).map(
+    (notification) => notification.id,
+  ),
 };
 
-interface AppStateValue extends PersistedState {
-  user: { name: string; sub: string; initials: string };
+interface AppStateValue extends PersistedPreferences {
+  isAuthenticated: boolean;
+  authLoading: boolean;
+  authError: Error | null;
+  authUser: AuthenticatedUser | null;
+  userId: string;
+  schoolId: string;
+  role: Role;
   school: (typeof SCHOOLS)[number];
   year: (typeof ACADEMIC_YEARS)[number];
-  setRole: (r: Role) => void;
+  user: { name: string; sub: string; initials: string };
+  setRole: (role: Role) => void;
   setSchoolId: (id: string) => void;
   setCampusId: (id: string) => void;
   setYearId: (id: string) => void;
-  setPlan: (p: PlanId) => void;
-  setLocale: (l: Locale) => void;
-  setOffline: (v: boolean) => void;
+  setPlan: (plan: PlanId) => void;
+  setLocale: (locale: Locale) => void;
+  setOffline: (offline: boolean) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   markUnread: (id: string) => void;
@@ -48,65 +64,108 @@ interface AppStateValue extends PersistedState {
 
 const AppStateContext = createContext<AppStateValue | null>(null);
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<PersistedState>(DEFAULTS);
+  const authQuery = useQuery({
+    queryKey: ["current-user"],
+    queryFn: () => withTimeout(currentUser(), 3000),
+    enabled: typeof window !== "undefined",
+    retry: false,
+  });
+  const [preferences, setPreferences] = useState<PersistedPreferences>(DEFAULTS);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const stored = JSON.parse(raw) as PersistedState;
-        setState({ ...DEFAULTS, ...stored, role: stored.role === "admin" ? "principal" : stored.role });
-      }
+      if (raw)
+        setPreferences({ ...DEFAULTS, ...(JSON.parse(raw) as Partial<PersistedPreferences>) });
     } catch {
-      /* demo-only persistence */
+      // Preferences are non-sensitive convenience state only.
     }
   }, []);
 
-  const update = useCallback((patch: Partial<PersistedState>) => {
-    setState((prev) => {
-      const next = { ...prev, ...patch };
+  const update = useCallback((patch: Partial<PersistedPreferences>) => {
+    setPreferences((previous) => {
+      const next = { ...previous, ...patch };
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
-        /* ignore */
+        // Ignore storage quota/private browsing errors.
       }
       return next;
     });
   }, []);
 
   const value = useMemo<AppStateValue>(() => {
-    const school = SCHOOLS.find((s) => s.id === state.schoolId) ?? SCHOOLS[0];
-    const year = ACADEMIC_YEARS.find((y) => y.id === state.yearId) ?? ACADEMIC_YEARS[0];
-    const readSet = new Set(state.readIds);
+    const auth = authQuery.data ?? null;
+    const role = (auth?.role ?? "student") as Role;
+    const school = auth
+      ? {
+          ...SCHOOLS[0]!,
+          id: auth.schoolId,
+          name: auth.schoolName,
+          code: auth.schoolId,
+          logoInitials: initials(auth.schoolName),
+          students: 0,
+          teachers: 0,
+        }
+      : SCHOOLS[0]!;
+    const year =
+      ACADEMIC_YEARS.find((item) => item.id === preferences.yearId) ?? ACADEMIC_YEARS[0]!;
+    const readSet = new Set(preferences.readIds);
     return {
-      ...state,
-       user: DEMO_USER[state.role],
+      ...preferences,
+      isAuthenticated: Boolean(auth),
+      authLoading: typeof window === "undefined" || authQuery.isLoading,
+      authError: (authQuery.error as Error | null) ?? null,
+      authUser: auth,
+      userId: auth?.userId ?? "",
+      schoolId: auth?.schoolId ?? "",
+      role,
       school,
       year,
-      setRole: (role) => update({ role }),
-      setSchoolId: (schoolId) => {
-        const s = SCHOOLS.find((x) => x.id === schoolId);
-        update({ schoolId, campusId: s?.campuses[0]?.id ?? "", plan: s?.plan ?? "enterprise" });
+      user: auth
+        ? {
+            name: auth.name,
+            sub: `${ROLE_LABEL[role]} · ${auth.schoolName}`,
+            initials: initials(auth.name),
+          }
+        : { name: "Unauthenticated", sub: "Sign in required", initials: "?" },
+      setRole: () => {
+        // Role is resolved by the authenticated membership; there is intentionally no client role switch.
+      },
+      setSchoolId: () => {
+        // School is resolved by the authenticated membership; there is intentionally no client school switch.
       },
       setCampusId: (campusId) => update({ campusId }),
       setYearId: (yearId) => update({ yearId }),
       setPlan: (plan) => update({ plan }),
       setLocale: (locale) => update({ locale }),
       setOffline: (offline) => update({ offline }),
-      markRead: (id) => update({ readIds: Array.from(new Set([...state.readIds, id])) }),
-      markUnread: (id) => update({ readIds: state.readIds.filter((x) => x !== id) }),
-      markAllRead: () => update({ readIds: NOTIFICATIONS.map((n) => n.id) }),
+      markRead: (id) => update({ readIds: Array.from(new Set([...preferences.readIds, id])) }),
+      markUnread: (id) => update({ readIds: preferences.readIds.filter((item) => item !== id) }),
+      markAllRead: () => update({ readIds: NOTIFICATIONS.map((notification) => notification.id) }),
       isRead: (id) => readSet.has(id),
-      unreadCount: NOTIFICATIONS.filter((n) => n.roles.includes(state.role) && !readSet.has(n.id)).length,
+      unreadCount: NOTIFICATIONS.filter(
+        (notification) => notification.roles.includes(role) && !readSet.has(notification.id),
+      ).length,
     };
-  }, [state, update]);
+  }, [authQuery.data, authQuery.error, authQuery.isLoading, preferences, update]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
 
 export function useAppState() {
-  const ctx = useContext(AppStateContext);
-  if (!ctx) throw new Error("useAppState must be used inside AppStateProvider");
-  return ctx;
+  const context = useContext(AppStateContext);
+  if (!context) throw new Error("useAppState must be used inside AppStateProvider");
+  return context;
 }

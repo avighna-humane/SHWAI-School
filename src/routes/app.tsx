@@ -6,7 +6,6 @@ import { MOBILE_NAV, NAV_GROUPS, findNavItem, navForRole } from "@/config/naviga
 import { ROLE_LABEL } from "@/config/roles";
 import { planAllows } from "@/config/plans";
 import { ACADEMIC_YEARS } from "@/data/mock/core";
-import { SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS, SYSTEM_STATUS } from "@/data/mock/platform";
 import { LANGUAGES } from "@/data/mock/core";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { logout } from "@/actions/auth";
 import type { Role } from "@/types";
 
 export const Route = createFileRoute("/app")({
@@ -54,6 +56,13 @@ function Icon({ name, className }: { name: string; className?: string }) {
 }
 
 function Shell() {
+  const state = useAppState();
+  if (state.authLoading) return <AuthLoading />;
+  if (!state.isAuthenticated) return <AuthRequired message={state.authError?.message} />;
+  return <AuthenticatedShell />;
+}
+
+function AuthenticatedShell() {
   const state = useAppState();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
@@ -105,8 +114,15 @@ function Shell() {
                               className="group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[status=active]:bg-primary-soft data-[status=active]:font-semibold data-[status=active]:text-primary"
                             >
                               <Icon name={item.icon} className="size-[18px] shrink-0" />
-                              {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
-                              {!collapsed && locked && <Icons.Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="Locked in your plan" />}
+                              {!collapsed && (
+                                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                              )}
+                              {!collapsed && locked && (
+                                <Icons.Lock
+                                  className="size-3.5 shrink-0 text-muted-foreground"
+                                  aria-label="Locked in your plan"
+                                />
+                              )}
                               {!collapsed && !locked && item.badge && (
                                 <span className="shrink-0 rounded bg-ai-soft px-1.5 py-0.5 text-[10px] font-semibold text-ai">
                                   {item.badge}
@@ -128,8 +144,17 @@ function Shell() {
           </nav>
         </ScrollArea>
         <div className="border-t border-sidebar-border p-2">
-          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setCollapsed((c) => !c)}>
-            {collapsed ? <Icons.PanelLeftOpen className="size-4" aria-hidden /> : <Icons.PanelLeftClose className="size-4" aria-hidden />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => setCollapsed((c) => !c)}
+          >
+            {collapsed ? (
+              <Icons.PanelLeftOpen className="size-4" aria-hidden />
+            ) : (
+              <Icons.PanelLeftClose className="size-4" aria-hidden />
+            )}
             {!collapsed && <span>Collapse</span>}
           </Button>
         </div>
@@ -142,7 +167,12 @@ function Shell() {
             <div className="flex min-w-0 items-center gap-2">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    aria-label="Open navigation"
+                  >
                     <Icons.Menu className="size-5" aria-hidden />
                   </Button>
                 </SheetTrigger>
@@ -153,9 +183,15 @@ function Shell() {
                   <ScrollArea className="h-[calc(100vh-64px)] px-2 py-3">
                     {groups.map((g) => (
                       <div key={g.label} className="mb-3">
-                        <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{g.label}</p>
+                        <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {g.label}
+                        </p>
                         {g.items.map((i) => (
-                          <Link key={i.path} to={i.path} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent data-[status=active]:bg-primary-soft data-[status=active]:text-primary">
+                          <Link
+                            key={i.path}
+                            to={i.path}
+                            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-accent data-[status=active]:bg-primary-soft data-[status=active]:text-primary"
+                          >
                             <Icon name={i.icon} className="size-4" />
                             {i.label}
                           </Link>
@@ -173,7 +209,9 @@ function Shell() {
               >
                 <Icons.Search className="size-4 shrink-0" aria-hidden />
                 <span className="truncate">Search students, classes, modules…</span>
-                <kbd className="ml-auto hidden shrink-0 rounded border border-border px-1.5 text-[10px] sm:block">⌘K</kbd>
+                <kbd className="ml-auto hidden shrink-0 rounded border border-border px-1.5 text-[10px] sm:block">
+                  ⌘K
+                </kbd>
               </button>
             </div>
 
@@ -182,7 +220,12 @@ function Shell() {
               <NotificationsMenu />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setShortcutsOpen(true)} aria-label="Help and keyboard shortcuts">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShortcutsOpen(true)}
+                    aria-label="Help and keyboard shortcuts"
+                  >
                     <Icons.CircleQuestionMark className="size-5" aria-hidden />
                   </Button>
                 </TooltipTrigger>
@@ -193,7 +236,10 @@ function Shell() {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border px-4 py-2 text-xs lg:px-6">
-            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+            <nav
+              aria-label="Breadcrumb"
+              className="flex min-w-0 items-center gap-1.5 text-muted-foreground"
+            >
               <Link to="/app" className="hover:text-foreground">
                 Home
               </Link>
@@ -206,7 +252,12 @@ function Shell() {
             </nav>
             <span className="ml-auto flex items-center gap-3">
               <span className="flex items-center gap-1.5 text-muted-foreground">
-                <span className={cn("size-2 rounded-full", SYSTEM_STATUS.state === "operational" ? "bg-success" : "bg-warning")} />
+                <span
+                  className={cn(
+                    "size-2 rounded-full",
+                    SYSTEM_STATUS.state === "operational" ? "bg-success" : "bg-warning",
+                  )}
+                />
                 {SYSTEM_STATUS.message}
               </span>
               <span className="hidden items-center gap-1.5 text-muted-foreground sm:flex">
@@ -217,7 +268,11 @@ function Shell() {
                   checked={state.offline}
                   onCheckedChange={(v) => {
                     state.setOffline(v);
-                    toast[v ? "warning" : "success"](v ? "Offline mode on — changes will queue for sync" : "Back online — queued changes synced");
+                    toast[v ? "warning" : "success"](
+                      v
+                        ? "Offline mode on — changes will queue for sync"
+                        : "Back online — queued changes synced",
+                    );
                   }}
                   aria-label="Toggle offline mode"
                 />
@@ -233,7 +288,9 @@ function Shell() {
             <div className="flex items-center gap-2">
               <Icons.Info className="size-4 shrink-0 text-amber-600" />
               <p className="leading-relaxed">
-                <strong className="font-semibold">Demo Sandbox:</strong> This workspace renders illustrative preview mock data. No real student databases, fee reconciliation pipelines, or live school systems are connected.
+                <strong className="font-semibold">Demo Sandbox:</strong> This workspace renders
+                illustrative preview mock data. No real student databases, fee reconciliation
+                pipelines, or live school systems are connected.
               </p>
             </div>
             <span className="rounded bg-warning-soft border border-warning/30 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 shrink-0">
@@ -244,7 +301,10 @@ function Shell() {
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card lg:hidden" aria-label="Primary">
+        <nav
+          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card lg:hidden"
+          aria-label="Primary"
+        >
           {mobileItems.map((i) => (
             <Link
               key={i!.path}
@@ -274,14 +334,20 @@ function Shell() {
               ["?", "Open this dialog"],
               ["Esc", "Close dialogs and drawers"],
             ].map(([k, v]) => (
-              <li key={k} className="flex items-center justify-between gap-4 rounded-lg bg-muted px-3 py-2">
+              <li
+                key={k}
+                className="flex items-center justify-between gap-4 rounded-lg bg-muted px-3 py-2"
+              >
                 <span className="text-muted-foreground">{v}</span>
-                <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-xs font-medium">{k}</kbd>
+                <kbd className="rounded border border-border bg-card px-1.5 py-0.5 text-xs font-medium">
+                  {k}
+                </kbd>
               </li>
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            This is a frontend demo — all data is mock data and no changes leave your browser.
+            Sensitive V1 workflows use authenticated server functions and school-scoped persistence.
+            Modules outside V1 remain explicitly marked as demo or configuration-required.
           </p>
         </DialogContent>
       </Dialog>
@@ -289,40 +355,56 @@ function Shell() {
   );
 }
 
+function AuthLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="surface-panel flex items-center gap-3 px-5 py-4 text-sm text-muted-foreground">
+        <Icons.Loader2 className="size-5 animate-spin text-primary" />
+        Checking authenticated school membership…
+      </div>
+    </div>
+  );
+}
+
+function AuthRequired({ message }: { message?: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="surface-panel max-w-md p-6 text-center">
+        <Icons.LockKeyhole className="mx-auto size-10 text-warning" />
+        <h1 className="mt-4 text-xl font-bold">Sign-in required</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          {message ?? "Sign in with an authenticated school membership to access SHWAI."}
+        </p>
+        <div className="mt-5 flex justify-center gap-2">
+          <Button asChild>
+            <Link to="/login">Sign in</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/register">Register school</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SchoolYearSelectors() {
-  const { school, year, setSchoolId, setYearId, locale, setLocale } = useAppState();
+  const { school, year, setYearId, locale, setLocale } = useAppState();
   return (
     <div className="hidden items-center gap-1.5 md:flex">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="max-w-[190px]">
-            <span className="grid size-5 shrink-0 place-items-center rounded bg-primary-soft text-[10px] font-bold text-primary">
-              {school.logoInitials}
-            </span>
-            <span className="truncate">{school.name}</span>
-            <Icons.ChevronDown className="size-3.5 shrink-0" aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
-          <DropdownMenuLabel>Current school</DropdownMenuLabel>
-          {SCHOOLS.map((s) => (
-            <DropdownMenuItem key={s.id} onClick={() => setSchoolId(s.id)} className="gap-2">
-              <span className="grid size-6 place-items-center rounded bg-muted text-[10px] font-bold">{s.logoInitials}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm">{s.name}</span>
-              <span className="block truncate text-xs text-muted-foreground">{s.board} · {s.city}</span>
-              </span>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Campuses</DropdownMenuLabel>
-          {school.campuses.map((c) => (
-            <DropdownMenuItem key={c.id} className="text-sm">
-              {c.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div
+        className="flex h-9 max-w-[240px] items-center gap-2 rounded-md border bg-card px-2.5 text-sm"
+        title="School is resolved from your authenticated membership"
+      >
+        <span className="grid size-5 shrink-0 place-items-center rounded bg-primary-soft text-[10px] font-bold text-primary">
+          {school.logoInitials}
+        </span>
+        <span className="truncate">{school.name}</span>
+        <Icons.LockKeyhole
+          className="size-3.5 shrink-0 text-muted-foreground"
+          aria-label="Server-derived school"
+        />
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -336,7 +418,9 @@ function SchoolYearSelectors() {
           {ACADEMIC_YEARS.map((y) => (
             <DropdownMenuItem key={y.id} onClick={() => setYearId(y.id)}>
               {y.label}
-              <Badge variant="secondary" className="ml-auto text-[10px] capitalize">{y.status}</Badge>
+              <Badge variant="secondary" className="ml-auto text-[10px] capitalize">
+                {y.status}
+              </Badge>
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
@@ -359,7 +443,12 @@ function NotificationsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label={`Notifications, ${unreadCount} unread`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label={`Notifications, ${unreadCount} unread`}
+        >
           <Icons.Bell className="size-5" aria-hidden />
           {unreadCount > 0 && (
             <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-danger-foreground">
@@ -386,13 +475,23 @@ function NotificationsMenu() {
               <span
                 className={cn(
                   "mt-1 size-2 shrink-0 rounded-full",
-                  n.severity === "critical" ? "bg-danger" : n.severity === "warning" ? "bg-warning" : n.severity === "success" ? "bg-success" : "bg-primary",
+                  n.severity === "critical"
+                    ? "bg-danger"
+                    : n.severity === "warning"
+                      ? "bg-warning"
+                      : n.severity === "success"
+                        ? "bg-success"
+                        : "bg-primary",
                   isRead(n.id) && "opacity-25",
                 )}
               />
               <span className="min-w-0">
-                <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>{n.title}</span>
-                <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">{n.body}</span>
+                <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>
+                  {n.title}
+                </span>
+                <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
+                  {n.body}
+                </span>
                 <span className="mt-1 block text-[11px] text-muted-foreground">{n.createdAt}</span>
               </span>
             </button>
@@ -410,7 +509,13 @@ function NotificationsMenu() {
 }
 
 function ProfileMenu() {
-  const { role } = useAppState();
+  const { role, user } = useAppState();
+  const navigate = useNavigate();
+  const logoutMutation = useMutation({
+    mutationFn: () => logout(),
+    onSuccess: () => navigate({ to: "/login" }),
+    onError: (error: Error) => toast.error(error.message),
+  });
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -419,8 +524,12 @@ function ProfileMenu() {
             <Icons.UserRound className="size-4" aria-hidden />
           </span>
           <span className="hidden text-left sm:block">
-            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">Account</span>
-            <span className="block text-[10px] leading-tight text-muted-foreground">{ROLE_LABEL[role]}</span>
+            <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight">
+              {user.name}
+            </span>
+            <span className="block text-[10px] leading-tight text-muted-foreground">
+              {ROLE_LABEL[role]}
+            </span>
           </span>
           <Icons.ChevronDown className="size-3.5" aria-hidden />
         </Button>
@@ -428,7 +537,9 @@ function ProfileMenu() {
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>
           <p className="text-sm">Account</p>
-          <p className="text-xs font-normal text-muted-foreground">Authenticated workspace access</p>
+          <p className="text-xs font-normal text-muted-foreground">
+            Authenticated workspace access
+          </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>
@@ -444,10 +555,11 @@ function ProfileMenu() {
             <Link to="/app/subscription">Subscription</Link>
           </DropdownMenuItem>
         ) : null}
-        <DropdownMenuItem asChild>
-          <Link to="/" onClick={() => localStorage.removeItem("shwai.demo.state")}>
-            Log out
-          </Link>
+        <DropdownMenuItem
+          disabled={logoutMutation.isPending}
+          onClick={() => logoutMutation.mutate()}
+        >
+          {logoutMutation.isPending ? "Signing out…" : "Log out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -472,14 +584,22 @@ function CommandPalette({
           <DialogTitle>Global search and command palette</DialogTitle>
         </DialogHeader>
         <Command>
-          <CommandInput placeholder="Search modules, students, actions…" value={query} onValueChange={setQuery} />
+          <CommandInput
+            placeholder="Search modules, students, actions…"
+            value={query}
+            onValueChange={setQuery}
+          />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             {groups.map((g) => (
               <CommandGroup key={g.label} heading={g.label}>
                 {g.items.map((i) => (
                   <CommandItem key={i.path} value={`${i.label} ${i.description}`} asChild>
-                    <Link to={i.path} onClick={() => onOpenChange(false)} className="flex items-center gap-2">
+                    <Link
+                      to={i.path}
+                      onClick={() => onOpenChange(false)}
+                      className="flex items-center gap-2"
+                    >
                       <Icon name={i.icon} className="size-4" />
                       <span>{i.label}</span>
                     </Link>

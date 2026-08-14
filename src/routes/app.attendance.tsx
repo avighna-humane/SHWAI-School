@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
 import { useAppState } from "@/app/providers/app-state";
-import { getDemoIds } from "@/lib/demo-ids";
-import { STUDENTS } from "@/data/mock/people";
+import { listStudents } from "@/actions/people";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,7 @@ const STATUS_CYCLE: Array<AttendanceStatus | undefined> = [
   "late",
   "leave",
 ];
-const STAFF_ROLES = new Set(["teacher", "principal", "admin", "owner"]);
+const STAFF_ROLES = new Set(["teacher", "staff", "principal", "admin", "owner"]);
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -45,36 +44,45 @@ function statusClass(status?: AttendanceStatus) {
 }
 
 function AttendancePage() {
-  const { role, school, year } = useAppState();
-  const identity = getDemoIds(role);
+  const { role, school, year, userId, schoolId } = useAppState();
   const [date, setDate] = useState(today);
   const [draft, setDraft] = useState<Record<string, AttendanceStatus | undefined>>({});
   const queryClient = useQueryClient();
   const canMark = STAFF_ROLES.has(role);
-  const roster = useMemo(() => {
-    if (role === "student") return STUDENTS.filter((student) => student.id === identity.userId);
-    if (role === "parent")
-      return STUDENTS.filter((student) => ["stu-1", "stu-2"].includes(student.id));
-    return STUDENTS.slice(0, 24);
-  }, [identity.userId, role]);
+  const studentsQuery = useQuery({
+    queryKey: ["attendance-roster", schoolId, role, userId],
+    queryFn: () => listStudents({ data: { status: "active" } }),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const roster = useMemo(
+    () =>
+      (studentsQuery.data ?? []).map((student) => ({
+        id: student.id,
+        name: student.name,
+        admissionNo: student.admission_no,
+        classId: student.class_id ?? "",
+        classLabel: student.class_label ?? "Unassigned",
+        section: student.section_name ?? "Unassigned",
+      })),
+    [studentsQuery.data],
+  );
 
   const query = useQuery({
-    queryKey: ["attendance", school.id, role, identity.userId, date],
+    queryKey: ["attendance", school.id, role, userId, date],
     queryFn: () =>
       withTimeout(
         listAttendance({
           data: {
-            schoolId: school.id,
-            actorSchoolId: school.id,
-            actorRole: role as "teacher" | "principal" | "admin" | "owner" | "student" | "parent",
-            actorId: identity.userId,
             date,
-            studentId: canMark ? undefined : identity.userId,
+            studentId: canMark ? undefined : userId,
           },
         }),
       ),
     enabled: typeof window !== "undefined",
   });
+
+  const workflowLoading = query.isLoading || studentsQuery.isLoading;
+  const workflowError = query.error ?? studentsQuery.error;
 
   useEffect(() => {
     const next: Record<string, AttendanceStatus | undefined> = {};
@@ -86,11 +94,6 @@ function AttendancePage() {
     mutationFn: () =>
       saveAttendance({
         data: {
-          schoolId: school.id,
-          actorSchoolId: school.id,
-          actorRole: role as "teacher" | "principal" | "admin" | "owner",
-          actorId: identity.userId,
-          actorName: identity.userName,
           date,
           records: roster
             .filter((student) => draft[student.id])
@@ -152,7 +155,10 @@ function AttendancePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => query.refetch()}
+            onClick={() => {
+              void query.refetch();
+              void studentsQuery.refetch();
+            }}
             disabled={query.isFetching}
           >
             <Icons.RefreshCw className={`mr-2 size-4 ${query.isFetching ? "animate-spin" : ""}`} />
@@ -168,10 +174,16 @@ function AttendancePage() {
         <Metric icon={Icons.HelpCircle} label="Unmarked" value={summary.unmarked} tone="muted" />
       </div>
 
-      {query.isLoading ? (
+      {workflowLoading ? (
         <LoadingState />
-      ) : query.isError ? (
-        <ErrorState message={(query.error as Error).message} onRetry={() => query.refetch()} />
+      ) : workflowError ? (
+        <ErrorState
+          message={(workflowError as Error).message}
+          onRetry={() => {
+            void query.refetch();
+            void studentsQuery.refetch();
+          }}
+        />
       ) : (
         <section className="surface-panel overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 sm:p-6">
@@ -237,7 +249,7 @@ function AttendancePage() {
                           </p>
                         </td>
                         <td className="px-5 py-4 text-muted-foreground">
-                          Grade {student.grade} — {student.section}
+                          {student.classLabel} — {student.section}
                         </td>
                         <td className="px-5 py-4">
                           {canMark ? (

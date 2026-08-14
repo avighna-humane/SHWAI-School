@@ -2,7 +2,7 @@
 
 React 19 + TypeScript + Vite app using TanStack Router/Start, Tailwind v4, shadcn/ui,
 Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured.
-The repository contains a real persisted vertical slice for homework, submissions, grading, notices, chat, attendance, and audit events. It still uses an explicit demo identity layer rather than production authentication, and AI/operations integrations remain configuration-required unless enabled in the runtime.
+The repository contains an authenticated V1 foundation with PostgreSQL-backed identity, school memberships, server-derived roles, tenant-scoped people, academic structure, homework, submissions, grading, notices, notifications, chat, attendance, audit events, leave, calendar, document metadata, ID-card records, and alumni transitions. AI/operations integrations remain configuration-required unless enabled in the runtime.
 
 ## Run
 
@@ -19,7 +19,7 @@ npm run db:migrate # requires DATABASE_URL or SUPABASE_DATABASE_URL
 
 ```
 src/
-  app/providers/     demo app state (role, school, year, plan, language, offline, notifications)
+  app/providers/     authenticated app state plus non-sensitive user preferences
   components/ui      shadcn primitives
   components/feedback  empty / error / loading / permission-denied / feature-locked states
   config/            navigation.ts (config-driven nav), roles.ts (RBAC), plans.ts (feature gates)
@@ -40,7 +40,7 @@ Deterministic datasets under `src/data/mock` are retained for demonstration and 
 
 `src/config/navigation.ts` declares every module with `roles` and an optional `plan`. The sidebar,
 command palette and mobile bar are all generated from it, so a role only sees its own modules.
-Switch role from the avatar menu in the top bar to exercise the demo identity boundary. This is not production authentication; server operations still validate role capability and school scope, while a real identity provider and membership tables remain deployment requirements.
+Authentication is available at `/login` and `/register`. The server derives `user → school → membership → role` from the HTTP-only session cookie; the client no longer controls the active role or school. Passwords are PBKDF2-SHA-256 hashed and sessions expire after eight hours. A production deployment must still provide PostgreSQL, TLS, secret rotation, monitoring, and an operational identity lifecycle.
 
 ## Subscription feature gating
 
@@ -50,4 +50,4 @@ prompts. Switch plans on `/app/subscription` to see modules lock and unlock live
 
 ## Functional completion boundary
 
-Homework, submissions, grading, notices, chat, attendance, and audit-event writes are implemented through server functions and require PostgreSQL configuration. The remaining V1–V6 modules continue to use deterministic demo records or explicit configuration-required states. AI responses, provenance, predictions, GPS tracking, SMS/WhatsApp delivery, payments, exports, printing, scheduled jobs, and production authentication are not claimed as live until their providers and server infrastructure are configured and verified.
+V1 services now include authenticated identity and membership, tenant-scoped people and academic structure, homework/submissions/grading, notices with application-level notifications, chat, attendance, audit events, leave requests, calendar events, document metadata, ID-card records, and alumni transitions. V1 service calls fail explicitly when PostgreSQL is unavailable; they do not silently simulate a successful write. File bytes still require a production storage provider, and email/push/SMS delivery is intentionally not faked. The remaining V2–V6 surfaces are outside this task and remain demo or configuration-required by design.

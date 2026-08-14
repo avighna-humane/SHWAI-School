@@ -26,6 +26,7 @@ import {
   TRANSPORT_ROUTES,
 } from "@/data/mock/operations";
 import { CONTEXT_ENTRIES, EXPERIMENTS, HELP_MATCHES, INTERVENTIONS } from "@/data/mock/support";
+import { PersistedV1Workspace } from "@/components/v1/persisted-v1-workspace";
 import {
   ACTIVITY_FEED,
   AI_RECOMMENDATIONS,
@@ -69,6 +70,13 @@ function ModuleWorkspace() {
   if (!item.roles.includes(role)) return <PermissionDenied role={ROLE_LABEL[role]} />;
   if (item.plan && !planAllows(plan, item.plan))
     return <FeatureLocked required={item.plan} current={plan} />;
+  if (
+    ["/app/calendar", "/app/documents", "/app/leave", "/app/id-cards", "/app/alumni"].includes(
+      pathname,
+    )
+  ) {
+    return <PersistedV1Workspace pathname={pathname} item={item} />;
+  }
 
   const data = buildWorkspaceData(item, school.name);
   const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[data.icon] ?? Icons.Database;

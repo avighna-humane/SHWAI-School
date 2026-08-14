@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireDatabase } from "@/lib/db";
+import { requireAuth, requireRole } from "@/lib/auth";
 
 export interface AuditEventRow {
   id: string;
@@ -25,12 +26,15 @@ const input = z.object({
 export const listAuditEvents = createServerFn({ method: "POST" })
   .validator(input)
   .handler(async ({ data }) => {
-    if (data.schoolId !== data.actorSchoolId) throw new Error("Cross-school access denied");
+    const context = await requireAuth();
+    requireRole(context, ["principal", "admin", "owner"]);
+    if (data.schoolId !== context.schoolId || data.actorSchoolId !== context.schoolId)
+      throw new Error("Cross-school access denied");
     const sql = requireDatabase();
     return sql<AuditEventRow[]>`
       SELECT id, school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail, created_at
       FROM hw_audit_events
-      WHERE school_id = ${data.schoolId}
+      WHERE school_id = ${context.schoolId}
       ORDER BY created_at DESC
       LIMIT ${data.limit}`;
   });

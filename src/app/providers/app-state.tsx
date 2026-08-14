@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useCallback,
@@ -12,10 +14,23 @@ import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
 import { NOTIFICATIONS } from "@/data/mock/platform";
 import { ROLE_LABEL } from "@/config/roles";
-import { currentUser, type AuthenticatedUser } from "@/actions/auth";
+import {
+  currentUser,
+  listMemberships,
+  switchSchool as switchSchoolAction,
+  type AuthenticatedUser,
+} from "@/actions/auth";
 import { withTimeout } from "@/lib/request-timeout";
 
 const STORAGE_KEY = "shwai.user.preferences";
+
+export interface MembershipOption {
+  id: string;
+  school_id: string;
+  school_name: string;
+  role: Role;
+  active: boolean;
+}
 
 interface PersistedPreferences {
   campusId: string;
@@ -47,9 +62,11 @@ interface AppStateValue extends PersistedPreferences {
   role: Role;
   school: (typeof SCHOOLS)[number];
   year: (typeof ACADEMIC_YEARS)[number];
+  memberships: MembershipOption[];
   user: { name: string; sub: string; initials: string };
   setRole: (role: Role) => void;
   setSchoolId: (id: string) => void;
+  switchSchool: (membershipId: string) => Promise<void>;
   setCampusId: (id: string) => void;
   setYearId: (id: string) => void;
   setPlan: (plan: PlanId) => void;
@@ -82,6 +99,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     retry: false,
   });
   const [preferences, setPreferences] = useState<PersistedPreferences>(DEFAULTS);
+  const membershipsQuery = useQuery({
+    queryKey: ["current-user-memberships", authQuery.data?.userId],
+    queryFn: () => listMemberships(),
+    enabled: Boolean(authQuery.data?.userId),
+    retry: false,
+  });
 
   useEffect(() => {
     try {
@@ -105,6 +128,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const refetchAuth = authQuery.refetch;
+  const refetchMemberships = membershipsQuery.refetch;
+  const switchSchool = useCallback(
+    async (membershipId: string) => {
+      await switchSchoolAction({ data: { membershipId } });
+      await refetchAuth();
+      await refetchMemberships();
+    },
+    [refetchAuth, refetchMemberships],
+  );
+
   const value = useMemo<AppStateValue>(() => {
     const auth = authQuery.data ?? null;
     const role = (auth?.role ?? "student") as Role;
@@ -124,6 +158,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const readSet = new Set(preferences.readIds);
     return {
       ...preferences,
+      plan: (auth?.plan ?? "starter") as PlanId,
       isAuthenticated: Boolean(auth),
       authLoading: typeof window === "undefined" || authQuery.isLoading,
       authError: (authQuery.error as Error | null) ?? null,
@@ -133,6 +168,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       role,
       school,
       year,
+      memberships: membershipsQuery.data ?? [],
       user: auth
         ? {
             name: auth.name,
@@ -146,9 +182,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setSchoolId: () => {
         // School is resolved by the authenticated membership; there is intentionally no client school switch.
       },
+      switchSchool,
       setCampusId: (campusId) => update({ campusId }),
       setYearId: (yearId) => update({ yearId }),
-      setPlan: (plan) => update({ plan }),
+      setPlan: () => {
+        // Plan entitlements are server-controlled; billing/provider workflows update them.
+      },
       setLocale: (locale) => update({ locale }),
       setOffline: (offline) => update({ offline }),
       markRead: (id) => update({ readIds: Array.from(new Set([...preferences.readIds, id])) }),
@@ -159,7 +198,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         (notification) => notification.roles.includes(role) && !readSet.has(notification.id),
       ).length,
     };
-  }, [authQuery.data, authQuery.error, authQuery.isLoading, preferences, update]);
+  }, [
+    authQuery.data,
+    authQuery.error,
+    authQuery.isLoading,
+    membershipsQuery.data,
+    preferences,
+    switchSchool,
+    update,
+  ]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

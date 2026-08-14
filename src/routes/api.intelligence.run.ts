@@ -65,6 +65,8 @@ export const Route = createFileRoute("/api/intelligence/run")({
             schoolName: school.name,
             role: "owner",
             membershipId: "system-scheduler",
+            plan: "enterprise",
+            subscriptionStatus: "system",
           };
           try {
             const result = await executeIntelligenceScan(systemContext, { windowDays: 30 });

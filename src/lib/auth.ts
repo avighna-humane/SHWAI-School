@@ -5,6 +5,7 @@ import {
   setCookie,
 } from "@tanstack/react-start/server";
 import { requireDatabase } from "@/lib/db";
+import type { PlanId } from "@/types";
 import { constantTimeEqual } from "@/lib/security";
 
 export const SESSION_COOKIE = "shwai_session";
@@ -19,6 +20,8 @@ export interface AuthContext {
   schoolName: string;
   role: "student" | "teacher" | "parent" | "staff" | "admin" | "principal" | "owner";
   membershipId: string;
+  plan: PlanId;
+  subscriptionStatus: string;
 }
 
 function bytesToBase64(bytes: Uint8Array) {
@@ -129,7 +132,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   const tokenHash = await digest(token);
   const rows = await sql<AuthContext[]>`
     SELECT u.id AS user_id, u.email, u.name, m.school_id, s.name AS school_name,
-           m.role, m.id AS membership_id
+           m.role, m.id AS membership_id, s.plan, s.subscription_status
     FROM hw_sessions session
     JOIN hw_users u ON u.id = session.user_id AND u.active = TRUE
     JOIN hw_memberships m ON m.id = session.membership_id AND m.active = TRUE

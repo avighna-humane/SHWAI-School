@@ -1,0 +1,80 @@
+name: SHWAI CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test -- --run
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build
+      - run: git diff --check
+
+  focused-lint:
+    name: Lint production-readiness changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npx eslint
+          scripts/migrate.ts
+          src/actions/auth.ts
+          src/actions/data.ts
+          src/actions/imports.ts
+          src/actions/invitations.ts
+          src/actions/onboarding.ts
+          src/app/providers/app-state.tsx
+          src/components/auth/auth-card.tsx
+          src/config/navigation.ts
+          src/lib/jobs.ts
+          src/lib/permissions.ts
+          src/lib/notifications/email.ts
+          src/routes/accept-invitation.tsx
+          src/routes/app.data-export.tsx
+          src/routes/app.data-import.tsx
+          src/routes/app.onboarding.tsx
+          src/routes/forgot-password.tsx
+          src/routes/health.ts
+          src/routes/readiness.ts
+          src/routes/reset-password.tsx
+          src/routes/verify-email.tsx
+          --max-warnings=0
+
+  migration:
+    name: Validate staging migration when credentials are available
+    runs-on: ubuntu-latest
+    if: ${{ secrets.STAGING_DATABASE_URL != '' }}
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      NODE_ENV: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate

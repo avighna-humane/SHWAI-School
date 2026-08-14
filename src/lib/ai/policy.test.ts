@@ -20,6 +20,8 @@ const context = (role: AuthContext["role"], schoolId = "school-a"): AuthContext 
   schoolName: "Test School",
   role,
   membershipId: "membership-1",
+  plan: "enterprise",
+  subscriptionStatus: "active",
 });
 
 describe("V3 AI policy", () => {

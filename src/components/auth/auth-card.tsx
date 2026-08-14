@@ -10,22 +10,41 @@ import { Label } from "@/components/ui/label";
 export function AuthCard({ mode }: { mode: "login" | "register" }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", schoolName: "" });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const isRegister = mode === "register";
 
   const mutation = useMutation({
-    mutationFn: () =>
-      isRegister
-        ? register({ data: form })
-        : login({ data: { email: form.email, password: form.password } }),
-    onSuccess: () => navigate({ to: "/app" }),
+    mutationFn: async () => {
+      if (isRegister) {
+        const result = await register({
+          data: {
+            ...form,
+            termsAccepted: true,
+            privacyVersion: "v1",
+          },
+        });
+        return { kind: "register" as const, message: result.message };
+      }
+      await login({ data: { email: form.email, password: form.password } });
+      return { kind: "login" as const };
+    },
+    onSuccess: (result) => {
+      if (result.kind === "register") {
+        setSuccess(result.message);
+        return;
+      }
+      void navigate({ to: "/app" });
+    },
     onError: (cause: Error) => setError(cause.message),
   });
 
   function update(field: keyof typeof form, value: string) {
     setForm((previous) => ({ ...previous, [field]: value }));
     setError(null);
+    setSuccess(null);
   }
 
   return (
@@ -48,7 +67,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isRegister
-                ? "Registration creates the first owner membership for a new school."
+                ? "Registration creates the first owner membership for a new school. Email verification is required before sign-in."
                 : "Your school and role are resolved from your authenticated membership."}
             </p>
           </div>
@@ -57,6 +76,11 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
             onSubmit={(event) => {
               event.preventDefault();
               setError(null);
+              setSuccess(null);
+              if (isRegister && !termsAccepted) {
+                setError("Accept the terms and privacy notice before creating an account.");
+                return;
+              }
               mutation.mutate();
             }}
           >
@@ -124,12 +148,37 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
                 <p className="text-xs text-muted-foreground">Use at least 12 characters.</p>
               ) : null}
             </div>
+            {isRegister ? (
+              <label className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(event) => {
+                    setTermsAccepted(event.target.checked);
+                    setError(null);
+                  }}
+                  className="mt-1 size-4 rounded border-input"
+                />
+                <span>I accept the SHWAI terms and privacy notice for this school account.</span>
+              </label>
+            ) : null}
             {error ? (
               <div
                 role="alert"
                 className="rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-sm leading-5 text-danger"
               >
                 {error}
+              </div>
+            ) : null}
+            {success ? (
+              <div
+                role="status"
+                className="rounded-lg border border-success/30 bg-success-soft px-3 py-2 text-sm leading-5 text-success-foreground"
+              >
+                {success}{" "}
+                <Link className="font-semibold underline" to="/verify-email">
+                  Verify email
+                </Link>
               </div>
             ) : null}
             <Button className="w-full" type="submit" disabled={mutation.isPending}>
@@ -145,6 +194,13 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
               )}
             </Button>
           </form>
+          {!isRegister ? (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              <Link className="font-semibold text-primary hover:underline" to="/forgot-password">
+                Forgot your password?
+              </Link>
+            </p>
+          ) : null}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {isRegister ? "Already have an account?" : "Need a school account?"}{" "}
             <Link

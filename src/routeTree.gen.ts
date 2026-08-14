@@ -10,15 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcceptInvitationRouteImport } from './routes/accept-invitation'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ReadinessRouteImport } from './routes/readiness'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
 import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppChatRouteImport } from './routes/app.chat'
+import { Route as AppDataExportRouteImport } from './routes/app.data-export'
+import { Route as AppDataImportRouteImport } from './routes/app.data-import'
 import { Route as AppDecisionsRouteImport } from './routes/app.decisions'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppInterventionsRouteImport } from './routes/app.interventions'
@@ -26,14 +34,18 @@ import { Route as AppKnowledgeBaseRouteImport } from './routes/app.knowledge-bas
 import { Route as AppNoticesRouteImport } from './routes/app.notices'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppOfflineRouteImport } from './routes/app.offline'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppOperationsRouteImport } from './routes/app.operations'
 import { Route as AppPredictionsRouteImport } from './routes/app.predictions'
+import { Route as AppPrivacyRouteImport } from './routes/app.privacy'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
 import { Route as AppSupportRouteImport } from './routes/app.support'
+import { Route as AppSystemHealthRouteImport } from './routes/app.system-health'
 import { Route as ApiIntelligenceRunRouteImport } from './routes/api.intelligence.run'
+import { Route as ApiJobsRunRouteImport } from './routes/api.jobs.run'
 import { Route as AppAiClassroomAssistantRouteImport } from './routes/app.ai.classroom-assistant'
 import { Route as AppAiContentLibraryRouteImport } from './routes/app.ai.content-library'
 import { Route as AppAiGovernanceRouteImport } from './routes/app.ai.governance'
@@ -56,9 +68,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInvitationRoute = AcceptInvitationRouteImport.update({
+  id: '/accept-invitation',
+  path: '/accept-invitation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -71,9 +98,24 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReadinessRoute = ReadinessRouteImport.update({
+  id: '/readiness',
+  path: '/readiness',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -99,6 +141,16 @@ const AppAuditRoute = AppAuditRouteImport.update({
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDataExportRoute = AppDataExportRouteImport.update({
+  id: '/data-export',
+  path: '/data-export',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDataImportRoute = AppDataImportRouteImport.update({
+  id: '/data-import',
+  path: '/data-import',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDecisionsRoute = AppDecisionsRouteImport.update({
@@ -136,6 +188,11 @@ const AppOfflineRoute = AppOfflineRouteImport.update({
   path: '/offline',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOperationsRoute = AppOperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
@@ -144,6 +201,11 @@ const AppOperationsRoute = AppOperationsRouteImport.update({
 const AppPredictionsRoute = AppPredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacyRoute = AppPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -171,9 +233,19 @@ const AppSupportRoute = AppSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSystemHealthRoute = AppSystemHealthRouteImport.update({
+  id: '/system-health',
+  path: '/system-health',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiIntelligenceRunRoute = ApiIntelligenceRunRouteImport.update({
   id: '/api/intelligence/run',
   path: '/api/intelligence/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiJobsRunRoute = ApiJobsRunRouteImport.update({
+  id: '/api/jobs/run',
+  path: '/api/jobs/run',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAiClassroomAssistantRoute = AppAiClassroomAssistantRouteImport.update({
@@ -261,14 +333,22 @@ const AppStudentsStudentIdRoute = AppStudentsStudentIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
   '/app': typeof AppRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/readiness': typeof ReadinessRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/data-export': typeof AppDataExportRoute
+  '/app/data-import': typeof AppDataImportRoute
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
@@ -276,15 +356,19 @@ export interface FileRoutesByFullPath {
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/operations': typeof AppOperationsRoute
   '/app/predictions': typeof AppPredictionsRoute
+  '/app/privacy': typeof AppPrivacyRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/support': typeof AppSupportRoute
+  '/app/system-health': typeof AppSystemHealthRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/governance': typeof AppAiGovernanceRoute
@@ -304,13 +388,21 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/readiness': typeof ReadinessRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/data-export': typeof AppDataExportRoute
+  '/app/data-import': typeof AppDataImportRoute
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
@@ -318,15 +410,19 @@ export interface FileRoutesByTo {
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/operations': typeof AppOperationsRoute
   '/app/predictions': typeof AppPredictionsRoute
+  '/app/privacy': typeof AppPrivacyRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/support': typeof AppSupportRoute
+  '/app/system-health': typeof AppSystemHealthRoute
   '/app': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/governance': typeof AppAiGovernanceRoute
@@ -347,14 +443,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accept-invitation': typeof AcceptInvitationRoute
   '/app': typeof AppRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/readiness': typeof ReadinessRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/app/$': typeof AppSplatRoute
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/data-export': typeof AppDataExportRoute
+  '/app/data-import': typeof AppDataImportRoute
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
@@ -362,15 +466,19 @@ export interface FileRoutesById {
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/operations': typeof AppOperationsRoute
   '/app/predictions': typeof AppPredictionsRoute
+  '/app/privacy': typeof AppPrivacyRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/support': typeof AppSupportRoute
+  '/app/system-health': typeof AppSystemHealthRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/governance': typeof AppAiGovernanceRoute
@@ -392,14 +500,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invitation'
     | '/app'
+    | '/forgot-password'
+    | '/health'
     | '/login'
     | '/pricing'
+    | '/readiness'
     | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/data-export'
+    | '/app/data-import'
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
@@ -407,15 +523,19 @@ export interface FileRouteTypes {
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
+    | '/app/onboarding'
     | '/app/operations'
     | '/app/predictions'
+    | '/app/privacy'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
     | '/app/support'
+    | '/app/system-health'
     | '/app/'
     | '/api/intelligence/run'
+    | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
     | '/app/ai/governance'
@@ -435,13 +555,21 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invitation'
+    | '/forgot-password'
+    | '/health'
     | '/login'
     | '/pricing'
+    | '/readiness'
     | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/data-export'
+    | '/app/data-import'
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
@@ -449,15 +577,19 @@ export interface FileRouteTypes {
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
+    | '/app/onboarding'
     | '/app/operations'
     | '/app/predictions'
+    | '/app/privacy'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
     | '/app/support'
+    | '/app/system-health'
     | '/app'
     | '/api/intelligence/run'
+    | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
     | '/app/ai/governance'
@@ -477,14 +609,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accept-invitation'
     | '/app'
+    | '/forgot-password'
+    | '/health'
     | '/login'
     | '/pricing'
+    | '/readiness'
     | '/register'
+    | '/reset-password'
+    | '/verify-email'
     | '/app/$'
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/data-export'
+    | '/app/data-import'
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
@@ -492,15 +632,19 @@ export interface FileRouteTypes {
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
+    | '/app/onboarding'
     | '/app/operations'
     | '/app/predictions'
+    | '/app/privacy'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
     | '/app/support'
+    | '/app/system-health'
     | '/app/'
     | '/api/intelligence/run'
+    | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
     | '/app/ai/governance'
@@ -521,11 +665,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcceptInvitationRoute: typeof AcceptInvitationRoute
   AppRoute: typeof AppRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  ReadinessRoute: typeof ReadinessRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ApiIntelligenceRunRoute: typeof ApiIntelligenceRunRoute
+  ApiJobsRunRoute: typeof ApiJobsRunRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -537,11 +688,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accept-invitation': {
+      id: '/accept-invitation'
+      path: '/accept-invitation'
+      fullPath: '/accept-invitation'
+      preLoaderRoute: typeof AcceptInvitationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app': {
       id: '/app'
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -558,11 +730,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/readiness': {
+      id: '/readiness'
+      path: '/readiness'
+      fullPath: '/readiness'
+      preLoaderRoute: typeof ReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -598,6 +791,20 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/app/chat'
       preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/data-export': {
+      id: '/app/data-export'
+      path: '/data-export'
+      fullPath: '/app/data-export'
+      preLoaderRoute: typeof AppDataExportRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/data-import': {
+      id: '/app/data-import'
+      path: '/data-import'
+      fullPath: '/app/data-import'
+      preLoaderRoute: typeof AppDataImportRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/decisions': {
@@ -649,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOfflineRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/operations': {
       id: '/app/operations'
       path: '/operations'
@@ -661,6 +875,13 @@ declare module '@tanstack/react-router' {
       path: '/predictions'
       fullPath: '/app/predictions'
       preLoaderRoute: typeof AppPredictionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/privacy': {
+      id: '/app/privacy'
+      path: '/privacy'
+      fullPath: '/app/privacy'
+      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -698,11 +919,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSupportRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/system-health': {
+      id: '/app/system-health'
+      path: '/system-health'
+      fullPath: '/app/system-health'
+      preLoaderRoute: typeof AppSystemHealthRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/intelligence/run': {
       id: '/api/intelligence/run'
       path: '/api/intelligence/run'
       fullPath: '/api/intelligence/run'
       preLoaderRoute: typeof ApiIntelligenceRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/jobs/run': {
+      id: '/api/jobs/run'
+      path: '/api/jobs/run'
+      fullPath: '/api/jobs/run'
+      preLoaderRoute: typeof ApiJobsRunRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/ai/classroom-assistant': {
@@ -837,6 +1072,8 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppAuditRoute: typeof AppAuditRoute
   AppChatRoute: typeof AppChatRoute
+  AppDataExportRoute: typeof AppDataExportRoute
+  AppDataImportRoute: typeof AppDataImportRoute
   AppDecisionsRoute: typeof AppDecisionsRoute
   AppHomeworkRoute: typeof AppHomeworkRoute
   AppInterventionsRoute: typeof AppInterventionsRoute
@@ -844,13 +1081,16 @@ interface AppRouteChildren {
   AppNoticesRoute: typeof AppNoticesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOfflineRoute: typeof AppOfflineRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
   AppOperationsRoute: typeof AppOperationsRoute
   AppPredictionsRoute: typeof AppPredictionsRoute
+  AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRouteWithChildren
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppSupportRoute: typeof AppSupportRoute
+  AppSystemHealthRoute: typeof AppSystemHealthRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAiClassroomAssistantRoute: typeof AppAiClassroomAssistantRoute
   AppAiContentLibraryRoute: typeof AppAiContentLibraryRoute
@@ -874,6 +1114,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppAuditRoute: AppAuditRoute,
   AppChatRoute: AppChatRoute,
+  AppDataExportRoute: AppDataExportRoute,
+  AppDataImportRoute: AppDataImportRoute,
   AppDecisionsRoute: AppDecisionsRoute,
   AppHomeworkRoute: AppHomeworkRoute,
   AppInterventionsRoute: AppInterventionsRoute,
@@ -881,13 +1123,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppNoticesRoute: AppNoticesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOfflineRoute: AppOfflineRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
   AppOperationsRoute: AppOperationsRoute,
   AppPredictionsRoute: AppPredictionsRoute,
+  AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRouteWithChildren,
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppSupportRoute: AppSupportRoute,
+  AppSystemHealthRoute: AppSystemHealthRoute,
   AppIndexRoute: AppIndexRoute,
   AppAiClassroomAssistantRoute: AppAiClassroomAssistantRoute,
   AppAiContentLibraryRoute: AppAiContentLibraryRoute,
@@ -910,11 +1155,18 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcceptInvitationRoute: AcceptInvitationRoute,
   AppRoute: AppRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  ReadinessRoute: ReadinessRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ApiIntelligenceRunRoute: ApiIntelligenceRunRoute,
+  ApiJobsRunRoute: ApiJobsRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

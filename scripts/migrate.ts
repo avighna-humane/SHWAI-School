@@ -6,7 +6,9 @@ if (!DB_URL) {
   process.exit(1);
 }
 
-const sql = postgres(DB_URL, { ssl: DB_URL.includes("supabase") ? "require" : undefined });
+const sql = postgres(DB_URL, {
+  ssl: process.env.NODE_ENV === "production" || DB_URL.includes("supabase") ? "require" : undefined,
+});
 
 async function migrate() {
   console.log("Running SHWAI schema migration...");
@@ -21,6 +23,18 @@ async function migrate() {
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'Asia/Kolkata'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS country TEXT NOT NULL DEFAULT 'IN'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'INR'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS grading_system TEXT NOT NULL DEFAULT 'percentage'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS curriculum TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'en'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS logo_key TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS onboarding_status TEXT NOT NULL DEFAULT 'setup'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS onboarding_step TEXT NOT NULL DEFAULT 'school_profile'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS onboarding_completed_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'starter'`;
+  await sql`ALTER TABLE hw_schools ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'configuration_required'`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_users (
@@ -42,6 +56,44 @@ async function migrate() {
       active BOOLEAN NOT NULL DEFAULT TRUE,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE (user_id, school_id)
+    )`;
+  await sql`ALTER TABLE hw_users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_memberships ADD COLUMN IF NOT EXISTS invited_by TEXT`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_email_verification_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE, expires_at TIMESTAMPTZ NOT NULL, used_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_password_reset_tokens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE, expires_at TIMESTAMPTZ NOT NULL, used_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_invitations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      email TEXT NOT NULL, role TEXT NOT NULL CHECK (role IN ('student','teacher','parent','staff','admin','principal')),
+      target_entity_id TEXT NOT NULL DEFAULT '', token_hash TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','expired','revoked')),
+      expires_at TIMESTAMPTZ NOT NULL, invited_by TEXT NOT NULL, accepted_by TEXT, accepted_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_invitations_school_status_idx ON hw_invitations (school_id, status, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_invitations_email_idx ON hw_invitations (LOWER(email), status)`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_identity_policies (
+      school_id TEXT PRIMARY KEY REFERENCES hw_schools(id) ON DELETE CASCADE,
+      require_email_verification BOOLEAN NOT NULL DEFAULT TRUE,
+      require_mfa_for_privileged BOOLEAN NOT NULL DEFAULT FALSE,
+      mfa_provider TEXT NOT NULL DEFAULT 'configuration_required',
+      updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_user_consents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
+      school_id TEXT REFERENCES hw_schools(id) ON DELETE CASCADE, consent_type TEXT NOT NULL, version TEXT NOT NULL,
+      granted BOOLEAN NOT NULL, granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), withdrawn_at TIMESTAMPTZ
     )`;
 
   await sql`
@@ -1106,6 +1158,43 @@ async function migrate() {
     CREATE TABLE IF NOT EXISTS hw_data_requests (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, requester_id TEXT NOT NULL, request_type TEXT NOT NULL CHECK (request_type IN ('export','deletion')), scope JSONB NOT NULL DEFAULT '{}'::JSONB, status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested','approved','processing','completed','rejected','blocked_legal_hold')), reviewed_by TEXT, reason TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_jobs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT REFERENCES hw_schools(id) ON DELETE CASCADE, job_type TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','succeeded','failed','cancelled')),
+      attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 3, payload JSONB NOT NULL DEFAULT '{}'::JSONB,
+      result JSONB NOT NULL DEFAULT '{}'::JSONB, failure_reason TEXT NOT NULL DEFAULT '', available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      started_at TIMESTAMPTZ, completed_at TIMESTAMPTZ, created_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, job_type, idempotency_key)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_notification_deliveries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      notification_id UUID REFERENCES hw_notifications(id) ON DELETE CASCADE, recipient_id TEXT NOT NULL, channel TEXT NOT NULL CHECK (channel IN ('in_app','email','sms','whatsapp','push')),
+      template TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sending','sent','failed','cancelled')),
+      provider_message_id TEXT NOT NULL DEFAULT '', attempts INTEGER NOT NULL DEFAULT 0, failure_reason TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), sent_at TIMESTAMPTZ, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_import_jobs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      entity TEXT NOT NULL, format TEXT NOT NULL CHECK (format IN ('csv','json','xlsx')), status TEXT NOT NULL DEFAULT 'uploaded' CHECK (status IN ('uploaded','validated','reviewed','committed','failed','cancelled')),
+      file_name TEXT NOT NULL, file_size INTEGER NOT NULL, mapping JSONB NOT NULL DEFAULT '{}'::JSONB, summary JSONB NOT NULL DEFAULT '{}'::JSONB,
+      error_report JSONB NOT NULL DEFAULT '[]'::JSONB, initiated_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), completed_at TIMESTAMPTZ
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_import_rows (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), job_id UUID NOT NULL REFERENCES hw_import_jobs(id) ON DELETE CASCADE,
+      row_number INTEGER NOT NULL, raw_data JSONB NOT NULL, normalized_data JSONB NOT NULL DEFAULT '{}'::JSONB,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','valid','warning','error','committed','rejected')), errors JSONB NOT NULL DEFAULT '[]'::JSONB,
+      UNIQUE (job_id, row_number)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_export_jobs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      export_type TEXT NOT NULL, format TEXT NOT NULL CHECK (format IN ('csv','json','xlsx')), status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','succeeded','failed','expired','cancelled')),
+      scope JSONB NOT NULL DEFAULT '{}'::JSONB, artifact_reference TEXT NOT NULL DEFAULT '', initiated_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), expires_at TIMESTAMPTZ, completed_at TIMESTAMPTZ, failure_reason TEXT NOT NULL DEFAULT ''
+    )`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_campuses_school_idx ON hw_campuses (school_id, active)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_admission_pipeline_idx ON hw_admission_applications (school_id, status, updated_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_fee_assignments_student_idx ON hw_fee_assignments (school_id, student_id, status)`;
@@ -1125,6 +1214,14 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_offline_operations_sync_idx ON hw_offline_operations (school_id, status, updated_at)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_access_logs_idx ON hw_data_access_logs (school_id, entity, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_data_requests_idx ON hw_data_requests (school_id, request_type, status, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_jobs_claim_idx ON hw_jobs (status, available_at, created_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_jobs_school_idx ON hw_jobs (school_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_import_jobs_school_idx ON hw_import_jobs (school_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_import_rows_job_status_idx ON hw_import_rows (job_id, status, row_number)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_export_jobs_school_idx ON hw_export_jobs (school_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_identity_tokens_expiry_idx ON hw_email_verification_tokens (expires_at, used_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_password_tokens_expiry_idx ON hw_password_reset_tokens (expires_at, used_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_data_requests_school_status_idx ON hw_data_requests (school_id, status, created_at DESC)`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_ai_provenance_records (

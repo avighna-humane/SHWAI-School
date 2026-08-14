@@ -389,22 +389,72 @@ function AuthRequired({ message }: { message?: string }) {
 }
 
 function SchoolYearSelectors() {
-  const { school, year, setYearId, locale, setLocale } = useAppState();
+  const { school, year, setYearId, locale, setLocale, memberships, switchSchool } = useAppState();
+  const [switching, setSwitching] = useState(false);
+
+  async function changeSchool(membershipId: string) {
+    setSwitching(true);
+    try {
+      await switchSchool(membershipId);
+      toast.success("School context switched");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "School switch failed");
+    } finally {
+      setSwitching(false);
+    }
+  }
+
   return (
     <div className="hidden items-center gap-1.5 md:flex">
-      <div
-        className="flex h-9 max-w-[240px] items-center gap-2 rounded-md border bg-card px-2.5 text-sm"
-        title="School is resolved from your authenticated membership"
-      >
-        <span className="grid size-5 shrink-0 place-items-center rounded bg-primary-soft text-[10px] font-bold text-primary">
-          {school.logoInitials}
-        </span>
-        <span className="truncate">{school.name}</span>
-        <Icons.LockKeyhole
-          className="size-3.5 shrink-0 text-muted-foreground"
-          aria-label="Server-derived school"
-        />
-      </div>
+      {memberships.length > 1 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={switching}
+              title="Switch authorized school membership"
+            >
+              <span className="grid size-5 shrink-0 place-items-center rounded bg-primary-soft text-[10px] font-bold text-primary">
+                {school.logoInitials}
+              </span>
+              <span className="max-w-[150px] truncate">{school.name}</span>
+              <Icons.ChevronDown className="size-3.5" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Authorized school memberships</DropdownMenuLabel>
+            {memberships.map((membership) => (
+              <DropdownMenuItem
+                key={membership.id}
+                onClick={() => void changeSchool(membership.id)}
+              >
+                <span className="min-w-0 truncate">{membership.school_name}</span>
+                <Badge variant="secondary" className="ml-auto text-[10px] capitalize">
+                  {membership.role}
+                </Badge>
+                {membership.school_id === school.id ? (
+                  <Icons.Check className="ml-2 size-4" aria-hidden />
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <div
+          className="flex h-9 max-w-[240px] items-center gap-2 rounded-md border bg-card px-2.5 text-sm"
+          title="School is resolved from your authenticated membership"
+        >
+          <span className="grid size-5 shrink-0 place-items-center rounded bg-primary-soft text-[10px] font-bold text-primary">
+            {school.logoInitials}
+          </span>
+          <span className="truncate">{school.name}</span>
+          <Icons.LockKeyhole
+            className="size-3.5 shrink-0 text-muted-foreground"
+            aria-label="Server-derived school"
+          />
+        </div>
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

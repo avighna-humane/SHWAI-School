@@ -10,6 +10,8 @@ describe("V1 authentication primitives", () => {
     schoolName: "School A",
     role: "owner",
     membershipId: "membership-1",
+    plan: "enterprise",
+    subscriptionStatus: "active",
   };
 
   it("hashes passwords with a salted, non-plaintext representation", async () => {

@@ -53,6 +53,12 @@ Prediction foundations persist requested type, scope, evidence summary, data-qua
 
 The classroom assistant uses approved school context and reports provider/source boundaries honestly. Learning journeys persist concepts, prerequisite gaps, practice, revision, and observed progress; they extend V3/V4 evidence and do not forecast future outcomes. V6 AI settings and usage governance are persisted and audited. Live PostgreSQL migration, authenticated browser workflows, vector/speech/OCR providers, production scheduling, and external operational integrations remain configuration or deployment requirements. See [`docs/v6-completion-report.md`](docs/v6-completion-report.md) for the COMPLETE / PARTIAL / CONFIGURATION_REQUIRED / BLOCKED / NOT_IMPLEMENTED matrix.
 
+## Production readiness foundations
+
+The repository now includes a real production-code foundation for school onboarding at `/app/onboarding`, authorized multi-school membership switching, one-time email verification, password recovery with session revocation, controlled invitations at `/accept-invitation`, server-enforced permissions, server-derived plan context, staged student CSV/JSON import at `/app/data-import`, bounded audited CSV/JSON export at `/app/data-export`, privacy request review at `/app/privacy`, owner system health and incident controls at `/app/system-health`, `/health` and `/readiness` probes, persistent idempotent job records, a secure job-runner boundary, names-only `.env.example`, and a GitHub Actions verification workflow.
+
+These workflows are not claimed to be fully production-ready without deployment evidence. Email, private object storage, XLSX parsing, large background exports, durable workers, payment, SSO, Google/Microsoft education connectors, MFA providers, monitoring delivery, backups/PITR, restore testing, RLS review, WAF/DDoS controls, and production browser verification remain `CONFIGURATION REQUIRED`, `DEPLOYMENT REQUIRED`, `BLOCKED`, or `NOT VERIFIED`. Read [`docs/PRODUCTION_READINESS_REPORT.md`](docs/PRODUCTION_READINESS_REPORT.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md), and [`docs/BACKUP_AND_RECOVERY.md`](docs/BACKUP_AND_RECOVERY.md) before enabling a real school.
+
 ## AI provider configuration
 
 Configure a supported server-side provider in the runtime environment. The built-in Forge-compatible provider uses:
@@ -89,7 +95,7 @@ src/
   lib/                  database, access policy, timeout, and error helpers
   routes/               file-based routes for the app shell and V1–V6 modules
   scripts/              PostgreSQL schema migration
-  docs/                 version completion reports
+  docs/                 version and production-readiness reports/runbooks
 ```
 
 ## Mock data and services
@@ -98,7 +104,7 @@ Deterministic datasets under `src/data/mock` remain for demonstration and empty-
 
 ## Role-based navigation and authentication
 
-`src/config/navigation.ts` declares every module with `roles` and an optional `plan`; the sidebar, command palette, and mobile navigation derive from it. The server derives `user → school → membership → role` from the HTTP-only session cookie, so the browser cannot select an active role or school. Passwords use PBKDF2-SHA-256 and sessions expire after eight hours. Production deployment still requires PostgreSQL, TLS, secret rotation, monitoring, and an operational identity lifecycle.
+`src/config/navigation.ts` declares every module with `roles` and an optional `plan`; the sidebar, command palette, and mobile navigation derive from it. The server derives `user → school → membership → role → plan` from the HTTP-only session cookie. The browser cannot invent a role or school; it may switch only among active server-authorized memberships through session rotation. Passwords use PBKDF2-SHA-256 and sessions expire after eight hours. Production deployment still requires PostgreSQL, TLS, secret rotation, monitoring, and an operational identity lifecycle.
 
 ## Subscription feature gating
 

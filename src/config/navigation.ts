@@ -355,6 +355,20 @@ export const NAV_GROUPS: NavGroup[] = [
         plan: "professional",
         description: "Admissions, fees, transport, library, inventory and facilities",
       },
+      {
+        label: "Data import",
+        path: "/app/data-import",
+        icon: "DatabaseBackup",
+        roles: LEADERSHIP,
+        description: "Stage, validate, review, and atomically commit school data",
+      },
+      {
+        label: "Data export",
+        path: "/app/data-export",
+        icon: "FileDown",
+        roles: ["principal", "owner"],
+        description: "Audited, bounded school data export",
+      },
     ],
   },
   {
@@ -476,6 +490,13 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Authentication, encryption, backups, tenant isolation",
       },
       {
+        label: "System health",
+        path: "/app/system-health",
+        icon: "Activity",
+        roles: ["owner"],
+        description: "Owner-only dependency status and incident containment controls",
+      },
+      {
         label: "Privacy & data",
         path: "/app/privacy",
         icon: "FileKey",
@@ -494,6 +515,13 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: "Plug",
         roles: LEADERSHIP,
         description: "Classroom, Drive, Teams, Zoom, SMS and WhatsApp",
+      },
+      {
+        label: "Onboarding",
+        path: "/app/onboarding",
+        icon: "ListChecks",
+        roles: LEADERSHIP,
+        description: "Server-backed school setup, prerequisites, and readiness progress",
       },
       {
         label: "Settings",

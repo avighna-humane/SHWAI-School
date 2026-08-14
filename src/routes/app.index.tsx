@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FloatingAI } from "@/components/feedback/floating-ai";
 import { getIntelligenceOverview, listIntelligenceAlerts } from "@/actions/intelligence";
+import { getV5OperationsSummary } from "@/actions/operations";
 import { ACTIVITY_FEED, AI_RECOMMENDATIONS, SYSTEM_STATUS } from "@/data/mock/platform";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
@@ -63,6 +64,11 @@ function Dashboard() {
     queryKey: ["dashboard-v4-alerts", school.id],
     queryFn: () => listIntelligenceAlerts(),
     enabled: !["student", "parent"].includes(role),
+  });
+  const operationsQuery = useQuery({
+    queryKey: ["dashboard-v5-operations", school.id],
+    queryFn: () => getV5OperationsSummary(),
+    enabled: ["staff", "admin", "principal", "owner"].includes(role),
   });
   const overview = overviewQuery.data as unknown as
     | {
@@ -163,6 +169,63 @@ function Dashboard() {
           tone="ai"
         />
       </section>
+
+      {["staff", "admin", "principal", "owner"].includes(role) ? (
+        <section className="surface-panel p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                V5 enterprise operations
+              </p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight">
+                Operate from persisted records
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Admissions, fees, transport, library, inventory, facilities, workload and learning
+                debt are shown only when records exist.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to={"/app/operations" as never}>
+                Open operations <Icons.ArrowUpRight className="ml-2 size-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <DashboardOpsMetric
+              label="Admissions"
+              value={String(
+                (operationsQuery.data?.admissions ?? []).reduce(
+                  (sum, row) => sum + Number((row as { count?: number }).count ?? 0),
+                  0,
+                ),
+              )}
+            />
+            <DashboardOpsMetric
+              label="Fee accounts"
+              value={String(
+                (operationsQuery.data?.fees ?? []).reduce(
+                  (sum, row) => sum + Number((row as { count?: number }).count ?? 0),
+                  0,
+                ),
+              )}
+            />
+            <DashboardOpsMetric
+              label="Reorder alerts"
+              value={String(operationsQuery.data?.inventory?.[0]?.reorder_alerts ?? 0)}
+            />
+            <DashboardOpsMetric
+              label="Open learning debt"
+              value={String(
+                (operationsQuery.data?.debt ?? []).reduce(
+                  (sum, row) => sum + Number((row as { count?: number }).count ?? 0),
+                  0,
+                ),
+              )}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.45fr_0.8fr]">
         <section className="surface-panel p-5 sm:p-6">
@@ -398,6 +461,15 @@ function Dashboard() {
       </section>
 
       <FloatingAI />
+    </div>
+  );
+}
+
+function DashboardOpsMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-extrabold tabular-nums">{value}</p>
     </div>
   );
 }

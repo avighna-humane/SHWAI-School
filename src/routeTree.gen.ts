@@ -19,14 +19,18 @@ import { Route as AppSplatRouteImport } from './routes/app.$'
 import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppChatRouteImport } from './routes/app.chat'
+import { Route as AppDecisionsRouteImport } from './routes/app.decisions'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppInterventionsRouteImport } from './routes/app.interventions'
 import { Route as AppNoticesRouteImport } from './routes/app.notices'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppOfflineRouteImport } from './routes/app.offline'
+import { Route as AppOperationsRouteImport } from './routes/app.operations'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as ApiIntelligenceRunRouteImport } from './routes/api.intelligence.run'
 import { Route as AppAiContentLibraryRouteImport } from './routes/app.ai.content-library'
 import { Route as AppAiStudioRouteImport } from './routes/app.ai.studio'
@@ -92,6 +96,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDecisionsRoute = AppDecisionsRouteImport.update({
+  id: '/decisions',
+  path: '/decisions',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHomeworkRoute = AppHomeworkRouteImport.update({
   id: '/homework',
   path: '/homework',
@@ -112,6 +121,16 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOfflineRoute = AppOfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOperationsRoute = AppOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -130,6 +149,11 @@ const AppSubmissionsRoute = AppSubmissionsRouteImport.update({
 const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   id: '/subscription',
   path: '/subscription',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSupportRoute = AppSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => AppRoute,
 } as any)
 const ApiIntelligenceRunRoute = ApiIntelligenceRunRouteImport.update({
@@ -215,14 +239,18 @@ export interface FileRoutesByFullPath {
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/offline': typeof AppOfflineRoute
+  '/app/operations': typeof AppOperationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
+  '/app/support': typeof AppSupportRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
@@ -248,14 +276,18 @@ export interface FileRoutesByTo {
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/offline': typeof AppOfflineRoute
+  '/app/operations': typeof AppOperationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
+  '/app/support': typeof AppSupportRoute
   '/app': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
@@ -283,14 +315,18 @@ export interface FileRoutesById {
   '/app/attendance': typeof AppAttendanceRoute
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
+  '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
+  '/app/offline': typeof AppOfflineRoute
+  '/app/operations': typeof AppOperationsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
+  '/app/support': typeof AppSupportRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
@@ -319,14 +355,18 @@ export interface FileRouteTypes {
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
+    | '/app/offline'
+    | '/app/operations'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
+    | '/app/support'
     | '/app/'
     | '/api/intelligence/run'
     | '/app/ai/content-library'
@@ -352,14 +392,18 @@ export interface FileRouteTypes {
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
+    | '/app/offline'
+    | '/app/operations'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
+    | '/app/support'
     | '/app'
     | '/api/intelligence/run'
     | '/app/ai/content-library'
@@ -386,14 +430,18 @@ export interface FileRouteTypes {
     | '/app/attendance'
     | '/app/audit'
     | '/app/chat'
+    | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
+    | '/app/offline'
+    | '/app/operations'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
     | '/app/subscription'
+    | '/app/support'
     | '/app/'
     | '/api/intelligence/run'
     | '/app/ai/content-library'
@@ -492,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/decisions': {
+      id: '/app/decisions'
+      path: '/decisions'
+      fullPath: '/app/decisions'
+      preLoaderRoute: typeof AppDecisionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/homework': {
       id: '/app/homework'
       path: '/homework'
@@ -520,6 +575,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/offline': {
+      id: '/app/offline'
+      path: '/offline'
+      fullPath: '/app/offline'
+      preLoaderRoute: typeof AppOfflineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/operations': {
+      id: '/app/operations'
+      path: '/operations'
+      fullPath: '/app/operations'
+      preLoaderRoute: typeof AppOperationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -546,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/subscription'
       fullPath: '/app/subscription'
       preLoaderRoute: typeof AppSubscriptionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/support': {
+      id: '/app/support'
+      path: '/support'
+      fullPath: '/app/support'
+      preLoaderRoute: typeof AppSupportRouteImport
       parentRoute: typeof AppRoute
     }
     '/api/intelligence/run': {
@@ -666,14 +742,18 @@ interface AppRouteChildren {
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppAuditRoute: typeof AppAuditRoute
   AppChatRoute: typeof AppChatRoute
+  AppDecisionsRoute: typeof AppDecisionsRoute
   AppHomeworkRoute: typeof AppHomeworkRoute
   AppInterventionsRoute: typeof AppInterventionsRoute
   AppNoticesRoute: typeof AppNoticesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppOfflineRoute: typeof AppOfflineRoute
+  AppOperationsRoute: typeof AppOperationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRouteWithChildren
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
+  AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAiContentLibraryRoute: typeof AppAiContentLibraryRoute
   AppAiStudioRoute: typeof AppAiStudioRoute
@@ -694,14 +774,18 @@ const AppRouteChildren: AppRouteChildren = {
   AppAttendanceRoute: AppAttendanceRoute,
   AppAuditRoute: AppAuditRoute,
   AppChatRoute: AppChatRoute,
+  AppDecisionsRoute: AppDecisionsRoute,
   AppHomeworkRoute: AppHomeworkRoute,
   AppInterventionsRoute: AppInterventionsRoute,
   AppNoticesRoute: AppNoticesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppOfflineRoute: AppOfflineRoute,
+  AppOperationsRoute: AppOperationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRouteWithChildren,
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
+  AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
   AppAiContentLibraryRoute: AppAiContentLibraryRoute,
   AppAiStudioRoute: AppAiStudioRoute,

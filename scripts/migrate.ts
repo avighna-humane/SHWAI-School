@@ -878,6 +878,224 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_parent_meeting_requests_idx ON hw_parent_meeting_requests (school_id, status, requested_start)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_automation_runs_idx ON hw_intelligence_automation_runs (school_id, created_at DESC)`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_campuses (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      name TEXT NOT NULL, code TEXT NOT NULL, address TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, code)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_admission_enquiries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, applicant_name TEXT NOT NULL, guardian_name TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '', phone TEXT NOT NULL DEFAULT '', grade_requested INTEGER, source TEXT NOT NULL DEFAULT 'direct',
+      status TEXT NOT NULL DEFAULT 'ENQUIRY' CHECK (status IN ('ENQUIRY','APPLICATION_STARTED','APPLICATION_SUBMITTED','DOCUMENT_REVIEW','ENTRANCE_TEST','DECISION','ACCEPTED','REJECTED','WAITLISTED','ENROLLED')),
+      notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_admission_applications (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      enquiry_id UUID REFERENCES hw_admission_enquiries(id) ON DELETE SET NULL, applicant_name TEXT NOT NULL, guardian_name TEXT NOT NULL DEFAULT '',
+      campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, grade_requested INTEGER, academic_year_id TEXT REFERENCES hw_academic_years(id) ON DELETE SET NULL,
+      status TEXT NOT NULL DEFAULT 'APPLICATION_STARTED' CHECK (status IN ('APPLICATION_STARTED','APPLICATION_SUBMITTED','DOCUMENT_REVIEW','ENTRANCE_TEST','DECISION','ACCEPTED','REJECTED','WAITLISTED','ENROLLED')),
+      decision_reason TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_admission_documents (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      application_id UUID NOT NULL REFERENCES hw_admission_applications(id) ON DELETE CASCADE, document_type TEXT NOT NULL, file_reference TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'received' CHECK (status IN ('requested','received','reviewed','rejected')), review_notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_admission_tests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      application_id UUID NOT NULL REFERENCES hw_admission_applications(id) ON DELETE CASCADE, subject TEXT NOT NULL, scheduled_at TIMESTAMPTZ,
+      score NUMERIC(7,2), result TEXT NOT NULL DEFAULT 'pending' CHECK (result IN ('pending','pass','fail','absent')), notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_admission_followups (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      enquiry_id UUID REFERENCES hw_admission_enquiries(id) ON DELETE CASCADE, application_id UUID REFERENCES hw_admission_applications(id) ON DELETE CASCADE,
+      due_at TIMESTAMPTZ NOT NULL, owner_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','completed','cancelled')), notes TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_structures (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL,
+      academic_year_id TEXT REFERENCES hw_academic_years(id) ON DELETE SET NULL, name TEXT NOT NULL, grade INTEGER, amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0), currency TEXT NOT NULL DEFAULT 'INR', active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_assignments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      fee_structure_id UUID NOT NULL REFERENCES hw_fee_structures(id) ON DELETE CASCADE, scholarship_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (scholarship_amount >= 0), concession_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (concession_amount >= 0), status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','PARTIALLY_PAID','PAID','OVERDUE','WAIVED')),
+      assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), created_by TEXT NOT NULL, UNIQUE (school_id, student_id, fee_structure_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_installments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, assignment_id UUID NOT NULL REFERENCES hw_fee_assignments(id) ON DELETE CASCADE,
+      label TEXT NOT NULL, due_date DATE NOT NULL, amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0), status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','PARTIALLY_PAID','PAID','OVERDUE','WAIVED')), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_payments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, installment_id UUID NOT NULL REFERENCES hw_fee_installments(id) ON DELETE CASCADE,
+      amount NUMERIC(12,2) NOT NULL CHECK (amount > 0), payment_reference TEXT NOT NULL, payment_method TEXT NOT NULL DEFAULT 'manual', status TEXT NOT NULL DEFAULT 'recorded' CHECK (status IN ('recorded','reversed','pending_provider')), paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), receipt_number TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_reminders (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, installment_id UUID NOT NULL REFERENCES hw_fee_installments(id) ON DELETE CASCADE,
+      recipient_id TEXT NOT NULL, channel TEXT NOT NULL DEFAULT 'in_app', status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','blocked','failed')), provider_reference TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_fee_reconciliations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, period_label TEXT NOT NULL, expected_amount NUMERIC(12,2) NOT NULL DEFAULT 0, recorded_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','matched','variance_review')), notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_staff_assignments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, staff_id TEXT NOT NULL,
+      assignment_type TEXT NOT NULL, title TEXT NOT NULL, starts_at TIMESTAMPTZ, ends_at TIMESTAMPTZ, estimated_minutes INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'assigned' CHECK (status IN ('assigned','completed','cancelled')), created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_workload_tasks (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, teacher_id TEXT NOT NULL, task_type TEXT NOT NULL, title TEXT NOT NULL,
+      estimated_minutes INTEGER NOT NULL DEFAULT 0, actual_minutes INTEGER, frequency TEXT NOT NULL DEFAULT 'once', due_at TIMESTAMPTZ, status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','in_progress','completed','cancelled')), created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_transport_routes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, name TEXT NOT NULL, code TEXT NOT NULL, provider_key TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, code)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_transport_stops (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, route_id UUID NOT NULL REFERENCES hw_transport_routes(id) ON DELETE CASCADE, name TEXT NOT NULL, sequence_no INTEGER NOT NULL, latitude NUMERIC(10,7), longitude NUMERIC(10,7), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (route_id, sequence_no)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_transport_assignments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, route_id UUID NOT NULL REFERENCES hw_transport_routes(id) ON DELETE CASCADE, stop_id UUID REFERENCES hw_transport_stops(id) ON DELETE SET NULL, active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, student_id, route_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_transport_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, route_id UUID REFERENCES hw_transport_routes(id) ON DELETE SET NULL, student_id TEXT REFERENCES hw_students(id) ON DELETE SET NULL, event_type TEXT NOT NULL CHECK (event_type IN ('pickup','drop','incident','emergency')), event_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), details TEXT NOT NULL DEFAULT '', provider_reference TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_library_books (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, isbn TEXT NOT NULL DEFAULT '', title TEXT NOT NULL, author TEXT NOT NULL DEFAULT '', category TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_library_copies (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, book_id UUID NOT NULL REFERENCES hw_library_books(id) ON DELETE CASCADE, barcode TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available','loaned','lost','maintenance')), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, barcode)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_library_loans (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, copy_id UUID NOT NULL REFERENCES hw_library_copies(id) ON DELETE CASCADE, borrower_id TEXT NOT NULL, borrowed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), due_at DATE NOT NULL, returned_at TIMESTAMPTZ, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','returned','overdue','lost')), created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_inventory_items (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, sku TEXT NOT NULL, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT '', quantity NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (quantity >= 0), reorder_level NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (reorder_level >= 0), location TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, sku)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_inventory_movements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, item_id UUID NOT NULL REFERENCES hw_inventory_items(id) ON DELETE CASCADE, movement_type TEXT NOT NULL CHECK (movement_type IN ('purchase','issue','return','adjustment')), quantity NUMERIC(12,2) NOT NULL CHECK (quantity > 0), reference TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_facilities_rooms (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, campus_id UUID REFERENCES hw_campuses(id) ON DELETE SET NULL, name TEXT NOT NULL, room_type TEXT NOT NULL DEFAULT 'classroom', capacity INTEGER NOT NULL DEFAULT 0 CHECK (capacity >= 0), active BOOLEAN NOT NULL DEFAULT TRUE, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_facilities_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, room_id UUID REFERENCES hw_facilities_rooms(id) ON DELETE SET NULL, title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CLOSED')), assigned_to TEXT, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_certificates (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, certificate_type TEXT NOT NULL, issue_date DATE NOT NULL, issuer_id TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'issued' CHECK (status IN ('draft','issued','revoked')), verification_identifier TEXT NOT NULL DEFAULT '', artifact_reference TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_v5_scenarios (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', baseline JSONB NOT NULL DEFAULT '{}'::JSONB, changed_variables JSONB NOT NULL DEFAULT '{}'::JSONB, assumptions JSONB NOT NULL DEFAULT '{}'::JSONB, constraints JSONB NOT NULL DEFAULT '{}'::JSONB, outputs JSONB NOT NULL DEFAULT '{}'::JSONB, warnings JSONB NOT NULL DEFAULT '[]'::JSONB, tradeoffs JSONB NOT NULL DEFAULT '[]'::JSONB, status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','calculated','selected','archived')), created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_v5_decision_history (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, scenario_id UUID NOT NULL REFERENCES hw_v5_scenarios(id) ON DELETE CASCADE, selected_option TEXT NOT NULL, decision_date TIMESTAMPTZ NOT NULL DEFAULT NOW(), notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_curriculum_units (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, subject_id TEXT REFERENCES hw_subjects(id) ON DELETE SET NULL, class_id TEXT REFERENCES hw_classes(id) ON DELETE SET NULL, title TEXT NOT NULL, expected_start DATE, expected_completion DATE, priority TEXT NOT NULL DEFAULT 'normal', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_curriculum_coverage (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, unit_id UUID NOT NULL REFERENCES hw_curriculum_units(id) ON DELETE CASCADE, actual_status TEXT NOT NULL DEFAULT 'NOT_STARTED' CHECK (actual_status IN ('NOT_STARTED','IN_PROGRESS','COVERED','PARTIALLY_COVERED','REQUIRES_REVIEW')), actual_completion DATE, assessments_completed INTEGER NOT NULL DEFAULT 0, concept_mastery JSONB NOT NULL DEFAULT '{}'::JSONB, evidence TEXT NOT NULL DEFAULT '', recorded_by TEXT NOT NULL, recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, unit_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_learning_debt_records (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, unit_id UUID REFERENCES hw_curriculum_units(id) ON DELETE SET NULL, category TEXT NOT NULL CHECK (category IN ('not_taught','poorly_understood','prerequisite_gap','misconception','memorization_without_mastery','over_covered','under_covered')), evidence JSONB NOT NULL DEFAULT '{}'::JSONB, affected_group TEXT NOT NULL DEFAULT '', severity TEXT NOT NULL DEFAULT 'attention' CHECK (severity IN ('info','attention','urgent')), recommended_action TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','reviewed','resolved','dismissed')), created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intervention_experiments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, problem TEXT NOT NULL, hypothesis TEXT NOT NULL, intervention TEXT NOT NULL, target_group TEXT NOT NULL, baseline_metric TEXT NOT NULL, baseline_value NUMERIC(12,2), target_value NUMERIC(12,2), owner_id TEXT NOT NULL, start_date DATE NOT NULL, review_date DATE NOT NULL, comparison_method TEXT NOT NULL DEFAULT 'previous_period', status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned','active','review','completed','cancelled')), outcome TEXT NOT NULL DEFAULT '', evidence JSONB NOT NULL DEFAULT '{}'::JSONB, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_experiment_measurements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, experiment_id UUID NOT NULL REFERENCES hw_intervention_experiments(id) ON DELETE CASCADE, measured_at DATE NOT NULL, phase TEXT NOT NULL CHECK (phase IN ('baseline','implementation','follow_up','outcome')), metric_value NUMERIC(12,2), sample_size INTEGER NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '', created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_student_context_records (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, category TEXT NOT NULL, value TEXT NOT NULL, source TEXT NOT NULL, consent_status TEXT NOT NULL DEFAULT 'required' CHECK (consent_status IN ('not_required','pending','granted','revoked')), visibility TEXT NOT NULL DEFAULT 'need_to_know' CHECK (visibility IN ('need_to_know','student_support','leadership_only')), expires_at DATE, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','expired','revoked','correction_requested')), created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_context_corrections (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, context_id UUID NOT NULL REFERENCES hw_student_context_records(id) ON DELETE CASCADE, requested_by TEXT NOT NULL, reason TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested','reviewed','accepted','rejected')), reviewed_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_help_providers (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, provider_type TEXT NOT NULL CHECK (provider_type IN ('teacher_office_hours','peer_tutor','remedial_group','library_resource','verified_external','pastoral_support')), name TEXT NOT NULL, subjects TEXT[] NOT NULL DEFAULT '{}', languages TEXT[] NOT NULL DEFAULT '{}', approved BOOLEAN NOT NULL DEFAULT FALSE, age_min INTEGER, age_max INTEGER, availability JSONB NOT NULL DEFAULT '{}'::JSONB, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_help_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, subject TEXT NOT NULL, topic TEXT NOT NULL, language TEXT NOT NULL DEFAULT '', requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','matched','completed','cancelled')), created_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_help_matches (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, request_id UUID NOT NULL REFERENCES hw_help_requests(id) ON DELETE CASCADE, provider_id UUID NOT NULL REFERENCES hw_help_providers(id) ON DELETE CASCADE, safety_notes TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'proposed' CHECK (status IN ('proposed','approved','active','completed','declined')), approved_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_offline_operations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, operation_id TEXT NOT NULL, actor_id TEXT NOT NULL, entity TEXT NOT NULL, entity_id TEXT NOT NULL, operation TEXT NOT NULL, payload JSONB NOT NULL DEFAULT '{}'::JSONB, local_version TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','SYNCING','SYNCED','FAILED','CONFLICT')), error_message TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, operation_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_v5_provider_configs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, provider_type TEXT NOT NULL CHECK (provider_type IN ('payment','gps','sms','whatsapp','payroll','storage','translation')), enabled BOOLEAN NOT NULL DEFAULT FALSE, configuration_status TEXT NOT NULL DEFAULT 'not_configured' CHECK (configuration_status IN ('not_configured','configured','verified','failed')), public_label TEXT NOT NULL DEFAULT '', secret_reference TEXT NOT NULL DEFAULT '', updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, provider_type)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_data_access_logs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, actor_id TEXT NOT NULL, actor_role TEXT NOT NULL, action TEXT NOT NULL, entity TEXT NOT NULL, entity_id TEXT NOT NULL DEFAULT '', fields TEXT[] NOT NULL DEFAULT '{}', reason TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_data_retention_policies (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, entity TEXT NOT NULL, retention_days INTEGER NOT NULL CHECK (retention_days > 0), legal_hold BOOLEAN NOT NULL DEFAULT FALSE, active BOOLEAN NOT NULL DEFAULT TRUE, updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, entity)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_data_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, requester_id TEXT NOT NULL, request_type TEXT NOT NULL CHECK (request_type IN ('export','deletion')), scope JSONB NOT NULL DEFAULT '{}'::JSONB, status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested','approved','processing','completed','rejected','blocked_legal_hold')), reviewed_by TEXT, reason TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_v5_campuses_school_idx ON hw_campuses (school_id, active)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_admission_pipeline_idx ON hw_admission_applications (school_id, status, updated_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_fee_assignments_student_idx ON hw_fee_assignments (school_id, student_id, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_fee_installments_due_idx ON hw_fee_installments (school_id, status, due_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_staff_assignments_staff_idx ON hw_staff_assignments (school_id, staff_id, starts_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_workload_tasks_teacher_idx ON hw_workload_tasks (school_id, teacher_id, due_at, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_transport_assignments_student_idx ON hw_transport_assignments (school_id, student_id, active)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_transport_events_route_idx ON hw_transport_events (school_id, route_id, event_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_library_loans_borrower_idx ON hw_library_loans (school_id, borrower_id, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_inventory_movements_item_idx ON hw_inventory_movements (school_id, item_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_facilities_requests_status_idx ON hw_facilities_requests (school_id, status, updated_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_v5_scenarios_school_idx ON hw_v5_scenarios (school_id, status, updated_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_curriculum_debt_school_idx ON hw_learning_debt_records (school_id, status, severity, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_experiments_school_idx ON hw_intervention_experiments (school_id, status, review_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_context_records_student_idx ON hw_student_context_records (school_id, student_id, status, expires_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_help_requests_student_idx ON hw_help_requests (school_id, student_id, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_offline_operations_sync_idx ON hw_offline_operations (school_id, status, updated_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_v5_access_logs_idx ON hw_data_access_logs (school_id, entity, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_v5_data_requests_idx ON hw_data_requests (school_id, request_type, status, created_at DESC)`;
+
   console.log("Migration complete!");
   await sql.end();
 }

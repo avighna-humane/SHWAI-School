@@ -31,6 +31,9 @@ import { AcademicWorkspace } from "@/components/v2/academic-workspace";
 import { AiContentStudio } from "@/components/v3/ai-content-studio";
 import { AiTutor } from "@/components/v3/ai-tutor";
 import { IntelligenceWorkspace } from "@/components/v4/intelligence-workspace";
+import { OperationsWorkspace } from "@/components/v5/operations-workspace";
+import { DecisionWorkspace } from "@/components/v5/decision-workspace";
+import { SupportWorkspace } from "@/components/v5/support-workspace";
 import {
   ACTIVITY_FEED,
   AI_RECOMMENDATIONS,
@@ -71,6 +74,9 @@ function ModuleWorkspace() {
   if (pathname === "/app/intelligence/school") return <IntelligenceWorkspace view="school" />;
   if (pathname === "/app/intelligence/assistant") return <IntelligenceWorkspace view="assistant" />;
   if (pathname === "/app/interventions") return <IntelligenceWorkspace view="interventions" />;
+  if (pathname === "/app/operations") return <OperationsWorkspace />;
+  if (pathname === "/app/decisions") return <DecisionWorkspace />;
+  if (pathname === "/app/support") return <SupportWorkspace />;
   const item = ALL_NAV_ITEMS.find((i) => i.path === pathname);
 
   if (!item)

@@ -309,6 +309,45 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Enterprise operations",
+    items: [
+      {
+        label: "Operations workspace",
+        path: "/app/operations",
+        icon: "Building2",
+        roles: STAFFISH,
+        plan: "professional",
+        description: "Admissions, fees, transport, library, inventory and facilities",
+      },
+    ],
+  },
+  {
+    label: "Decision intelligence",
+    items: [
+      {
+        label: "Decision workspace",
+        path: "/app/decisions",
+        icon: "GitCompare",
+        roles: LEADERSHIP,
+        plan: "professional",
+        description: "Transparent what-if scenarios, learning debt and workload evidence",
+      },
+    ],
+  },
+  {
+    label: "Support infrastructure",
+    items: [
+      {
+        label: "Student support",
+        path: "/app/support",
+        icon: "HandHelping",
+        roles: ALL,
+        plan: "professional",
+        description: "Privacy-first context and safe help requests",
+      },
+    ],
+  },
+  {
     label: "Operations",
     items: [
       {

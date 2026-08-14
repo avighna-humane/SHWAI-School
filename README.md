@@ -1,6 +1,6 @@
 # SHWAI School Management Platform
 
-React 19 + TypeScript + Vite application using TanStack Router/Start, Tailwind v4, shadcn/ui, Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured. The repository contains an authenticated V1 foundation, a V2 academic-core slice, a V3 AI Learning + AI Content + AI Teacher Assistance slice, and a V4 Intelligence + Intervention slice. V4 uses observed current/previous behavior and deterministic evidence; it does not implement V5 enterprise operations or V6 advanced predictive analytics, governance, or career intelligence.
+React 19 + TypeScript + Vite application using TanStack Router/Start, Tailwind v4, shadcn/ui, Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured. The repository contains an authenticated V1 foundation, a V2 academic-core slice, a V3 AI Learning + AI Content + AI Teacher Assistance slice, a V4 Intelligence + Intervention slice, and a V5 Enterprise Operations + Decision Intelligence slice. V5 uses persisted operational records and transparent calculations; it does not implement V6 advanced predictive analytics, advanced AI governance, or career intelligence.
 
 ## Run
 
@@ -31,6 +31,16 @@ V4 also adds explicit administrator-controlled concept and prerequisite records,
 
 V4 PostgreSQL tables include `hw_intelligence_runs`, `hw_intelligence_signals`, `hw_intelligence_alerts`, `hw_intelligence_evidence`, `hw_intelligence_recommendations`, `hw_interventions`, `hw_intervention_followups`, `hw_intervention_outcomes`, `hw_intelligence_reports`, `hw_intelligence_concepts`, `hw_intelligence_prerequisites`, `hw_parent_intelligence_acknowledgements`, `hw_parent_meeting_requests`, `hw_intelligence_automation_rules`, and `hw_intelligence_automation_runs`.
 
+## V5 enterprise operations and decision intelligence
+
+V5 adds persisted enterprise operations and decision workflows. The functional workspaces are available at `/app/operations`, `/app/decisions`, `/app/support`, and `/app/offline`. They cover admissions enquiries and applications, fee structures and manually recorded payment references, campus metadata, staff assignments, transport routes and events, library checkout/return, inventory stock protection, facilities maintenance, certificates, transparent scenarios, decision history, curriculum coverage, evidence-backed learning debt, intervention experiments, workload evidence, privacy-first context records, support requests, offline operations, and explicit provider-configuration states.
+
+The V5 simulator calculates conflicts, students served, room utilization, teacher workload delta, remaining capacity, warnings, and trade-offs from explicit inputs on the server. It labels inputs as known, calculated, assumed, or unknown and will not estimate future academic performance. V5 AI assistance is limited to explaining server-calculated outputs through the existing server-only provider abstraction; it cannot calculate hidden numbers or make high-impact decisions.
+
+V5 context records are human-created, consent-aware, visibility-controlled, expiring, and correctable. The application never infers medical, mental-health, disability, family, socioeconomic, or protected characteristics from academic or behavioral data. Help matching requires approved providers and human oversight. Offline mutations carry operation IDs and can be surfaced as conflicts for authorized manual resolution; low-data mode and voice-unsupported states are explicit.
+
+External payment, GPS, SMS, WhatsApp, payroll, storage, translation, and 2FA integrations are provider boundaries. Without verified credentials and an end-to-end test, the application reports `configuration required` or `not verified` and never fabricates delivery, payment, live location, transcription, or synchronization success. See [`docs/v5-completion-report.md`](docs/v5-completion-report.md) for the 84-gate classification.
+
 ## AI provider configuration
 
 Configure a supported server-side provider in the runtime environment. The built-in Forge-compatible provider uses:
@@ -55,13 +65,15 @@ src/
   components/feedback/ retryable, empty, permission, and feature-locked states
   components/v3/       AI Content Studio and student AI Tutor
   components/v4/       Intelligence, alerts, concept map, school dashboard, and interventions
+  components/v5/       Enterprise operations, decision intelligence, support, and offline workspaces
   config/               navigation.ts, roles.ts, plans.ts
   data/mock/            demonstration datasets for non-persisted screens
   actions/              TanStack Start server functions for persisted workflows
   lib/ai/               provider abstraction, schemas, policy, and V3 tests
   lib/intelligence/     deterministic V4 thresholds, evidence policy, and tests
+  lib/v5/               transparent scenario engine, workload calculations, and V5 policy tests
   lib/                  database, access policy, timeout, and error helpers
-  routes/               file-based routes for the app shell and V1–V4 modules
+  routes/               file-based routes for the app shell and V1–V5 modules
   scripts/              PostgreSQL schema migration
   docs/                 version completion reports
 ```
@@ -80,4 +92,4 @@ Deterministic datasets under `src/data/mock` remain for demonstration and empty-
 
 ## Verification boundary
 
-V1, V2, V3, and V4 policy/regression tests are included in the suite. V4 tests cover observed decline thresholds, insufficient-data handling, confidence categories, parent-safe fields, role boundaries, escalation hierarchy, and automation idempotency. The current V4 release was statically type-checked and built locally, but live PostgreSQL migration, live provider calls, browser verification against seeded school data, and production cron execution require deployment infrastructure. See [`docs/v4-completion-report.md`](docs/v4-completion-report.md) for the COMPLETE / PARTIAL / MOCKED / BLOCKED classification and exact release boundary.
+V1, V2, V3, V4, and V5 policy/regression tests are included in the suite. V4 tests cover observed decline thresholds, insufficient-data handling, confidence categories, parent-safe fields, role boundaries, escalation hierarchy, and automation idempotency. V5 tests cover transparent scenario calculations, unknown future outcomes, workload thresholds, role/capability boundaries, context visibility, sensitive-inference rejection, provider states, fee status, and negative-inventory protection. The V5 implementation is statically type-checked and built locally; live PostgreSQL migration, seeded-data browser verification, provider end-to-end tests, production scheduled jobs, 2FA, export/deletion execution, and several document/messaging integrations require deployment infrastructure. See [`docs/v5-completion-report.md`](docs/v5-completion-report.md) for the 84-gate COMPLETE / PARTIAL / MOCKED / BLOCKED classification and exact release boundary.

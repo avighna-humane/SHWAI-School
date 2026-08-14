@@ -1,6 +1,6 @@
 # SHWAI School Management Platform
 
-React 19 + TypeScript + Vite application using TanStack Router/Start, Tailwind v4, shadcn/ui, Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured. The repository contains an authenticated V1 foundation, a V2 academic-core slice, and a V3 AI Learning + AI Content + AI Teacher Assistance slice. No V4 early-warning/prediction, V5 enterprise operations, or V6 advanced governance/career intelligence is included in V3.
+React 19 + TypeScript + Vite application using TanStack Router/Start, Tailwind v4, shadcn/ui, Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured. The repository contains an authenticated V1 foundation, a V2 academic-core slice, a V3 AI Learning + AI Content + AI Teacher Assistance slice, and a V4 Intelligence + Intervention slice. V4 uses observed current/previous behavior and deterministic evidence; it does not implement V5 enterprise operations or V6 advanced predictive analytics, governance, or career intelligence.
 
 ## Run
 
@@ -20,6 +20,16 @@ V3 uses a server-only provider abstraction in `src/lib/ai/provider.ts`. It suppo
 Teachers can use `/app/ai/studio` to generate reviewable homework, worksheets, quizzes, question banks, answer-key assistance, lesson slides, activities, flashcards, study notes, revision sheets, and mind maps. `/app/ai/teacher-assistant` provides lesson plans, differentiated assignments, translations, report-card comment drafts, and parent-message drafts. Generated records are persisted as AI-labeled drafts; editing and explicit teacher approval are required before publication. `/app/ai/content-library` provides tenant-scoped review of generated resources.
 
 Students can use `/app/ai/tutor` for student-safe Socratic help with five progressive hint levels and persisted session history. Student context is minimized to necessary academic fields. Practice generation and learning activity recording are server-side, and engagement awards are tied to actual persisted activity rather than opening the tutor or generating a prompt. Personalized learning uses recent observed grades and activity with deterministic adaptive-difficulty rules; it does not forecast future outcomes. Parents see only the limited, published study-note and revision-sheet visibility intended for family support, never private tutor conversations.
+
+## V4 intelligence and automation
+
+V4 adds a reusable, school-scoped intelligence layer in `src/actions/intelligence.ts` and `src/lib/intelligence/`. The deterministic signal engine compares compatible observation windows across persisted attendance, published grades, homework/submissions, and V3 learning events. It records data quality, evidence counts, explanations, confidence categories, alerts, recommendations, interventions, follow-ups, outcomes, escalation events, and intelligence-run metadata. Insufficient data is displayed as **Insufficient data** or **Not enough evidence** rather than converted into a fabricated score.
+
+The V4 workspace is available at `/app/intelligence/early-warning`, `/app/intelligence/concepts`, `/app/intelligence/school`, `/app/intelligence/assistant`, and `/app/interventions`. Teachers and authorized staff can review evidence-backed alerts, acknowledge them, create human-owned interventions, schedule follow-ups, advance workflow status, and record measured outcomes. Leadership users can query aggregate school intelligence through the provider-backed assistant; numerical data is retrieved and calculated server-side, and arbitrary generated SQL is never executed.
+
+V4 also adds explicit administrator-controlled concept and prerequisite records, student-safe observed progress summaries, parent-safe published progress and attendance summaries, parent acknowledgement and meeting-request workflows, AI usage aggregates, and an idempotent scheduled endpoint at `/api/intelligence/run`. The endpoint requires `x-shwai-intelligence-secret` and `SHWAI_INTELLIGENCE_CRON_SECRET`; it does not pretend that production scheduling exists when the deployment has no cron/job runner. Automation rules are persisted, audited, idempotent, permission-checked, and prevented from making high-impact decisions automatically.
+
+V4 PostgreSQL tables include `hw_intelligence_runs`, `hw_intelligence_signals`, `hw_intelligence_alerts`, `hw_intelligence_evidence`, `hw_intelligence_recommendations`, `hw_interventions`, `hw_intervention_followups`, `hw_intervention_outcomes`, `hw_intelligence_reports`, `hw_intelligence_concepts`, `hw_intelligence_prerequisites`, `hw_parent_intelligence_acknowledgements`, `hw_parent_meeting_requests`, `hw_intelligence_automation_rules`, and `hw_intelligence_automation_runs`.
 
 ## AI provider configuration
 
@@ -44,12 +54,14 @@ src/
   components/ui/       shadcn primitives
   components/feedback/ retryable, empty, permission, and feature-locked states
   components/v3/       AI Content Studio and student AI Tutor
+  components/v4/       Intelligence, alerts, concept map, school dashboard, and interventions
   config/               navigation.ts, roles.ts, plans.ts
   data/mock/            demonstration datasets for non-persisted screens
   actions/              TanStack Start server functions for persisted workflows
   lib/ai/               provider abstraction, schemas, policy, and V3 tests
+  lib/intelligence/     deterministic V4 thresholds, evidence policy, and tests
   lib/                  database, access policy, timeout, and error helpers
-  routes/               file-based routes for the app shell and V1–V3 modules
+  routes/               file-based routes for the app shell and V1–V4 modules
   scripts/              PostgreSQL schema migration
   docs/                 version completion reports
 ```
@@ -68,4 +80,4 @@ Deterministic datasets under `src/data/mock` remain for demonstration and empty-
 
 ## Verification boundary
 
-V1 and V2 regression tests remain in the suite. V3 policy tests cover role authorization, cross-school rejection, prompt safety, input limits, per-minute and daily rate limits, context minimization, and structured-output validation. See [`docs/v3-completion-report.md`](docs/v3-completion-report.md) for the feature-by-feature implementation, verification, infrastructure blockers, and strict V3 boundary.
+V1, V2, V3, and V4 policy/regression tests are included in the suite. V4 tests cover observed decline thresholds, insufficient-data handling, confidence categories, parent-safe fields, role boundaries, escalation hierarchy, and automation idempotency. The current V4 release was statically type-checked and built locally, but live PostgreSQL migration, live provider calls, browser verification against seeded school data, and production cron execution require deployment infrastructure. See [`docs/v4-completion-report.md`](docs/v4-completion-report.md) for the COMPLETE / PARTIAL / MOCKED / BLOCKED classification and exact release boundary.

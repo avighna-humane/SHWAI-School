@@ -9,6 +9,7 @@ import {
   getAcademicAnalytics,
 } from "@/actions/academic";
 import { getPersonalizedLearning } from "@/actions/ai";
+import { getIntelligenceOverview } from "@/actions/intelligence";
 import { useAppState } from "@/app/providers/app-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,6 +127,11 @@ function StudentPortal() {
     queryFn: () => getPersonalizedLearning(),
     enabled: Boolean(schoolId) && typeof window !== "undefined",
   });
+  const intelligenceQuery = useQuery({
+    queryKey: ["student-observed-intelligence", schoolId],
+    queryFn: () => getIntelligenceOverview(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
 
   return (
     <div className="space-y-6">
@@ -198,6 +204,58 @@ function StudentPortal() {
         />
       </section>
 
+      <section className="surface-panel border-primary/20 bg-primary/5 p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+            <Icons.TrendingUp className="size-5" />
+          </span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              My observed progress
+            </p>
+            <h2 className="mt-1 text-xl font-bold">Progress and revision priorities</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This view shows your published academic records and persisted learning activity. It
+              does not expose internal alerts or risk classifications.
+            </p>
+            {intelligenceQuery.isLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading observed progress…</p>
+            ) : intelligenceQuery.isError ? (
+              <p className="mt-3 text-sm text-danger">
+                {(intelligenceQuery.error as Error).message}
+              </p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {(
+                  intelligenceQuery.data as
+                    | {
+                        grades?: Array<{
+                          subject: string;
+                          average_percentage: number;
+                          records: number;
+                        }>;
+                      }
+                    | undefined
+                )?.grades
+                  ?.slice(0, 6)
+                  .map((row) => (
+                    <div key={row.subject} className="rounded-lg border border-border bg-card p-3">
+                      <p className="text-sm font-semibold">{row.subject}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {row.average_percentage}% across {row.records} published records
+                      </p>
+                    </div>
+                  ))}
+                {!(intelligenceQuery.data as { grades?: unknown[] } | undefined)?.grades?.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    Not enough published evidence for a subject summary.
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
       <section className="surface-panel border-ai/20 bg-ai-soft/20 p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

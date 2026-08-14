@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import * as Icons from 'lucide-react';
-import { useAppState } from '@/app/providers/app-state';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { createFileRoute, Link } from "@tanstack/react-router";
+import * as Icons from "lucide-react";
+import { useAppState } from "@/app/providers/app-state";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute('/app/portal/staff')({ component: StaffPortal });
+export const Route = createFileRoute("/app/portal/staff")({ component: StaffPortal });
 
 function Icon({ name, className }: { name: string; className?: string }) {
   const C = (Icons as unknown as Record<string, Icons.LucideIcon>)[name] ?? Icons.Circle;
@@ -13,50 +13,52 @@ function Icon({ name, className }: { name: string; className?: string }) {
 
 const PORTAL_CARDS = [
   {
-    icon: 'Megaphone',
-    label: 'Notices',
-    description: 'Create and publish school-wide notices. Target all students, specific classes, all teachers, specific teachers, or the entire school.',
-    path: '/app/notices',
-    primary: 'Manage Notices',
-    createPath: '/app/notices',
-    badge: 'New' as const,
+    icon: "Megaphone",
+    label: "Notices",
+    description:
+      "Create and publish school-wide notices. Target all students, specific classes, all teachers, specific teachers, or the entire school.",
+    path: "/app/notices",
+    primary: "Manage Notices",
+    createPath: "/app/notices",
+    badge: "New" as const,
     highlight: true,
     isNotices: true,
   },
   {
-    icon: 'GraduationCap',
-    label: 'Students',
-    description: 'Manage student profiles, track progress and interventions.',
-    path: '/app/students',
-    primary: 'View Students',
+    icon: "GraduationCap",
+    label: "Students",
+    description: "Manage student profiles, track progress and interventions.",
+    path: "/app/students",
+    primary: "View Students",
   },
   {
-    icon: 'Presentation',
-    label: 'Teachers',
-    description: 'View teacher profiles, workload and support.',
-    path: '/app/teachers',
-    primary: 'View Teachers',
+    icon: "Presentation",
+    label: "Teachers",
+    description: "View teacher profiles, workload and support.",
+    path: "/app/teachers",
+    primary: "View Teachers",
   },
   {
-    icon: 'UserCheck',
-    label: 'Attendance',
-    description: 'Daily attendance marking, trends and analytics.',
-    path: '/app/attendance',
-    primary: 'View Attendance',
+    icon: "UserCheck",
+    label: "Attendance",
+    description: "Daily attendance marking, trends and analytics.",
+    path: "/app/attendance",
+    primary: "View Attendance",
   },
   {
-    icon: 'ChartSpline',
-    label: 'School Intelligence',
-    description: 'School-wide trends, forecasting and utilisation.',
-    path: '/app/intelligence/school',
-    primary: 'Open Intelligence',
+    icon: "ChartSpline",
+    label: "School Intelligence",
+    description:
+      "School-wide observed trends, evidence-backed alerts, intervention status and data quality.",
+    path: "/app/intelligence/school",
+    primary: "Open Intelligence",
   },
   {
-    icon: 'FileBarChart',
-    label: 'Reports',
-    description: 'Academic, attendance, teacher and school reports.',
-    path: '/app/reports',
-    primary: 'View Reports',
+    icon: "FileBarChart",
+    label: "Reports",
+    description: "Academic, attendance, teacher and school reports.",
+    path: "/app/reports",
+    primary: "View Reports",
   },
 ];
 
@@ -76,15 +78,17 @@ function StaffPortal() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PORTAL_CARDS.map(card => (
+        {PORTAL_CARDS.map((card) => (
           <div
             key={card.path}
             className={`flex flex-col rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md
-              ${card.highlight ? 'border-primary/30 bg-primary/5' : 'bg-card'}`}
+              ${card.highlight ? "border-primary/30 bg-primary/5" : "bg-card"}`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className={`flex size-10 items-center justify-center rounded-lg
-                ${card.highlight ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <div
+                className={`flex size-10 items-center justify-center rounded-lg
+                ${card.highlight ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
+              >
                 <Icon name={card.icon} className="size-5" />
               </div>
               {card.badge && (
@@ -94,13 +98,13 @@ function StaffPortal() {
               )}
             </div>
 
-            <h2 className={`mt-3 text-base font-semibold ${card.highlight ? 'text-primary' : ''}`}>
+            <h2 className={`mt-3 text-base font-semibold ${card.highlight ? "text-primary" : ""}`}>
               {card.label}
             </h2>
             <p className="mt-1 flex-1 text-sm text-muted-foreground">{card.description}</p>
 
             <div className="mt-4 flex items-center gap-2">
-              {'isNotices' in card && card.isNotices ? (
+              {"isNotices" in card && card.isNotices ? (
                 <>
                   <Button asChild size="sm" variant="default" className="flex-1">
                     <Link to={card.path}>

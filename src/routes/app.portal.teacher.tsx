@@ -83,6 +83,25 @@ const PORTAL_CARDS = [
     primary: "Open Library",
     badge: "AI" as const,
   },
+  {
+    icon: "TriangleAlert",
+    label: "Early Warning",
+    description:
+      "Review current observable academic signals with evidence, uncertainty and data-quality notes.",
+    path: "/app/intelligence/early-warning",
+    primary: "Review Signals",
+    badge: "V4" as const,
+    highlight: true,
+    note: "No opaque risk score or automatic action",
+  },
+  {
+    icon: "LifeBuoy",
+    label: "Interventions",
+    description: "Assign human-owned support, schedule follow-ups and record measured outcomes.",
+    path: "/app/interventions",
+    primary: "Manage Cases",
+    badge: "V4" as const,
+  },
 ];
 
 function Icon({ name, className }: { name: string; className?: string }) {

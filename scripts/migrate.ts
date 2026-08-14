@@ -644,6 +644,240 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_ai_tutor_student_idx ON hw_ai_tutor_sessions (school_id, student_id, updated_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_ai_learning_student_topic_idx ON hw_ai_learning_events (school_id, student_id, topic, created_at DESC)`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_runs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      window_days INTEGER NOT NULL CHECK (window_days IN (7, 14, 30, 90)),
+      status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+      triggered_by TEXT NOT NULL,
+      records_examined INTEGER NOT NULL DEFAULT 0,
+      signals_created INTEGER NOT NULL DEFAULT 0,
+      alerts_created INTEGER NOT NULL DEFAULT 0,
+      data_quality JSONB NOT NULL DEFAULT '{}'::JSONB,
+      error_message TEXT NOT NULL DEFAULT '',
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      completed_at TIMESTAMPTZ
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_signals (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      run_id UUID REFERENCES hw_intelligence_runs(id) ON DELETE SET NULL,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      category TEXT NOT NULL CHECK (category IN ('attendance', 'academic', 'homework', 'engagement', 'concept')),
+      code TEXT NOT NULL,
+      label TEXT NOT NULL,
+      observed_value NUMERIC(10,2),
+      baseline_value NUMERIC(10,2),
+      delta_value NUMERIC(10,2),
+      direction TEXT NOT NULL CHECK (direction IN ('up', 'down', 'flat', 'insufficient_data')),
+      observation_start DATE NOT NULL,
+      observation_end DATE NOT NULL,
+      evidence_count INTEGER NOT NULL DEFAULT 0,
+      data_quality TEXT NOT NULL CHECK (data_quality IN ('good', 'limited', 'insufficient')),
+      explanation TEXT NOT NULL,
+      metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_alerts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      run_id UUID REFERENCES hw_intelligence_runs(id) ON DELETE SET NULL,
+      alert_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      severity TEXT NOT NULL CHECK (severity IN ('info', 'attention', 'urgent')),
+      confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low', 'insufficient_data')),
+      confidence_reason TEXT NOT NULL,
+      observation_start DATE NOT NULL,
+      observation_end DATE NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'acknowledged', 'assigned', 'in_progress', 'follow_up', 'resolved', 'dismissed')),
+      owner_id TEXT,
+      acknowledged_at TIMESTAMPTZ,
+      resolved_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_evidence (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      alert_id UUID NOT NULL REFERENCES hw_intelligence_alerts(id) ON DELETE CASCADE,
+      signal_id UUID REFERENCES hw_intelligence_signals(id) ON DELETE SET NULL,
+      label TEXT NOT NULL,
+      value TEXT NOT NULL,
+      detail TEXT NOT NULL,
+      source_entity TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_recommendations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      alert_id UUID NOT NULL REFERENCES hw_intelligence_alerts(id) ON DELETE CASCADE,
+      action TEXT NOT NULL,
+      rationale TEXT NOT NULL,
+      priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high')),
+      status TEXT NOT NULL DEFAULT 'suggested' CHECK (status IN ('suggested', 'accepted', 'rejected', 'converted')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_interventions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      alert_id UUID REFERENCES hw_intelligence_alerts(id) ON DELETE SET NULL,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      issue TEXT NOT NULL,
+      evidence TEXT NOT NULL,
+      recommended_action TEXT NOT NULL,
+      owner_id TEXT,
+      priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high')),
+      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'reviewed', 'assigned', 'in_progress', 'follow_up', 'completed', 'outcome_measured', 'cancelled')),
+      notes TEXT NOT NULL DEFAULT '',
+      target_date DATE,
+      follow_up_date DATE,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intervention_followups (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      intervention_id UUID NOT NULL REFERENCES hw_interventions(id) ON DELETE CASCADE,
+      scheduled_for DATE NOT NULL,
+      status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'overdue', 'completed', 'cancelled')),
+      notes TEXT NOT NULL DEFAULT '',
+      completed_by TEXT,
+      completed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intervention_outcomes (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      intervention_id UUID NOT NULL REFERENCES hw_interventions(id) ON DELETE CASCADE,
+      measured_at DATE NOT NULL,
+      metric_name TEXT NOT NULL,
+      before_value NUMERIC(10,2),
+      after_value NUMERIC(10,2),
+      outcome TEXT NOT NULL CHECK (outcome IN ('improved', 'unchanged', 'declined', 'insufficient_data')),
+      notes TEXT NOT NULL DEFAULT '',
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_reports (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      report_type TEXT NOT NULL,
+      observation_start DATE NOT NULL,
+      observation_end DATE NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+      content JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_signals_student_idx ON hw_intelligence_signals (school_id, student_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_signals_category_idx ON hw_intelligence_signals (school_id, category, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_alerts_status_idx ON hw_intelligence_alerts (school_id, status, severity, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_alerts_student_idx ON hw_intelligence_alerts (school_id, student_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_evidence_alert_idx ON hw_intelligence_evidence (school_id, alert_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_recommendations_alert_idx ON hw_intelligence_recommendations (school_id, alert_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_interventions_status_idx ON hw_interventions (school_id, status, priority, updated_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intervention_followups_date_idx ON hw_intervention_followups (school_id, status, scheduled_for)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intervention_outcomes_idx ON hw_intervention_outcomes (school_id, intervention_id, measured_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_reports_idx ON hw_intelligence_reports (school_id, report_type, created_at DESC)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_concepts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      concept_key TEXT NOT NULL,
+      label TEXT NOT NULL,
+      subject TEXT NOT NULL DEFAULT '',
+      source_type TEXT NOT NULL CHECK (source_type IN ('curriculum_admin', 'ai_content_metadata', 'teacher_defined')),
+      source_id TEXT,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, concept_key)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_prerequisites (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      prerequisite_concept_id UUID NOT NULL REFERENCES hw_intelligence_concepts(id) ON DELETE CASCADE,
+      dependent_concept_id UUID NOT NULL REFERENCES hw_intelligence_concepts(id) ON DELETE CASCADE,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, prerequisite_concept_id, dependent_concept_id),
+      CHECK (prerequisite_concept_id <> dependent_concept_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_parent_intelligence_acknowledgements (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      parent_id TEXT NOT NULL,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      alert_id UUID REFERENCES hw_intelligence_alerts(id) ON DELETE SET NULL,
+      viewed_at TIMESTAMPTZ,
+      acknowledged_at TIMESTAMPTZ,
+      response TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, parent_id, student_id, alert_id)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_parent_meeting_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      parent_id TEXT NOT NULL,
+      student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE,
+      reason TEXT NOT NULL,
+      requested_start TIMESTAMPTZ NOT NULL,
+      requested_end TIMESTAMPTZ NOT NULL,
+      status TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'accepted', 'alternative_proposed', 'declined', 'completed', 'cancelled')),
+      participants TEXT[] NOT NULL DEFAULT '{}',
+      notes TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_automation_rules (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      rule_key TEXT NOT NULL,
+      trigger_type TEXT NOT NULL CHECK (trigger_type IN ('daily_attendance', 'weekly_academic', 'weekly_homework', 'monthly_report')),
+      enabled BOOLEAN NOT NULL DEFAULT FALSE,
+      recipient_role TEXT NOT NULL CHECK (recipient_role IN ('teacher', 'staff', 'principal', 'admin', 'parent')),
+      action_type TEXT NOT NULL CHECK (action_type IN ('scan', 'notification', 'report_summary', 'revision_recommendation')),
+      configuration JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_by TEXT NOT NULL,
+      updated_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, rule_key)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_intelligence_automation_runs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      rule_id UUID REFERENCES hw_intelligence_automation_rules(id) ON DELETE SET NULL,
+      trigger_type TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed', 'skipped')),
+      idempotency_key TEXT NOT NULL,
+      recipient_count INTEGER NOT NULL DEFAULT 0,
+      detail TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id, idempotency_key)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_concepts_subject_idx ON hw_intelligence_concepts (school_id, subject, label)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_prerequisites_dependent_idx ON hw_intelligence_prerequisites (school_id, dependent_concept_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_parent_intelligence_ack_idx ON hw_parent_intelligence_acknowledgements (school_id, parent_id, student_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_parent_meeting_requests_idx ON hw_parent_meeting_requests (school_id, status, requested_start)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_intelligence_automation_runs_idx ON hw_intelligence_automation_runs (school_id, created_at DESC)`;
+
   console.log("Migration complete!");
   await sql.end();
 }

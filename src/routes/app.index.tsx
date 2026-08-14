@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import * as Icons from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { ROLE_LABEL } from "@/config/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FloatingAI } from "@/components/feedback/floating-ai";
-import { SCHOOL_TRENDS, RISK_ALERTS } from "@/data/mock/intelligence";
+import { getIntelligenceOverview, listIntelligenceAlerts } from "@/actions/intelligence";
 import { ACTIVITY_FEED, AI_RECOMMENDATIONS, SYSTEM_STATUS } from "@/data/mock/platform";
 
 export const Route = createFileRoute("/app/")({ component: Dashboard });
@@ -54,13 +55,43 @@ const QUICK_ACTIONS = [
 
 function Dashboard() {
   const { role, school, year, plan, offline } = useAppState();
-  const latestTrend = SCHOOL_TRENDS[SCHOOL_TRENDS.length - 1];
-  const activeAlerts = RISK_ALERTS.filter((alert) => alert.status !== "resolved").length;
-  const highConfidence = Math.round(
-    (AI_RECOMMENDATIONS.filter((item) => item.confidence >= 0.8).length /
-      AI_RECOMMENDATIONS.length) *
-      100,
-  );
+  const overviewQuery = useQuery({
+    queryKey: ["dashboard-v4-overview", school.id],
+    queryFn: () => getIntelligenceOverview(),
+  });
+  const alertsQuery = useQuery({
+    queryKey: ["dashboard-v4-alerts", school.id],
+    queryFn: () => listIntelligenceAlerts(),
+    enabled: !["student", "parent"].includes(role),
+  });
+  const overview = overviewQuery.data as unknown as
+    | {
+        attendance?: Array<{ attendance_percentage: number | null }>;
+        homework?: Array<{ assigned: number; completed: number }>;
+        aiUsage?: Array<{ requests: number; failures: number }>;
+        performance?: Array<{ subject: string; average_percentage: number; records: number }>;
+      }
+    | undefined;
+  const currentAlerts = (alertsQuery.data ?? []) as unknown as Array<{
+    id: string;
+    student_name: string;
+    title: string;
+    summary: string;
+    severity: string;
+  }>;
+  const activeAlerts = currentAlerts.length;
+  const attendanceValue = overview?.attendance?.[0]?.attendance_percentage;
+  const homeworkValue = overview?.homework?.[0]?.assigned
+    ? Math.round(
+        (Number(overview.homework[0].completed) / Number(overview.homework[0].assigned)) * 100,
+      )
+    : null;
+  const aiUsage = overview?.aiUsage?.[0];
+  const aiSuccessRate = aiUsage?.requests
+    ? Math.round(
+        ((Number(aiUsage.requests) - Number(aiUsage.failures)) / Number(aiUsage.requests)) * 100,
+      )
+    : null;
 
   return (
     <div className="relative space-y-6 pb-8">
@@ -113,8 +144,8 @@ function Dashboard() {
         <MetricCard
           icon={Icons.CalendarCheck2}
           label="Attendance"
-          value={`${latestTrend.attendance}%`}
-          detail="School trend · latest period"
+          value={attendanceValue == null ? "Insufficient data" : `${attendanceValue}%`}
+          detail="Persisted attendance · last 30 days"
           tone="success"
         />
         <MetricCard
@@ -127,8 +158,8 @@ function Dashboard() {
         <MetricCard
           icon={Icons.ShieldCheck}
           label="AI evidence coverage"
-          value={`${highConfidence}%`}
-          detail="Recommendations at ≥80% confidence"
+          value={aiSuccessRate == null ? "Insufficient data" : `${aiSuccessRate}%`}
+          detail="V3 AI request success rate · last 30 days"
           tone="ai"
         />
       </section>
@@ -154,37 +185,40 @@ function Dashboard() {
               </Link>
             </Button>
           </div>
-          <div
-            className="mt-7 grid grid-cols-6 items-end gap-3 sm:gap-5"
-            aria-label="School trend chart"
-          >
-            {SCHOOL_TRENDS.map((trend) => (
-              <div key={trend.month} className="space-y-2 text-center">
-                <div className="flex h-40 items-end justify-center gap-1.5 sm:gap-2">
-                  <div
-                    className="w-2.5 rounded-t-full bg-primary/80 sm:w-3"
-                    style={{ height: `${trend.performance * 1.3}%` }}
-                    title={`Performance ${trend.performance}%`}
-                  />
-                  <div
-                    className="w-2.5 rounded-t-full bg-success/80 sm:w-3"
-                    style={{ height: `${trend.attendance * 1.3}%` }}
-                    title={`Attendance ${trend.attendance}%`}
-                  />
-                  <div
-                    className="w-2.5 rounded-t-full bg-ai/70 sm:w-3"
-                    style={{ height: `${trend.homework * 1.3}%` }}
-                    title={`Homework ${trend.homework}%`}
-                  />
+          <div className="mt-7 space-y-4" aria-label="Persisted school performance summary">
+            {overview?.performance?.length ? (
+              overview.performance.slice(0, 6).map((row) => (
+                <div key={row.subject} className="flex items-center gap-3">
+                  <span className="w-32 truncate text-sm font-semibold">{row.subject}</span>
+                  <div className="h-2 flex-1 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, Number(row.average_percentage)))}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="w-20 text-right text-sm font-bold tabular-nums">
+                    {row.average_percentage}%
+                  </span>
+                  <span className="text-xs text-muted-foreground">n={row.records}</span>
                 </div>
-                <p className="text-xs font-semibold text-muted-foreground">{trend.month}</p>
+              ))
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                Insufficient data for a persisted subject summary.
               </div>
-            ))}
+            )}
           </div>
           <div className="mt-5 flex flex-wrap gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
-            <Legend color="bg-primary" label="Performance" />
-            <Legend color="bg-success" label="Attendance" />
-            <Legend color="bg-ai" label="Homework" />
+            <span>
+              Attendance · {attendanceValue == null ? "Insufficient data" : `${attendanceValue}%`}{" "}
+              over 30 days
+            </span>
+            <span>
+              Homework · {homeworkValue == null ? "Insufficient data" : `${homeworkValue}%`} over 30
+              days
+            </span>
           </div>
         </section>
 
@@ -201,28 +235,41 @@ function Dashboard() {
             </Badge>
           </div>
           <div className="mt-5 space-y-3">
-            {RISK_ALERTS.slice(0, 4).map((alert) => (
-              <Link
-                key={alert.id}
-                to={"/app/intelligence/early-warning" as never}
-                className="group flex items-center gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-muted/50"
-              >
-                <span
-                  className={`grid size-8 shrink-0 place-items-center rounded-lg ${alert.riskScore >= 80 ? "bg-danger-soft text-danger" : "bg-warning-soft text-warning-foreground"}`}
+            {alertsQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading persisted alerts…</p>
+            ) : alertsQuery.isError ? (
+              <p className="text-sm text-danger">{(alertsQuery.error as Error).message}</p>
+            ) : (
+              currentAlerts.slice(0, 4).map((alert) => (
+                <Link
+                  key={alert.id}
+                  to={"/app/intelligence/early-warning" as never}
+                  className="group flex items-center gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-muted/50"
                 >
-                  <Icons.TriangleAlert className="size-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{alert.studentName}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {alert.classLabel} · {alert.riskType.replaceAll("-", " ")}
+                  <span
+                    className={`grid size-8 shrink-0 place-items-center rounded-lg ${alert.severity === "urgent" ? "bg-danger-soft text-danger" : "bg-warning-soft text-warning-foreground"}`}
+                  >
+                    <Icons.TriangleAlert className="size-4" />
                   </span>
-                </span>
-                <span className="text-sm font-bold tabular-nums text-foreground">
-                  {alert.riskScore}
-                </span>
-              </Link>
-            ))}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {alert.student_name}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {alert.title}
+                    </span>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {alert.summary}
+                    </span>
+                  </span>
+                </Link>
+              ))
+            )}
+            {!currentAlerts.length && !alertsQuery.isLoading ? (
+              <p className="text-sm text-muted-foreground">
+                No persisted alerts are open. Run an intelligence scan after data is available.
+              </p>
+            ) : null}
           </div>
           <Button asChild variant="ghost" size="sm" className="mt-3 w-full justify-between">
             <Link to={"/app/intelligence/early-warning" as never}>

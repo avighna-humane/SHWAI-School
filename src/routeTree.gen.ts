@@ -20,16 +20,22 @@ import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
 import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
+import { Route as AppInterventionsRouteImport } from './routes/app.interventions'
 import { Route as AppNoticesRouteImport } from './routes/app.notices'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as ApiIntelligenceRunRouteImport } from './routes/api.intelligence.run'
 import { Route as AppAiContentLibraryRouteImport } from './routes/app.ai.content-library'
 import { Route as AppAiStudioRouteImport } from './routes/app.ai.studio'
 import { Route as AppAiTeacherAssistantRouteImport } from './routes/app.ai.teacher-assistant'
 import { Route as AppAiTutorRouteImport } from './routes/app.ai.tutor'
+import { Route as AppIntelligenceAssistantRouteImport } from './routes/app.intelligence.assistant'
+import { Route as AppIntelligenceConceptsRouteImport } from './routes/app.intelligence.concepts'
+import { Route as AppIntelligenceEarlyWarningRouteImport } from './routes/app.intelligence.early-warning'
+import { Route as AppIntelligenceSchoolRouteImport } from './routes/app.intelligence.school'
 import { Route as AppPortalParentRouteImport } from './routes/app.portal.parent'
 import { Route as AppPortalStaffRouteImport } from './routes/app.portal.staff'
 import { Route as AppPortalStudentRouteImport } from './routes/app.portal.student'
@@ -91,6 +97,11 @@ const AppHomeworkRoute = AppHomeworkRouteImport.update({
   path: '/homework',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInterventionsRoute = AppInterventionsRouteImport.update({
+  id: '/interventions',
+  path: '/interventions',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNoticesRoute = AppNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -121,6 +132,11 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   path: '/subscription',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiIntelligenceRunRoute = ApiIntelligenceRunRouteImport.update({
+  id: '/api/intelligence/run',
+  path: '/api/intelligence/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAiContentLibraryRoute = AppAiContentLibraryRouteImport.update({
   id: '/ai/content-library',
   path: '/ai/content-library',
@@ -139,6 +155,28 @@ const AppAiTeacherAssistantRoute = AppAiTeacherAssistantRouteImport.update({
 const AppAiTutorRoute = AppAiTutorRouteImport.update({
   id: '/ai/tutor',
   path: '/ai/tutor',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntelligenceAssistantRoute =
+  AppIntelligenceAssistantRouteImport.update({
+    id: '/intelligence/assistant',
+    path: '/intelligence/assistant',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppIntelligenceConceptsRoute = AppIntelligenceConceptsRouteImport.update({
+  id: '/intelligence/concepts',
+  path: '/intelligence/concepts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntelligenceEarlyWarningRoute =
+  AppIntelligenceEarlyWarningRouteImport.update({
+    id: '/intelligence/early-warning',
+    path: '/intelligence/early-warning',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppIntelligenceSchoolRoute = AppIntelligenceSchoolRouteImport.update({
+  id: '/intelligence/school',
+  path: '/intelligence/school',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPortalParentRoute = AppPortalParentRouteImport.update({
@@ -178,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
+  '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -185,10 +224,15 @@ export interface FileRoutesByFullPath {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
+  '/app/intelligence/assistant': typeof AppIntelligenceAssistantRoute
+  '/app/intelligence/concepts': typeof AppIntelligenceConceptsRoute
+  '/app/intelligence/early-warning': typeof AppIntelligenceEarlyWarningRoute
+  '/app/intelligence/school': typeof AppIntelligenceSchoolRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -205,6 +249,7 @@ export interface FileRoutesByTo {
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
+  '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -212,10 +257,15 @@ export interface FileRoutesByTo {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
+  '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
+  '/app/intelligence/assistant': typeof AppIntelligenceAssistantRoute
+  '/app/intelligence/concepts': typeof AppIntelligenceConceptsRoute
+  '/app/intelligence/early-warning': typeof AppIntelligenceEarlyWarningRoute
+  '/app/intelligence/school': typeof AppIntelligenceSchoolRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -234,6 +284,7 @@ export interface FileRoutesById {
   '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
+  '/app/interventions': typeof AppInterventionsRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -241,10 +292,15 @@ export interface FileRoutesById {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
+  '/app/intelligence/assistant': typeof AppIntelligenceAssistantRoute
+  '/app/intelligence/concepts': typeof AppIntelligenceConceptsRoute
+  '/app/intelligence/early-warning': typeof AppIntelligenceEarlyWarningRoute
+  '/app/intelligence/school': typeof AppIntelligenceSchoolRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -264,6 +320,7 @@ export interface FileRouteTypes {
     | '/app/audit'
     | '/app/chat'
     | '/app/homework'
+    | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
@@ -271,10 +328,15 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/api/intelligence/run'
     | '/app/ai/content-library'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
+    | '/app/intelligence/assistant'
+    | '/app/intelligence/concepts'
+    | '/app/intelligence/early-warning'
+    | '/app/intelligence/school'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -291,6 +353,7 @@ export interface FileRouteTypes {
     | '/app/audit'
     | '/app/chat'
     | '/app/homework'
+    | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
@@ -298,10 +361,15 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app'
+    | '/api/intelligence/run'
     | '/app/ai/content-library'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
+    | '/app/intelligence/assistant'
+    | '/app/intelligence/concepts'
+    | '/app/intelligence/early-warning'
+    | '/app/intelligence/school'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -319,6 +387,7 @@ export interface FileRouteTypes {
     | '/app/audit'
     | '/app/chat'
     | '/app/homework'
+    | '/app/interventions'
     | '/app/notices'
     | '/app/notifications'
     | '/app/settings'
@@ -326,10 +395,15 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/api/intelligence/run'
     | '/app/ai/content-library'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
+    | '/app/intelligence/assistant'
+    | '/app/intelligence/concepts'
+    | '/app/intelligence/early-warning'
+    | '/app/intelligence/school'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -343,6 +417,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
+  ApiIntelligenceRunRoute: typeof ApiIntelligenceRunRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -424,6 +499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHomeworkRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/interventions': {
+      id: '/app/interventions'
+      path: '/interventions'
+      fullPath: '/app/interventions'
+      preLoaderRoute: typeof AppInterventionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/notices': {
       id: '/app/notices'
       path: '/notices'
@@ -466,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/intelligence/run': {
+      id: '/api/intelligence/run'
+      path: '/api/intelligence/run'
+      fullPath: '/api/intelligence/run'
+      preLoaderRoute: typeof ApiIntelligenceRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/ai/content-library': {
       id: '/app/ai/content-library'
       path: '/ai/content-library'
@@ -492,6 +581,34 @@ declare module '@tanstack/react-router' {
       path: '/ai/tutor'
       fullPath: '/app/ai/tutor'
       preLoaderRoute: typeof AppAiTutorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/intelligence/assistant': {
+      id: '/app/intelligence/assistant'
+      path: '/intelligence/assistant'
+      fullPath: '/app/intelligence/assistant'
+      preLoaderRoute: typeof AppIntelligenceAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/intelligence/concepts': {
+      id: '/app/intelligence/concepts'
+      path: '/intelligence/concepts'
+      fullPath: '/app/intelligence/concepts'
+      preLoaderRoute: typeof AppIntelligenceConceptsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/intelligence/early-warning': {
+      id: '/app/intelligence/early-warning'
+      path: '/intelligence/early-warning'
+      fullPath: '/app/intelligence/early-warning'
+      preLoaderRoute: typeof AppIntelligenceEarlyWarningRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/intelligence/school': {
+      id: '/app/intelligence/school'
+      path: '/intelligence/school'
+      fullPath: '/app/intelligence/school'
+      preLoaderRoute: typeof AppIntelligenceSchoolRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/portal/parent': {
@@ -550,6 +667,7 @@ interface AppRouteChildren {
   AppAuditRoute: typeof AppAuditRoute
   AppChatRoute: typeof AppChatRoute
   AppHomeworkRoute: typeof AppHomeworkRoute
+  AppInterventionsRoute: typeof AppInterventionsRoute
   AppNoticesRoute: typeof AppNoticesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -561,6 +679,10 @@ interface AppRouteChildren {
   AppAiStudioRoute: typeof AppAiStudioRoute
   AppAiTeacherAssistantRoute: typeof AppAiTeacherAssistantRoute
   AppAiTutorRoute: typeof AppAiTutorRoute
+  AppIntelligenceAssistantRoute: typeof AppIntelligenceAssistantRoute
+  AppIntelligenceConceptsRoute: typeof AppIntelligenceConceptsRoute
+  AppIntelligenceEarlyWarningRoute: typeof AppIntelligenceEarlyWarningRoute
+  AppIntelligenceSchoolRoute: typeof AppIntelligenceSchoolRoute
   AppPortalParentRoute: typeof AppPortalParentRoute
   AppPortalStaffRoute: typeof AppPortalStaffRoute
   AppPortalStudentRoute: typeof AppPortalStudentRoute
@@ -573,6 +695,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAuditRoute: AppAuditRoute,
   AppChatRoute: AppChatRoute,
   AppHomeworkRoute: AppHomeworkRoute,
+  AppInterventionsRoute: AppInterventionsRoute,
   AppNoticesRoute: AppNoticesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
@@ -584,6 +707,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppAiStudioRoute: AppAiStudioRoute,
   AppAiTeacherAssistantRoute: AppAiTeacherAssistantRoute,
   AppAiTutorRoute: AppAiTutorRoute,
+  AppIntelligenceAssistantRoute: AppIntelligenceAssistantRoute,
+  AppIntelligenceConceptsRoute: AppIntelligenceConceptsRoute,
+  AppIntelligenceEarlyWarningRoute: AppIntelligenceEarlyWarningRoute,
+  AppIntelligenceSchoolRoute: AppIntelligenceSchoolRoute,
   AppPortalParentRoute: AppPortalParentRoute,
   AppPortalStaffRoute: AppPortalStaffRoute,
   AppPortalStudentRoute: AppPortalStudentRoute,
@@ -598,6 +725,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
+  ApiIntelligenceRunRoute: ApiIntelligenceRunRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

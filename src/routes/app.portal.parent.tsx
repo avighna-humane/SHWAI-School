@@ -1,9 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import * as Icons from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { listStudents } from "@/actions/people";
 import { listAiContent } from "@/actions/ai";
+import {
+  acknowledgeParentIntelligence,
+  getIntelligenceOverview,
+  requestParentMeeting,
+} from "@/actions/intelligence";
 import {
   listAssessments,
   listGrades,
@@ -45,6 +51,49 @@ function ParentPortal() {
     queryKey: ["parent-ai-resources", schoolId],
     queryFn: () => listAiContent(),
     enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const intelligence = useQuery({
+    queryKey: ["parent-observed-intelligence", schoolId],
+    queryFn: () => getIntelligenceOverview(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const [meetingStudentId, setMeetingStudentId] = useState<string | null>(null);
+  const [meetingReason, setMeetingReason] = useState("");
+  const [meetingDate, setMeetingDate] = useState(() =>
+    new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
+  );
+  const acknowledgeMutation = useMutation({
+    mutationFn: (studentId: string) =>
+      acknowledgeParentIntelligence({
+        data: {
+          studentId,
+          alertId: null,
+          response: "Parent reviewed the published progress summary.",
+        },
+      }),
+  });
+  const meetingMutation = useMutation({
+    mutationFn: ({
+      studentId,
+      reason,
+      start,
+    }: {
+      studentId: string;
+      reason: string;
+      start: string;
+    }) =>
+      requestParentMeeting({
+        data: {
+          studentId,
+          reason,
+          requestedStart: new Date(start).toISOString(),
+          requestedEnd: new Date(new Date(start).getTime() + 30 * 60000).toISOString(),
+        },
+      }),
+    onSuccess: () => {
+      setMeetingStudentId(null);
+      setMeetingReason("");
+    },
   });
   return (
     <div className="space-y-6">
@@ -145,6 +194,56 @@ function ParentPortal() {
           </div>
         </div>
       </section>
+      <section className="surface-panel border-primary/20 bg-primary/5 p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+            <Icons.BarChart3 className="size-5" />
+          </span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              Observed progress summary
+            </p>
+            <h2 className="mt-1 text-xl font-bold">Published academic evidence</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This summary uses published grades for linked children only. It does not expose
+              internal alerts, risk classifications, private conversations, or intervention notes.
+            </p>
+            {intelligence.isLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading observed progress…</p>
+            ) : intelligence.isError ? (
+              <p className="mt-3 text-sm text-danger">{(intelligence.error as Error).message}</p>
+            ) : (
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                {(
+                  intelligence.data as
+                    | {
+                        grades?: Array<{
+                          subject: string;
+                          average_percentage: number;
+                          records: number;
+                        }>;
+                      }
+                    | undefined
+                )?.grades
+                  ?.slice(0, 6)
+                  .map((row) => (
+                    <div key={row.subject} className="rounded-lg border border-border bg-card p-3">
+                      <p className="text-sm font-semibold">{row.subject}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {row.average_percentage}% across {row.records} published records
+                      </p>
+                    </div>
+                  ))}
+                {!(intelligence.data as { grades?: unknown[] } | undefined)?.grades?.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    Not enough published evidence for a subject summary.
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
       {children.isLoading ? (
         <State
           title="Loading linked children…"
@@ -174,14 +273,72 @@ function ParentPortal() {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Button asChild size="sm">
                   <Link to="/app/attendance">Attendance</Link>
                 </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link to="/app/notices">Notices</Link>
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => acknowledgeMutation.mutate(child.id)}
+                  disabled={acknowledgeMutation.isPending}
+                >
+                  Acknowledge progress
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setMeetingStudentId(meetingStudentId === child.id ? null : child.id)
+                  }
+                >
+                  Request meeting
+                </Button>
               </div>
+              {meetingStudentId === child.id ? (
+                <div className="mt-4 space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+                  <label className="block text-xs font-semibold">
+                    Reason
+                    <textarea
+                      value={meetingReason}
+                      onChange={(event) => setMeetingReason(event.target.value)}
+                      rows={2}
+                      placeholder="What would you like to discuss?"
+                      className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold">
+                    Requested time
+                    <input
+                      type="datetime-local"
+                      value={meetingDate}
+                      onChange={(event) => setMeetingDate(event.target.value)}
+                      className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+                    />
+                  </label>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      meetingMutation.mutate({
+                        studentId: child.id,
+                        reason: meetingReason,
+                        start: meetingDate,
+                      })
+                    }
+                    disabled={meetingMutation.isPending || meetingReason.trim().length < 2}
+                  >
+                    {meetingMutation.isPending ? "Sending…" : "Send request"}
+                  </Button>
+                  {meetingMutation.isError ? (
+                    <p className="text-xs text-danger">
+                      {(meetingMutation.error as Error).message}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
             </section>
           ))}
         </div>

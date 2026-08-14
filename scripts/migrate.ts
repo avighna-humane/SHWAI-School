@@ -564,6 +564,86 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_timetable_school_day_idx ON hw_timetable_entries (school_id, academic_year_id, weekday)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_report_cards_student_year_idx ON hw_report_cards (school_id, student_id, academic_year_id)`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_usage (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      feature TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      input_chars INTEGER NOT NULL DEFAULT 0,
+      output_tokens INTEGER,
+      status TEXT NOT NULL CHECK (status IN ('success', 'failure', 'blocked', 'configuration_required')),
+      error_code TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_content (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      created_by TEXT NOT NULL,
+      content_type TEXT NOT NULL,
+      subject TEXT,
+      class_id TEXT,
+      topic TEXT,
+      title TEXT NOT NULL,
+      payload JSONB NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+      ai_generated BOOLEAN NOT NULL DEFAULT TRUE,
+      provider TEXT NOT NULL,
+      model TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_tutor_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      topic TEXT,
+      subject TEXT,
+      class_label TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_tutor_messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      session_id UUID NOT NULL REFERENCES hw_ai_tutor_sessions(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('student', 'tutor', 'system')),
+      content TEXT NOT NULL,
+      hint_level INTEGER CHECK (hint_level IS NULL OR hint_level BETWEEN 0 AND 5),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_learning_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      feature TEXT NOT NULL,
+      topic TEXT NOT NULL,
+      activity_type TEXT NOT NULL,
+      source_id TEXT,
+      hints_requested INTEGER NOT NULL DEFAULT 0,
+      successful BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_usage_school_created_idx ON hw_ai_usage (school_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_content_school_creator_idx ON hw_ai_content (school_id, created_by, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_tutor_student_idx ON hw_ai_tutor_sessions (school_id, student_id, updated_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_learning_student_topic_idx ON hw_ai_learning_events (school_id, student_id, topic, created_at DESC)`;
+
   console.log("Migration complete!");
   await sql.end();
 }

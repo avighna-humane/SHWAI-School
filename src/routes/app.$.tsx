@@ -28,6 +28,8 @@ import {
 import { CONTEXT_ENTRIES, EXPERIMENTS, HELP_MATCHES, INTERVENTIONS } from "@/data/mock/support";
 import { PersistedV1Workspace } from "@/components/v1/persisted-v1-workspace";
 import { AcademicWorkspace } from "@/components/v2/academic-workspace";
+import { AiContentStudio } from "@/components/v3/ai-content-studio";
+import { AiTutor } from "@/components/v3/ai-tutor";
 import {
   ACTIVITY_FEED,
   AI_RECOMMENDATIONS,
@@ -57,6 +59,10 @@ type WorkspaceData = {
 
 function ModuleWorkspace() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname === "/app/ai/tutor") return <AiTutor />;
+  if (pathname === "/app/ai/studio") return <AiContentStudio />;
+  if (pathname === "/app/ai/teacher-assistant") return <AiContentStudio mode="assistant" />;
+  if (pathname === "/app/ai/content-library") return <AiContentStudio />;
   const { role, plan, school } = useAppState();
   const item = ALL_NAV_ITEMS.find((i) => i.path === pathname);
 

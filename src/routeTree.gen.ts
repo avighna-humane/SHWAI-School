@@ -26,6 +26,10 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
+import { Route as AppAiContentLibraryRouteImport } from './routes/app.ai.content-library'
+import { Route as AppAiStudioRouteImport } from './routes/app.ai.studio'
+import { Route as AppAiTeacherAssistantRouteImport } from './routes/app.ai.teacher-assistant'
+import { Route as AppAiTutorRouteImport } from './routes/app.ai.tutor'
 import { Route as AppPortalParentRouteImport } from './routes/app.portal.parent'
 import { Route as AppPortalStaffRouteImport } from './routes/app.portal.staff'
 import { Route as AppPortalStudentRouteImport } from './routes/app.portal.student'
@@ -117,6 +121,26 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   path: '/subscription',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiContentLibraryRoute = AppAiContentLibraryRouteImport.update({
+  id: '/ai/content-library',
+  path: '/ai/content-library',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiStudioRoute = AppAiStudioRouteImport.update({
+  id: '/ai/studio',
+  path: '/ai/studio',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiTeacherAssistantRoute = AppAiTeacherAssistantRouteImport.update({
+  id: '/ai/teacher-assistant',
+  path: '/ai/teacher-assistant',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiTutorRoute = AppAiTutorRouteImport.update({
+  id: '/ai/tutor',
+  path: '/ai/tutor',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPortalParentRoute = AppPortalParentRouteImport.update({
   id: '/portal/parent',
   path: '/portal/parent',
@@ -161,6 +185,10 @@ export interface FileRoutesByFullPath {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/studio': typeof AppAiStudioRoute
+  '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
+  '/app/ai/tutor': typeof AppAiTutorRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -184,6 +212,10 @@ export interface FileRoutesByTo {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app': typeof AppIndexRoute
+  '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/studio': typeof AppAiStudioRoute
+  '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
+  '/app/ai/tutor': typeof AppAiTutorRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -209,6 +241,10 @@ export interface FileRoutesById {
   '/app/submissions': typeof AppSubmissionsRoute
   '/app/subscription': typeof AppSubscriptionRoute
   '/app/': typeof AppIndexRoute
+  '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/studio': typeof AppAiStudioRoute
+  '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
+  '/app/ai/tutor': typeof AppAiTutorRoute
   '/app/portal/parent': typeof AppPortalParentRoute
   '/app/portal/staff': typeof AppPortalStaffRoute
   '/app/portal/student': typeof AppPortalStudentRoute
@@ -235,6 +271,10 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/ai/content-library'
+    | '/app/ai/studio'
+    | '/app/ai/teacher-assistant'
+    | '/app/ai/tutor'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -258,6 +298,10 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app'
+    | '/app/ai/content-library'
+    | '/app/ai/studio'
+    | '/app/ai/teacher-assistant'
+    | '/app/ai/tutor'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -282,6 +326,10 @@ export interface FileRouteTypes {
     | '/app/submissions'
     | '/app/subscription'
     | '/app/'
+    | '/app/ai/content-library'
+    | '/app/ai/studio'
+    | '/app/ai/teacher-assistant'
+    | '/app/ai/tutor'
     | '/app/portal/parent'
     | '/app/portal/staff'
     | '/app/portal/student'
@@ -418,6 +466,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/ai/content-library': {
+      id: '/app/ai/content-library'
+      path: '/ai/content-library'
+      fullPath: '/app/ai/content-library'
+      preLoaderRoute: typeof AppAiContentLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ai/studio': {
+      id: '/app/ai/studio'
+      path: '/ai/studio'
+      fullPath: '/app/ai/studio'
+      preLoaderRoute: typeof AppAiStudioRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ai/teacher-assistant': {
+      id: '/app/ai/teacher-assistant'
+      path: '/ai/teacher-assistant'
+      fullPath: '/app/ai/teacher-assistant'
+      preLoaderRoute: typeof AppAiTeacherAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ai/tutor': {
+      id: '/app/ai/tutor'
+      path: '/ai/tutor'
+      fullPath: '/app/ai/tutor'
+      preLoaderRoute: typeof AppAiTutorRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/portal/parent': {
       id: '/app/portal/parent'
       path: '/portal/parent'
@@ -481,6 +557,10 @@ interface AppRouteChildren {
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAiContentLibraryRoute: typeof AppAiContentLibraryRoute
+  AppAiStudioRoute: typeof AppAiStudioRoute
+  AppAiTeacherAssistantRoute: typeof AppAiTeacherAssistantRoute
+  AppAiTutorRoute: typeof AppAiTutorRoute
   AppPortalParentRoute: typeof AppPortalParentRoute
   AppPortalStaffRoute: typeof AppPortalStaffRoute
   AppPortalStudentRoute: typeof AppPortalStudentRoute
@@ -500,6 +580,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAiContentLibraryRoute: AppAiContentLibraryRoute,
+  AppAiStudioRoute: AppAiStudioRoute,
+  AppAiTeacherAssistantRoute: AppAiTeacherAssistantRoute,
+  AppAiTutorRoute: AppAiTutorRoute,
   AppPortalParentRoute: AppPortalParentRoute,
   AppPortalStaffRoute: AppPortalStaffRoute,
   AppPortalStudentRoute: AppPortalStudentRoute,

@@ -8,6 +8,7 @@ import {
   listTimetable,
   getAcademicAnalytics,
 } from "@/actions/academic";
+import { getPersonalizedLearning } from "@/actions/ai";
 import { useAppState } from "@/app/providers/app-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,32 @@ const PORTAL_CARDS = [
     path: "/app/chat",
     primary: "Open Chat",
   },
+  {
+    icon: "Bot",
+    label: "AI Tutor",
+    description: "Get progressive hints and explanations without skipping the learning steps.",
+    path: "/app/ai/tutor",
+    primary: "Ask AI Tutor",
+    badge: "AI" as const,
+    highlight: true,
+  },
+  {
+    icon: "ListChecks",
+    label: "AI Practice",
+    description:
+      "Generate safe practice questions from a subject and topic, then record your activity.",
+    path: "/app/ai/tutor",
+    primary: "Start Practice",
+    badge: "AI" as const,
+  },
+  {
+    icon: "BookOpenCheck",
+    label: "AI Study Resources",
+    description: "Open teacher-approved study notes, revision sheets and flashcards.",
+    path: "/app/ai/content-library",
+    primary: "Browse Resources",
+    badge: "AI" as const,
+  },
 ];
 
 function Icon({ name, className }: { name: string; className?: string }) {
@@ -92,6 +119,11 @@ function StudentPortal() {
   const analyticsQuery = useQuery({
     queryKey: ["student-analytics", schoolId],
     queryFn: () => getAcademicAnalytics(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const learningQuery = useQuery({
+    queryKey: ["student-personalized-learning", schoolId],
+    queryFn: () => getPersonalizedLearning(),
     enabled: Boolean(schoolId) && typeof window !== "undefined",
   });
 
@@ -166,8 +198,58 @@ function StudentPortal() {
         />
       </section>
 
+      <section className="surface-panel border-ai/20 bg-ai-soft/20 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-ai">
+              <Icons.Sparkles className="size-3.5" /> AI Learning
+            </p>
+            <h2 className="mt-1 text-xl font-bold">Practice, revise and ask for the next step</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Teacher-approved resources and student-safe tutoring are available here.
+              Recommendations are based on persisted academic activity, not predictions or automated
+              decisions.
+            </p>
+          </div>
+          <Badge className="rounded-full bg-ai-soft text-ai">
+            Adaptive level: {learningQuery.data?.adaptiveDifficulty ?? "standard"}
+          </Badge>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {PORTAL_CARDS.filter((card) => card.badge === "AI").map((card) => (
+            <div key={card.label} className="rounded-xl border border-ai/15 bg-card p-4">
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-lg bg-ai-soft text-ai">
+                  <Icon name={card.icon} className="size-4" />
+                </span>
+                <p className="text-sm font-semibold">{card.label}</p>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">{card.description}</p>
+              <Button asChild size="sm" variant="outline" className="mt-3 w-full">
+                <Link to={card.path}>{card.primary}</Link>
+              </Button>
+            </div>
+          ))}
+        </div>
+        {learningQuery.data?.recommendations?.length ? (
+          <div className="mt-4 rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              Persisted recommendations
+            </p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-3">
+              {learningQuery.data.recommendations.map((recommendation) => (
+                <p key={recommendation.subject} className="text-sm">
+                  <span className="font-semibold">{recommendation.subject}:</span>{" "}
+                  <span className="text-muted-foreground">{recommendation.reason}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PORTAL_CARDS.map((card) => (
+        {PORTAL_CARDS.filter((card) => card.badge !== "AI").map((card) => (
           <div
             key={card.path}
             className={`flex flex-col rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md

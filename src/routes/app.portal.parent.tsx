@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import * as Icons from "lucide-react";
 import { useAppState } from "@/app/providers/app-state";
 import { listStudents } from "@/actions/people";
+import { listAiContent } from "@/actions/ai";
 import {
   listAssessments,
   listGrades,
@@ -38,6 +39,11 @@ function ParentPortal() {
   const children = useQuery({
     queryKey: ["portal-children", schoolId],
     queryFn: () => listStudents({ data: { status: "active" } }),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const aiResources = useQuery({
+    queryKey: ["parent-ai-resources", schoolId],
+    queryFn: () => listAiContent(),
     enabled: Boolean(schoolId) && typeof window !== "undefined",
   });
   return (
@@ -83,6 +89,59 @@ function ParentPortal() {
           <div>
             <p className="text-xs text-muted-foreground">School</p>
             <p className="font-semibold">{school.name}</p>
+          </div>
+        </div>
+      </section>
+      <section className="surface-panel border-ai/20 bg-ai-soft/15 p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-ai text-ai-foreground">
+            <Icons.Sparkles className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ai">
+              Published AI learning resources
+            </p>
+            <h2 className="mt-1 text-xl font-bold">Family-visible progress support</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Only teacher-approved study notes and revision sheets are visible here. Private
+              student–tutor conversations are not shared with parents.
+            </p>
+            {aiResources.isLoading ? (
+              <p className="mt-3 text-sm text-muted-foreground">Loading approved resources…</p>
+            ) : aiResources.isError ? (
+              <p className="mt-3 text-sm text-danger">{(aiResources.error as Error).message}</p>
+            ) : (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {(
+                  aiResources.data as
+                    | Array<{
+                        id: string;
+                        title: string;
+                        subject: string;
+                        topic: string;
+                        content_type: string;
+                      }>
+                    | undefined
+                )
+                  ?.slice(0, 4)
+                  .map((resource) => (
+                    <div key={resource.id} className="rounded-lg border border-border bg-card p-3">
+                      <div className="flex items-center gap-2">
+                        <Icons.BookOpenCheck className="size-4 text-ai" />
+                        <p className="text-sm font-semibold">{resource.title}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {resource.content_type} · {resource.subject} · {resource.topic}
+                      </p>
+                    </div>
+                  ))}
+                {!aiResources.data?.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    No teacher-approved AI resources are available yet.
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </section>

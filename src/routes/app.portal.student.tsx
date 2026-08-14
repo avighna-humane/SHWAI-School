@@ -80,6 +80,17 @@ const PORTAL_CARDS = [
     badge: "AI" as const,
   },
   {
+    icon: "Route",
+    label: "AI Learning Journeys",
+    description:
+      "Track persisted concepts, prerequisite gaps, practice steps, revision targets and observed progress.",
+    path: "/app/ai/learning-journeys",
+    primary: "Open Learning Journey",
+    badge: "AI" as const,
+    highlight: true,
+    note: "Based on observed activity; not a forecast",
+  },
+  {
     icon: "BookOpenCheck",
     label: "AI Study Resources",
     description: "Open teacher-approved study notes, revision sheets and flashcards.",

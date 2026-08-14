@@ -41,6 +41,18 @@ V5 context records are human-created, consent-aware, visibility-controlled, expi
 
 External payment, GPS, SMS, WhatsApp, payroll, storage, translation, and 2FA integrations are provider boundaries. Without verified credentials and an end-to-end test, the application reports `configuration required` or `not verified` and never fabricates delivery, payment, live location, transcription, or synchronization success. See [`docs/v5-completion-report.md`](docs/v5-completion-report.md) for the 84-gate classification.
 
+## V6 advanced AI and future intelligence
+
+V6 adds governed AI foundations at `/app/ai/governance`, `/app/knowledge-base`, `/app/predictions`, `/app/ai/classroom-assistant`, and `/app/ai/learning-journeys`. `src/actions/v6.ts` provides authenticated, school-scoped server functions for AI provenance, output versions, approval events, approved-source knowledge retrieval, prediction records and evaluations, data-quality warnings, school AI settings, usage governance, classroom assistance, and persisted learning journeys.
+
+AI-generated teacher content and student practice now retain V6 provenance records with request IDs, provider/model metadata, output versions, approval state, missing-data and bias-warning fields. Teacher edits create a human-edited replacement version, and publication records explicit approval. Generated content remains a draft until review; no client-side provider key is used.
+
+The school knowledge base supports source registration, human approval, governed chunk ingestion, PostgreSQL text retrieval, and cited answers. Answers are restricted to approved, non-expired school sources and explicitly return `No approved school source was found` when retrieval finds no eligible evidence. The current implementation is a text-search foundation; vector embeddings, OCR, automatic document parsing, and external-drive ingestion are not claimed.
+
+Prediction foundations persist requested type, scope, evidence summary, data-quality warnings, provider state, review state, and evaluation outcomes. If the minimum historical evidence is unavailable, the server returns `Prediction unavailable: insufficient historical data` and does not store a fabricated value. High-stakes predictions require human review and cannot automatically punish students, deny admissions, permanently label people, discipline teachers, or make irreversible decisions.
+
+The classroom assistant uses approved school context and reports provider/source boundaries honestly. Learning journeys persist concepts, prerequisite gaps, practice, revision, and observed progress; they extend V3/V4 evidence and do not forecast future outcomes. V6 AI settings and usage governance are persisted and audited. Live PostgreSQL migration, authenticated browser workflows, vector/speech/OCR providers, production scheduling, and external operational integrations remain configuration or deployment requirements. See [`docs/v6-completion-report.md`](docs/v6-completion-report.md) for the COMPLETE / PARTIAL / CONFIGURATION_REQUIRED / BLOCKED / NOT_IMPLEMENTED matrix.
+
 ## AI provider configuration
 
 Configure a supported server-side provider in the runtime environment. The built-in Forge-compatible provider uses:
@@ -66,14 +78,16 @@ src/
   components/v3/       AI Content Studio and student AI Tutor
   components/v4/       Intelligence, alerts, concept map, school dashboard, and interventions
   components/v5/       Enterprise operations, decision intelligence, support, and offline workspaces
+  components/v6/       AI governance, knowledge, predictions, classroom assistance, and learning journeys
   config/               navigation.ts, roles.ts, plans.ts
   data/mock/            demonstration datasets for non-persisted screens
   actions/              TanStack Start server functions for persisted workflows
   lib/ai/               provider abstraction, schemas, policy, and V3 tests
   lib/intelligence/     deterministic V4 thresholds, evidence policy, and tests
   lib/v5/               transparent scenario engine, workload calculations, and V5 policy tests
+  lib/v6/               V6 policy helpers and governance tests
   lib/                  database, access policy, timeout, and error helpers
-  routes/               file-based routes for the app shell and V1–V5 modules
+  routes/               file-based routes for the app shell and V1–V6 modules
   scripts/              PostgreSQL schema migration
   docs/                 version completion reports
 ```
@@ -92,4 +106,4 @@ Deterministic datasets under `src/data/mock` remain for demonstration and empty-
 
 ## Verification boundary
 
-V1, V2, V3, V4, and V5 policy/regression tests are included in the suite. V4 tests cover observed decline thresholds, insufficient-data handling, confidence categories, parent-safe fields, role boundaries, escalation hierarchy, and automation idempotency. V5 tests cover transparent scenario calculations, unknown future outcomes, workload thresholds, role/capability boundaries, context visibility, sensitive-inference rejection, provider states, fee status, and negative-inventory protection. The V5 implementation is statically type-checked and built locally; live PostgreSQL migration, seeded-data browser verification, provider end-to-end tests, production scheduled jobs, 2FA, export/deletion execution, and several document/messaging integrations require deployment infrastructure. See [`docs/v5-completion-report.md`](docs/v5-completion-report.md) for the 84-gate COMPLETE / PARTIAL / MOCKED / BLOCKED classification and exact release boundary.
+V1, V2, V3, V4, V5, and V6 policy/regression tests are included in the suite. V4 tests cover observed decline thresholds, insufficient-data handling, confidence categories, parent-safe fields, role boundaries, escalation hierarchy, and automation idempotency. V5 tests cover transparent scenario calculations, unknown future outcomes, workload thresholds, role/capability boundaries, context visibility, sensitive-inference rejection, provider states, fee status, and negative-inventory protection. V6 tests cover governance roles, approval transitions, approved-source boundaries, insufficient-data prediction safeguards, data-quality warnings, and provider states. The V1–V6 implementation is statically type-checked, linted, tested, and built locally; live PostgreSQL migration, seeded-data browser verification, provider end-to-end tests, production scheduled jobs, vector/OCR/speech services, 2FA, export/deletion execution, and several document/messaging integrations require deployment infrastructure. See [`docs/v6-completion-report.md`](docs/v6-completion-report.md) for the V6 completion matrix and exact release boundary.

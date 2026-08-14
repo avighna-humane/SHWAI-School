@@ -1,0 +1,11 @@
+SHWAI V6 specification summary from /home/ubuntu/upload/pasted_content_11.txt (attached by user; read 2026-08-14)
+
+V6 scope: advanced AI and future intelligence on V1-V5. Required foundations include persistent AI provenance, output version history, human approval, school-approved knowledge source governance, approved-source retrieval and citations, structured AI response contracts, prediction records with insufficient-data behavior and evaluation, high-stakes prediction review, actual data-quality/bias warnings, model/prompt auditability, school AI settings and usage governance, classroom assistant, personalized learning journeys, curriculum optimization, future administration AI architecture, document assistance, career/student guidance foundations, and a school knowledge assistant.
+
+Every supported feature must be functional across persistence, server logic, authentication, school/tenant isolation, authorization, input validation, error/configuration states, audit, real frontend/backend data flow, and tests where practical. Provider-dependent capabilities must expose CONFIGURATION_REQUIRED without fabricated success.
+
+Security boundaries: server-derived identity; no client-selected school/role/user; school-scoped queries; role-aware student/teacher/parent/counselor/admin/owner access; approved sources cannot leak across schools; no secrets or hidden prompts; AI endpoints rate-limited, input-bounded, and audited. High-stakes predictions cannot punish, deny, permanently label, discipline, or make irreversible decisions automatically.
+
+Required UI states: loading, empty, success, error, retry, configuration required, insufficient data, unauthorized, pending review, approved, rejected, stale data, low confidence. Each V6 workspace must distinguish LIVE, PERSISTED, CONFIGURATION REQUIRED, INSUFFICIENT DATA, and DEMO/NOT PRODUCTION.
+
+V6 completion matrix classifications: COMPLETE, PARTIAL, MOCKED, CONFIGURATION_REQUIRED, BLOCKED, NOT_IMPLEMENTED. Final report must include files, migrations/tables/indexes, backend/frontend/AI/governance functionality, tests, browser verification, V1-V5 regression, matrix, blockers, external configuration, commit, push status, and clean working tree. Do not implement V7.

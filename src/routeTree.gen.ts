@@ -22,17 +22,22 @@ import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppDecisionsRouteImport } from './routes/app.decisions'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppInterventionsRouteImport } from './routes/app.interventions'
+import { Route as AppKnowledgeBaseRouteImport } from './routes/app.knowledge-base'
 import { Route as AppNoticesRouteImport } from './routes/app.notices'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppOfflineRouteImport } from './routes/app.offline'
 import { Route as AppOperationsRouteImport } from './routes/app.operations'
+import { Route as AppPredictionsRouteImport } from './routes/app.predictions'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppStudentsRouteImport } from './routes/app.students'
 import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
 import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as ApiIntelligenceRunRouteImport } from './routes/api.intelligence.run'
+import { Route as AppAiClassroomAssistantRouteImport } from './routes/app.ai.classroom-assistant'
 import { Route as AppAiContentLibraryRouteImport } from './routes/app.ai.content-library'
+import { Route as AppAiGovernanceRouteImport } from './routes/app.ai.governance'
+import { Route as AppAiLearningJourneysRouteImport } from './routes/app.ai.learning-journeys'
 import { Route as AppAiStudioRouteImport } from './routes/app.ai.studio'
 import { Route as AppAiTeacherAssistantRouteImport } from './routes/app.ai.teacher-assistant'
 import { Route as AppAiTutorRouteImport } from './routes/app.ai.tutor'
@@ -111,6 +116,11 @@ const AppInterventionsRoute = AppInterventionsRouteImport.update({
   path: '/interventions',
   getParentRoute: () => AppRoute,
 } as any)
+const AppKnowledgeBaseRoute = AppKnowledgeBaseRouteImport.update({
+  id: '/knowledge-base',
+  path: '/knowledge-base',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNoticesRoute = AppNoticesRouteImport.update({
   id: '/notices',
   path: '/notices',
@@ -129,6 +139,11 @@ const AppOfflineRoute = AppOfflineRouteImport.update({
 const AppOperationsRoute = AppOperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPredictionsRoute = AppPredictionsRouteImport.update({
+  id: '/predictions',
+  path: '/predictions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -161,9 +176,24 @@ const ApiIntelligenceRunRoute = ApiIntelligenceRunRouteImport.update({
   path: '/api/intelligence/run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAiClassroomAssistantRoute = AppAiClassroomAssistantRouteImport.update({
+  id: '/ai/classroom-assistant',
+  path: '/ai/classroom-assistant',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAiContentLibraryRoute = AppAiContentLibraryRouteImport.update({
   id: '/ai/content-library',
   path: '/ai/content-library',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiGovernanceRoute = AppAiGovernanceRouteImport.update({
+  id: '/ai/governance',
+  path: '/ai/governance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAiLearningJourneysRoute = AppAiLearningJourneysRouteImport.update({
+  id: '/ai/learning-journeys',
+  path: '/ai/learning-journeys',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAiStudioRoute = AppAiStudioRouteImport.update({
@@ -242,10 +272,12 @@ export interface FileRoutesByFullPath {
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
+  '/app/knowledge-base': typeof AppKnowledgeBaseRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
   '/app/operations': typeof AppOperationsRoute
+  '/app/predictions': typeof AppPredictionsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
@@ -253,7 +285,10 @@ export interface FileRoutesByFullPath {
   '/app/support': typeof AppSupportRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/governance': typeof AppAiGovernanceRoute
+  '/app/ai/learning-journeys': typeof AppAiLearningJourneysRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
@@ -279,10 +314,12 @@ export interface FileRoutesByTo {
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
+  '/app/knowledge-base': typeof AppKnowledgeBaseRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
   '/app/operations': typeof AppOperationsRoute
+  '/app/predictions': typeof AppPredictionsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
@@ -290,7 +327,10 @@ export interface FileRoutesByTo {
   '/app/support': typeof AppSupportRoute
   '/app': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/governance': typeof AppAiGovernanceRoute
+  '/app/ai/learning-journeys': typeof AppAiLearningJourneysRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
@@ -318,10 +358,12 @@ export interface FileRoutesById {
   '/app/decisions': typeof AppDecisionsRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/interventions': typeof AppInterventionsRoute
+  '/app/knowledge-base': typeof AppKnowledgeBaseRoute
   '/app/notices': typeof AppNoticesRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/offline': typeof AppOfflineRoute
   '/app/operations': typeof AppOperationsRoute
+  '/app/predictions': typeof AppPredictionsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/students': typeof AppStudentsRouteWithChildren
   '/app/submissions': typeof AppSubmissionsRoute
@@ -329,7 +371,10 @@ export interface FileRoutesById {
   '/app/support': typeof AppSupportRoute
   '/app/': typeof AppIndexRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
+  '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
   '/app/ai/content-library': typeof AppAiContentLibraryRoute
+  '/app/ai/governance': typeof AppAiGovernanceRoute
+  '/app/ai/learning-journeys': typeof AppAiLearningJourneysRoute
   '/app/ai/studio': typeof AppAiStudioRoute
   '/app/ai/teacher-assistant': typeof AppAiTeacherAssistantRoute
   '/app/ai/tutor': typeof AppAiTutorRoute
@@ -358,10 +403,12 @@ export interface FileRouteTypes {
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
+    | '/app/knowledge-base'
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
     | '/app/operations'
+    | '/app/predictions'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
@@ -369,7 +416,10 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/'
     | '/api/intelligence/run'
+    | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
+    | '/app/ai/governance'
+    | '/app/ai/learning-journeys'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
@@ -395,10 +445,12 @@ export interface FileRouteTypes {
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
+    | '/app/knowledge-base'
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
     | '/app/operations'
+    | '/app/predictions'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
@@ -406,7 +458,10 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app'
     | '/api/intelligence/run'
+    | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
+    | '/app/ai/governance'
+    | '/app/ai/learning-journeys'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
@@ -433,10 +488,12 @@ export interface FileRouteTypes {
     | '/app/decisions'
     | '/app/homework'
     | '/app/interventions'
+    | '/app/knowledge-base'
     | '/app/notices'
     | '/app/notifications'
     | '/app/offline'
     | '/app/operations'
+    | '/app/predictions'
     | '/app/settings'
     | '/app/students'
     | '/app/submissions'
@@ -444,7 +501,10 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/'
     | '/api/intelligence/run'
+    | '/app/ai/classroom-assistant'
     | '/app/ai/content-library'
+    | '/app/ai/governance'
+    | '/app/ai/learning-journeys'
     | '/app/ai/studio'
     | '/app/ai/teacher-assistant'
     | '/app/ai/tutor'
@@ -561,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInterventionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/knowledge-base': {
+      id: '/app/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/app/knowledge-base'
+      preLoaderRoute: typeof AppKnowledgeBaseRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/notices': {
       id: '/app/notices'
       path: '/notices'
@@ -587,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/operations'
       fullPath: '/app/operations'
       preLoaderRoute: typeof AppOperationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/predictions': {
+      id: '/app/predictions'
+      path: '/predictions'
+      fullPath: '/app/predictions'
+      preLoaderRoute: typeof AppPredictionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -631,11 +705,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntelligenceRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/ai/classroom-assistant': {
+      id: '/app/ai/classroom-assistant'
+      path: '/ai/classroom-assistant'
+      fullPath: '/app/ai/classroom-assistant'
+      preLoaderRoute: typeof AppAiClassroomAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ai/content-library': {
       id: '/app/ai/content-library'
       path: '/ai/content-library'
       fullPath: '/app/ai/content-library'
       preLoaderRoute: typeof AppAiContentLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ai/governance': {
+      id: '/app/ai/governance'
+      path: '/ai/governance'
+      fullPath: '/app/ai/governance'
+      preLoaderRoute: typeof AppAiGovernanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ai/learning-journeys': {
+      id: '/app/ai/learning-journeys'
+      path: '/ai/learning-journeys'
+      fullPath: '/app/ai/learning-journeys'
+      preLoaderRoute: typeof AppAiLearningJourneysRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/ai/studio': {
@@ -745,17 +840,22 @@ interface AppRouteChildren {
   AppDecisionsRoute: typeof AppDecisionsRoute
   AppHomeworkRoute: typeof AppHomeworkRoute
   AppInterventionsRoute: typeof AppInterventionsRoute
+  AppKnowledgeBaseRoute: typeof AppKnowledgeBaseRoute
   AppNoticesRoute: typeof AppNoticesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOfflineRoute: typeof AppOfflineRoute
   AppOperationsRoute: typeof AppOperationsRoute
+  AppPredictionsRoute: typeof AppPredictionsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStudentsRoute: typeof AppStudentsRouteWithChildren
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAiClassroomAssistantRoute: typeof AppAiClassroomAssistantRoute
   AppAiContentLibraryRoute: typeof AppAiContentLibraryRoute
+  AppAiGovernanceRoute: typeof AppAiGovernanceRoute
+  AppAiLearningJourneysRoute: typeof AppAiLearningJourneysRoute
   AppAiStudioRoute: typeof AppAiStudioRoute
   AppAiTeacherAssistantRoute: typeof AppAiTeacherAssistantRoute
   AppAiTutorRoute: typeof AppAiTutorRoute
@@ -777,17 +877,22 @@ const AppRouteChildren: AppRouteChildren = {
   AppDecisionsRoute: AppDecisionsRoute,
   AppHomeworkRoute: AppHomeworkRoute,
   AppInterventionsRoute: AppInterventionsRoute,
+  AppKnowledgeBaseRoute: AppKnowledgeBaseRoute,
   AppNoticesRoute: AppNoticesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOfflineRoute: AppOfflineRoute,
   AppOperationsRoute: AppOperationsRoute,
+  AppPredictionsRoute: AppPredictionsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStudentsRoute: AppStudentsRouteWithChildren,
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAiClassroomAssistantRoute: AppAiClassroomAssistantRoute,
   AppAiContentLibraryRoute: AppAiContentLibraryRoute,
+  AppAiGovernanceRoute: AppAiGovernanceRoute,
+  AppAiLearningJourneysRoute: AppAiLearningJourneysRoute,
   AppAiStudioRoute: AppAiStudioRoute,
   AppAiTeacherAssistantRoute: AppAiTeacherAssistantRoute,
   AppAiTutorRoute: AppAiTutorRoute,

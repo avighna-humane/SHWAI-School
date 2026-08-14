@@ -34,6 +34,11 @@ import { IntelligenceWorkspace } from "@/components/v4/intelligence-workspace";
 import { OperationsWorkspace } from "@/components/v5/operations-workspace";
 import { DecisionWorkspace } from "@/components/v5/decision-workspace";
 import { SupportWorkspace } from "@/components/v5/support-workspace";
+import { V6GovernanceWorkspace } from "@/components/v6/governance-workspace";
+import { V6KnowledgeWorkspace } from "@/components/v6/knowledge-workspace";
+import { V6PredictionWorkspace } from "@/components/v6/prediction-workspace";
+import { V6ClassroomAssistantWorkspace } from "@/components/v6/classroom-assistant-workspace";
+import { V6LearningJourneyWorkspace } from "@/components/v6/learning-journey-workspace";
 import {
   ACTIVITY_FEED,
   AI_RECOMMENDATIONS,
@@ -77,6 +82,11 @@ function ModuleWorkspace() {
   if (pathname === "/app/operations") return <OperationsWorkspace />;
   if (pathname === "/app/decisions") return <DecisionWorkspace />;
   if (pathname === "/app/support") return <SupportWorkspace />;
+  if (pathname === "/app/ai/governance") return <V6GovernanceWorkspace />;
+  if (pathname === "/app/knowledge-base") return <V6KnowledgeWorkspace />;
+  if (pathname === "/app/predictions") return <V6PredictionWorkspace />;
+  if (pathname === "/app/ai/classroom-assistant") return <V6ClassroomAssistantWorkspace />;
+  if (pathname === "/app/ai/learning-journeys") return <V6LearningJourneyWorkspace />;
   const item = ALL_NAV_ITEMS.find((i) => i.path === pathname);
 
   if (!item)
@@ -154,7 +164,7 @@ function ModuleWorkspace() {
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="ml-auto">
-            <Link to={"/app/ai/provenance" as never}>Open provenance</Link>
+            <Link to={"/app/ai/governance" as never}>Open provenance</Link>
           </Button>
         </div>
       ) : null}
@@ -488,7 +498,7 @@ function buildWorkspaceData(item: NavItem, schoolName: string): WorkspaceData {
         detail: `Range ${x.ciLow}–${x.ciHigh} ${x.unit} · horizon ${x.horizon}`,
       })),
       action: "Review a forecast with evidence",
-      actionPath: "/app/ai/provenance",
+      actionPath: "/app/ai/governance",
     };
   if (label === "Interventions" || label === "Experiments") {
     const rows =

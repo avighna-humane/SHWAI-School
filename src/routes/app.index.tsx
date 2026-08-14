@@ -396,7 +396,7 @@ function Dashboard() {
             ))}
           </div>
           <Button asChild variant="outline" size="sm" className="mt-5 w-full">
-            <Link to={"/app/ai/provenance" as never}>Inspect evidence and version history</Link>
+            <Link to={"/app/ai/governance" as never}>Inspect evidence and version history</Link>
           </Button>
         </section>
 

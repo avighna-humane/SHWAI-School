@@ -254,6 +254,10 @@ export const generateAiContent = createServerFn({ method: "POST" })
     const rows = await sql<
       { id: string }[]
     >`INSERT INTO hw_ai_content (school_id, created_by, content_type, subject, class_id, topic, title, payload, status, provider, model, request_id) VALUES (${context.schoolId}, ${context.userId}, ${data.contentType}, ${data.subject}, ${data.classLabel ?? null}, ${data.topic}, ${title}, ${JSON.stringify(result.data)}::JSONB, 'draft', ${result.provider}, ${result.model}, ${result.requestId}) RETURNING id`;
+    const provenance = await sql<
+      { id: string }[]
+    >`INSERT INTO hw_ai_provenance_records (school_id, output_type, output_id, request_id, provider, model, prompt_template, prompt_version, requested_by, confidence, missing_data, bias_warnings, approval_status) VALUES (${context.schoolId}, ${data.contentType}, ${rows[0]!.id}, ${result.requestId}, ${result.provider}, ${result.model}, ${data.contentType}, 'v3', ${context.userId}, 'unknown', '[]'::JSONB, '[]'::JSONB, 'pending_review') RETURNING id`;
+    await sql`INSERT INTO hw_ai_output_versions (school_id, output_type, output_id, provenance_id, version_number, payload, created_by) VALUES (${context.schoolId}, ${data.contentType}, ${rows[0]!.id}, ${provenance[0]!.id}, 1, ${JSON.stringify(result.data)}::JSONB, ${context.userId})`;
     return {
       id: rows[0]!.id,
       title,
@@ -281,6 +285,14 @@ export const editAiContent = createServerFn({ method: "POST" })
     const parsed = schema.safeParse(data.payload);
     if (!parsed.success) throw new Error("Edited AI content does not match the required structure");
     await sql`UPDATE hw_ai_content SET title = ${data.title}, payload = ${JSON.stringify(parsed.data)}::JSONB, status = 'draft', updated_at = NOW() WHERE id = ${data.id} AND school_id = ${context.schoolId} AND created_by = ${context.userId}`;
+    const provenance = await sql<
+      { id: string; output_version: number }[]
+    >`SELECT id, output_version FROM hw_ai_provenance_records WHERE school_id = ${context.schoolId} AND output_type = ${rows[0].content_type} AND output_id = ${data.id} ORDER BY created_at DESC LIMIT 1`;
+    if (provenance[0]) {
+      await sql`UPDATE hw_ai_provenance_records SET approval_status = 'revised', output_version = output_version + 1 WHERE id = ${provenance[0].id} AND school_id = ${context.schoolId}`;
+      await sql`UPDATE hw_ai_output_versions SET status = 'superseded' WHERE school_id = ${context.schoolId} AND provenance_id = ${provenance[0].id} AND status = 'current'`;
+      await sql`INSERT INTO hw_ai_output_versions (school_id, output_type, output_id, provenance_id, version_number, payload, edited_by_human, created_by) VALUES (${context.schoolId}, ${rows[0].content_type}, ${data.id}, ${provenance[0].id}, ${provenance[0].output_version + 1}, ${JSON.stringify(parsed.data)}::JSONB, TRUE, ${context.userId})`;
+    }
     await recordAiAudit(
       sql,
       context,
@@ -299,8 +311,19 @@ export const publishAiContent = createServerFn({ method: "POST" })
     const sql = requireDatabase();
     const rows = await sql<
       { id: string; content_type: string; status: string }[]
-    >`UPDATE hw_ai_content SET status = 'published', updated_at = NOW() WHERE id = ${data.id} AND school_id = ${context.schoolId} AND created_by = ${context.userId} RETURNING id, content_type, status`;
+    >`SELECT id, content_type, status FROM hw_ai_content WHERE id = ${data.id} AND school_id = ${context.schoolId} AND created_by = ${context.userId}`;
     if (!rows[0]) throw new Error("AI content not found or not owned by this teacher");
+    const provenance = await sql<
+      { id: string; approval_status: string }[]
+    >`SELECT id, approval_status FROM hw_ai_provenance_records WHERE school_id = ${context.schoolId} AND output_type = ${rows[0].content_type} AND output_id = ${data.id} ORDER BY created_at DESC LIMIT 1`;
+    if (!provenance[0])
+      throw new Error("AI content cannot be published until provenance is recorded and reviewed");
+    if (!["pending_review", "revised", "approved"].includes(provenance[0].approval_status)) {
+      throw new Error("AI content is not in a reviewable approval state");
+    }
+    await sql`UPDATE hw_ai_content SET status = 'published', updated_at = NOW() WHERE id = ${data.id} AND school_id = ${context.schoolId} AND created_by = ${context.userId}`;
+    await sql`UPDATE hw_ai_provenance_records SET approval_status = 'approved', reviewer_id = ${context.userId}, reviewed_at = NOW(), review_note = 'Teacher explicitly approved publication' WHERE id = ${provenance[0].id} AND school_id = ${context.schoolId}`;
+    await sql`INSERT INTO hw_ai_approval_events (school_id, provenance_id, previous_status, new_status, reviewer_id, review_note) VALUES (${context.schoolId}, ${provenance[0].id}, ${provenance[0].approval_status}, 'approved', ${context.userId}, 'Teacher explicitly approved publication')`;
     await recordAiAudit(
       sql,
       context,
@@ -415,6 +438,10 @@ export const generateStudentPractice = createServerFn({ method: "POST" })
     const rows = await sql<
       { id: string }[]
     >`INSERT INTO hw_ai_content (school_id, created_by, content_type, subject, topic, title, payload, status, provider, model, request_id) VALUES (${context.schoolId}, ${context.userId}, 'practice_questions', ${data.subject}, ${data.topic}, ${result.data.title}, ${JSON.stringify(result.data)}::JSONB, 'draft', ${result.provider}, ${result.model}, ${result.requestId}) RETURNING id`;
+    const provenance = await sql<
+      { id: string }[]
+    >`INSERT INTO hw_ai_provenance_records (school_id, output_type, output_id, request_id, provider, model, prompt_template, prompt_version, requested_by, confidence, missing_data, bias_warnings, approval_status) VALUES (${context.schoolId}, 'practice_questions', ${rows[0]!.id}, ${result.requestId}, ${result.provider}, ${result.model}, 'practice_questions', 'v3', ${context.userId}, 'unknown', '[]'::JSONB, '[]'::JSONB, 'generated') RETURNING id`;
+    await sql`INSERT INTO hw_ai_output_versions (school_id, output_type, output_id, provenance_id, version_number, payload, created_by) VALUES (${context.schoolId}, 'practice_questions', ${rows[0]!.id}, ${provenance[0]!.id}, 1, ${JSON.stringify(result.data)}::JSONB, ${context.userId})`;
     return {
       id: rows[0]!.id,
       ...result.data,

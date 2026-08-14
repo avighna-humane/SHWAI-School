@@ -84,6 +84,45 @@ const PORTAL_CARDS = [
     badge: "AI" as const,
   },
   {
+    icon: "ShieldCheck",
+    label: "AI Governance & Provenance",
+    description:
+      "Review AI provenance, output versions, approval events, school settings and usage governance.",
+    path: "/app/ai/governance",
+    primary: "Open Governance",
+    badge: "V6" as const,
+    highlight: true,
+    note: "Human approval and audit trail remain visible",
+  },
+  {
+    icon: "BookOpenText",
+    label: "School Knowledge Base",
+    description:
+      "Register, approve and search school sources; answers cite approved material only.",
+    path: "/app/knowledge-base",
+    primary: "Open Knowledge Base",
+    badge: "V6" as const,
+  },
+  {
+    icon: "School2",
+    label: "Classroom Assistant",
+    description:
+      "Ask for teacher-facing lesson support using approved school context and transparent limits.",
+    path: "/app/ai/classroom-assistant",
+    primary: "Open Assistant",
+    badge: "V6" as const,
+  },
+  {
+    icon: "ChartNoAxesCombined",
+    label: "Prediction Foundations",
+    description:
+      "Request reviewable, evidence-backed predictions with explicit insufficient-data safeguards.",
+    path: "/app/predictions",
+    primary: "Review Predictions",
+    badge: "V6" as const,
+    note: "No automatic disciplinary or irreversible action",
+  },
+  {
     icon: "TriangleAlert",
     label: "Early Warning",
     description:

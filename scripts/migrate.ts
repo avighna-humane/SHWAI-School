@@ -1096,6 +1096,72 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_access_logs_idx ON hw_data_access_logs (school_id, entity, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_data_requests_idx ON hw_data_requests (school_id, request_type, status, created_at DESC)`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_provenance_records (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      output_type TEXT NOT NULL, output_id TEXT NOT NULL DEFAULT '', request_id TEXT NOT NULL, provider TEXT NOT NULL, model TEXT NOT NULL, model_version TEXT NOT NULL DEFAULT '', prompt_template TEXT NOT NULL DEFAULT '', prompt_version TEXT NOT NULL DEFAULT '', requested_by TEXT NOT NULL,
+      source_record_ids TEXT[] NOT NULL DEFAULT '{}', source_document_ids UUID[] NOT NULL DEFAULT '{}', source_curriculum_ids UUID[] NOT NULL DEFAULT '{}', learning_objective TEXT NOT NULL DEFAULT '', difficulty TEXT NOT NULL DEFAULT '', confidence TEXT NOT NULL DEFAULT 'unknown', uncertainty JSONB NOT NULL DEFAULT '{}'::JSONB, missing_data JSONB NOT NULL DEFAULT '[]'::JSONB, bias_warnings JSONB NOT NULL DEFAULT '[]'::JSONB,
+      approval_status TEXT NOT NULL DEFAULT 'generated' CHECK (approval_status IN ('draft','generated','pending_review','approved','rejected','revised','superseded')), reviewer_id TEXT, reviewed_at TIMESTAMPTZ, review_note TEXT NOT NULL DEFAULT '', output_version INTEGER NOT NULL DEFAULT 1, parent_provenance_id UUID REFERENCES hw_ai_provenance_records(id) ON DELETE SET NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_output_versions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, output_type TEXT NOT NULL, output_id TEXT NOT NULL, provenance_id UUID NOT NULL REFERENCES hw_ai_provenance_records(id) ON DELETE CASCADE,
+      version_number INTEGER NOT NULL, payload JSONB NOT NULL, edited_by_human BOOLEAN NOT NULL DEFAULT FALSE, created_by TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'current' CHECK (status IN ('current','superseded')), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, output_type, output_id, version_number)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_approval_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, provenance_id UUID NOT NULL REFERENCES hw_ai_provenance_records(id) ON DELETE CASCADE,
+      previous_status TEXT NOT NULL, new_status TEXT NOT NULL, reviewer_id TEXT NOT NULL, review_note TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_knowledge_sources (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, document_id UUID REFERENCES hw_documents(id) ON DELETE SET NULL,
+      source_type TEXT NOT NULL, title TEXT NOT NULL, approval_state TEXT NOT NULL DEFAULT 'pending_review' CHECK (approval_state IN ('approved','pending_review','rejected','archived')), approver_id TEXT, approved_at TIMESTAMPTZ, version TEXT NOT NULL DEFAULT '1', active BOOLEAN NOT NULL DEFAULT TRUE, metadata JSONB NOT NULL DEFAULT '{}'::JSONB, created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_knowledge_chunks (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, source_id UUID NOT NULL REFERENCES hw_ai_knowledge_sources(id) ON DELETE CASCADE,
+      chunk_index INTEGER NOT NULL, content TEXT NOT NULL, embedding_reference TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (source_id, chunk_index)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_knowledge_queries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, requester_id TEXT NOT NULL, query TEXT NOT NULL, answer TEXT NOT NULL DEFAULT '', citation_ids UUID[] NOT NULL DEFAULT '{}', evidence JSONB NOT NULL DEFAULT '[]'::JSONB, confidence TEXT NOT NULL DEFAULT 'unknown', uncertainty JSONB NOT NULL DEFAULT '{}'::JSONB, missing_data JSONB NOT NULL DEFAULT '[]'::JSONB, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','answered','no_approved_source','configuration_required','failed')), provenance_id UUID REFERENCES hw_ai_provenance_records(id) ON DELETE SET NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_predictions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, prediction_type TEXT NOT NULL, target_entity_type TEXT NOT NULL, target_entity_id TEXT NOT NULL,
+      prediction_value JSONB, confidence TEXT NOT NULL DEFAULT 'unknown', prediction_interval JSONB, provider TEXT NOT NULL DEFAULT 'unavailable', model TEXT NOT NULL DEFAULT 'unavailable', model_version TEXT NOT NULL DEFAULT '', feature_snapshot JSONB NOT NULL DEFAULT '{}'::JSONB, horizon TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'insufficient_data' CHECK (status IN ('insufficient_data','pending_model','generated','pending_review','approved','rejected','evaluated')), actual_outcome JSONB, human_review_status TEXT NOT NULL DEFAULT 'not_reviewed', created_by TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), evaluated_at TIMESTAMPTZ
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_prediction_evaluations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, prediction_id UUID NOT NULL REFERENCES hw_ai_predictions(id) ON DELETE CASCADE,
+      predicted JSONB, actual JSONB, error JSONB, prediction_date TIMESTAMPTZ NOT NULL, evaluation_date TIMESTAMPTZ NOT NULL DEFAULT NOW(), evaluated_by TEXT NOT NULL
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_warnings (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, provenance_id UUID REFERENCES hw_ai_provenance_records(id) ON DELETE CASCADE, prediction_id UUID REFERENCES hw_ai_predictions(id) ON DELETE CASCADE,
+      warning_type TEXT NOT NULL, severity TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info','attention','urgent')), detail TEXT NOT NULL, source TEXT NOT NULL DEFAULT 'system', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_settings (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL UNIQUE REFERENCES hw_schools(id) ON DELETE CASCADE, enable_ai_tutor BOOLEAN NOT NULL DEFAULT TRUE, enable_content_generation BOOLEAN NOT NULL DEFAULT TRUE, enable_predictions BOOLEAN NOT NULL DEFAULT FALSE, approved_providers TEXT[] NOT NULL DEFAULT '{}', approved_knowledge_sources BOOLEAN NOT NULL DEFAULT FALSE, human_review_required BOOLEAN NOT NULL DEFAULT TRUE, role_permissions JSONB NOT NULL DEFAULT '{}'::JSONB, updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_ai_learning_journeys (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, subject TEXT NOT NULL,
+      concepts JSONB NOT NULL DEFAULT '[]'::JSONB, current_mastery JSONB NOT NULL DEFAULT '{}'::JSONB, prerequisite_gaps JSONB NOT NULL DEFAULT '[]'::JSONB, recommended_next_concept TEXT NOT NULL DEFAULT '', recommended_practice JSONB NOT NULL DEFAULT '[]'::JSONB, revision_schedule JSONB NOT NULL DEFAULT '[]'::JSONB, progress JSONB NOT NULL DEFAULT '{}'::JSONB, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','paused','completed')), updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, student_id, subject)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_provenance_school_output_idx ON hw_ai_provenance_records (school_id, output_type, output_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_provenance_approval_idx ON hw_ai_provenance_records (school_id, approval_status, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_output_versions_lookup_idx ON hw_ai_output_versions (school_id, output_type, output_id, version_number DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_knowledge_sources_approval_idx ON hw_ai_knowledge_sources (school_id, approval_state, active)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_knowledge_chunks_source_idx ON hw_ai_knowledge_chunks (school_id, source_id, chunk_index)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_knowledge_queries_idx ON hw_ai_knowledge_queries (school_id, requester_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_predictions_target_idx ON hw_ai_predictions (school_id, prediction_type, target_entity_type, target_entity_id, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_predictions_review_idx ON hw_ai_predictions (school_id, status, human_review_status, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_warnings_idx ON hw_ai_warnings (school_id, warning_type, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_ai_learning_journeys_student_idx ON hw_ai_learning_journeys (school_id, student_id, subject)`;
+
   console.log("Migration complete!");
   await sql.end();
 }

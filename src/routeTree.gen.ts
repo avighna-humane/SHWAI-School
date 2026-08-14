@@ -14,6 +14,8 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSplatRouteImport } from './routes/app.$'
+import { Route as AppAttendanceRouteImport } from './routes/app.attendance'
+import { Route as AppAuditRouteImport } from './routes/app.audit'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppHomeworkRouteImport } from './routes/app.homework'
 import { Route as AppNoticesRouteImport } from './routes/app.notices'
@@ -50,6 +52,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppSplatRoute = AppSplatRouteImport.update({
   id: '/$',
   path: '/$',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAttendanceRoute = AppAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAuditRoute = AppAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatRoute = AppChatRouteImport.update({
@@ -118,6 +130,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/attendance': typeof AppAttendanceRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/notices': typeof AppNoticesRoute
@@ -136,6 +150,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/attendance': typeof AppAttendanceRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/notices': typeof AppNoticesRoute
@@ -156,6 +172,8 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/pricing': typeof PricingRoute
   '/app/$': typeof AppSplatRoute
+  '/app/attendance': typeof AppAttendanceRoute
+  '/app/audit': typeof AppAuditRoute
   '/app/chat': typeof AppChatRoute
   '/app/homework': typeof AppHomeworkRoute
   '/app/notices': typeof AppNoticesRoute
@@ -177,6 +195,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/attendance'
+    | '/app/audit'
     | '/app/chat'
     | '/app/homework'
     | '/app/notices'
@@ -195,6 +215,8 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/app/$'
+    | '/app/attendance'
+    | '/app/audit'
     | '/app/chat'
     | '/app/homework'
     | '/app/notices'
@@ -214,6 +236,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/pricing'
     | '/app/$'
+    | '/app/attendance'
+    | '/app/audit'
     | '/app/chat'
     | '/app/homework'
     | '/app/notices'
@@ -270,6 +294,20 @@ declare module '@tanstack/react-router' {
       path: '/$'
       fullPath: '/app/$'
       preLoaderRoute: typeof AppSplatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/attendance': {
+      id: '/app/attendance'
+      path: '/attendance'
+      fullPath: '/app/attendance'
+      preLoaderRoute: typeof AppAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/audit': {
+      id: '/app/audit'
+      path: '/audit'
+      fullPath: '/app/audit'
+      preLoaderRoute: typeof AppAuditRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/chat': {
@@ -373,6 +411,8 @@ const AppStudentsRouteWithChildren = AppStudentsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppSplatRoute: typeof AppSplatRoute
+  AppAttendanceRoute: typeof AppAttendanceRoute
+  AppAuditRoute: typeof AppAuditRoute
   AppChatRoute: typeof AppChatRoute
   AppHomeworkRoute: typeof AppHomeworkRoute
   AppNoticesRoute: typeof AppNoticesRoute
@@ -389,6 +429,8 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppSplatRoute: AppSplatRoute,
+  AppAttendanceRoute: AppAttendanceRoute,
+  AppAuditRoute: AppAuditRoute,
   AppChatRoute: AppChatRoute,
   AppHomeworkRoute: AppHomeworkRoute,
   AppNoticesRoute: AppNoticesRoute,

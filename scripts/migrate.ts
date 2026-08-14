@@ -1,12 +1,17 @@
-import postgres from 'postgres';
+import postgres from "postgres";
 
-const DB_URL = process.env.SUPABASE_DATABASE_URL ?? '';
-if (!DB_URL) { console.error('SUPABASE_DATABASE_URL not set'); process.exit(1); }
+const DB_URL = process.env.DATABASE_URL ?? process.env.SUPABASE_DATABASE_URL ?? "";
+if (!DB_URL) {
+  console.error("DATABASE_URL or SUPABASE_DATABASE_URL is not set");
+  process.exit(1);
+}
 
-const sql = postgres(DB_URL, { ssl: 'require' });
+const sql = postgres(DB_URL, { ssl: DB_URL.includes("supabase") ? "require" : undefined });
 
 async function migrate() {
-  console.log('Running SHWAI schema migration...');
+  console.log("Running SHWAI schema migration...");
+
+  await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_homework (
@@ -59,6 +64,7 @@ async function migrate() {
       audience TEXT[] NOT NULL DEFAULT '{}',
       target_classes TEXT[] DEFAULT '{}',
       attachment_name TEXT DEFAULT '',
+      attachment_data TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
 
@@ -84,8 +90,44 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
 
-  console.log('Migration complete!');
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_attendance (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL,
+      student_id TEXT NOT NULL,
+      student_name TEXT NOT NULL,
+      class_id TEXT NOT NULL,
+      date DATE NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late', 'leave')),
+      marked_by TEXT NOT NULL,
+      marked_at TIMESTAMPTZ DEFAULT NOW(),
+      synced BOOLEAN NOT NULL DEFAULT TRUE,
+      UNIQUE (school_id, student_id, date)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_audit_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL,
+      actor_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      actor_role TEXT NOT NULL,
+      action TEXT NOT NULL,
+      entity TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      detail TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_attendance_school_date_idx ON hw_attendance (school_id, date)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_audit_school_created_idx ON hw_audit_events (school_id, created_at DESC)`;
+
+  console.log("Migration complete!");
   await sql.end();
 }
 
-migrate().catch(console.error);
+migrate().catch(async (error) => {
+  console.error(error);
+  await sql.end({ timeout: 1 });
+  process.exitCode = 1;
+});

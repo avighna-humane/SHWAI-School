@@ -2,7 +2,7 @@
 
 React 19 + TypeScript + Vite app using TanStack Router/Start, Tailwind v4, shadcn/ui,
 Recharts, TanStack Table, Framer Motion, TanStack Start server functions, and PostgreSQL persistence where configured.
-The repository contains an authenticated V1 foundation with PostgreSQL-backed identity, school memberships, server-derived roles, tenant-scoped people, academic structure, homework, submissions, grading, notices, notifications, chat, attendance, audit events, leave, calendar, document metadata, ID-card records, and alumni transitions. AI/operations integrations remain configuration-required unless enabled in the runtime.
+The repository contains an authenticated V1 foundation plus a V2 academic-core slice with PostgreSQL-backed assessments, manual questions, timed attempts, grades, report cards, descriptive analytics, timetable conflict checks, substitute assignments, and role-scoped academic portals. AI/operations integrations remain configuration-required unless enabled in the runtime.
 
 ## Run
 
@@ -50,4 +50,4 @@ prompts. Switch plans on `/app/subscription` to see modules lock and unlock live
 
 ## Functional completion boundary
 
-V1 services now include authenticated identity and membership, tenant-scoped people and academic structure, homework/submissions/grading, notices with application-level notifications, chat, attendance, audit events, leave requests, calendar events, document metadata, ID-card records, and alumni transitions. V1 service calls fail explicitly when PostgreSQL is unavailable; they do not silently simulate a successful write. File bytes still require a production storage provider, and email/push/SMS delivery is intentionally not faked. The remaining V2–V6 surfaces are outside this task and remain demo or configuration-required by design.
+V2 services now extend the V1 foundation with persisted assessment types, MCQ/subjective questions, server-timed online attempts, gradebook marks and publication, report-card calculation/publication, observed academic analytics, timetable conflict detection, substitute-teacher assignments, engagement awards, and student/parent academic summaries. These services fail explicitly when PostgreSQL is unavailable; they do not silently simulate success. File bytes and external Google/email/SMS delivery remain provider-dependent and are not faked. V3–V6 intelligence, enterprise operations, and advanced AI remain outside scope.

@@ -373,6 +373,197 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_attendance_school_date_idx ON hw_attendance (school_id, date)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_audit_school_created_idx ON hw_audit_events (school_id, created_at DESC)`;
 
+  await sql`ALTER TABLE hw_calendar_events ADD COLUMN IF NOT EXISTS source_entity TEXT`;
+  await sql`ALTER TABLE hw_calendar_events ADD COLUMN IF NOT EXISTS source_id TEXT`;
+  await sql`ALTER TABLE hw_homework ADD COLUMN IF NOT EXISTS difficulty TEXT DEFAULT 'standard'`;
+  await sql`ALTER TABLE hw_homework ADD COLUMN IF NOT EXISTS publication_status TEXT NOT NULL DEFAULT 'published'`;
+  await sql`ALTER TABLE hw_homework ADD COLUMN IF NOT EXISTS section_id TEXT`;
+  await sql`ALTER TABLE hw_homework ADD COLUMN IF NOT EXISTS assigned_student_id TEXT`;
+  await sql`ALTER TABLE hw_homework ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_submissions ADD COLUMN IF NOT EXISTS attempt_no INTEGER NOT NULL DEFAULT 1`;
+  await sql`ALTER TABLE hw_submissions ADD COLUMN IF NOT EXISTS content TEXT NOT NULL DEFAULT ''`;
+  await sql`ALTER TABLE hw_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE hw_submissions ADD COLUMN IF NOT EXISTS grading_status TEXT NOT NULL DEFAULT 'pending'`;
+  await sql`ALTER TABLE hw_submissions ADD COLUMN IF NOT EXISTS grade_published BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE hw_submissions DROP CONSTRAINT IF EXISTS hw_submissions_homework_id_student_id_key`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS hw_submissions_attempt_key ON hw_submissions (homework_id, student_id, attempt_no)`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_assessments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id),
+      title TEXT NOT NULL,
+      subject_id TEXT,
+      subject TEXT NOT NULL,
+      class_id TEXT NOT NULL,
+      section_id TEXT,
+      teacher_id TEXT NOT NULL,
+      assessment_type TEXT NOT NULL CHECK (assessment_type IN ('quiz', 'test', 'examination', 'assignment')),
+      maximum_marks NUMERIC(8,2) NOT NULL CHECK (maximum_marks > 0),
+      assessment_date DATE NOT NULL,
+      duration_minutes INTEGER CHECK (duration_minutes IS NULL OR duration_minutes > 0),
+      instructions TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'closed', 'archived')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      published_at TIMESTAMPTZ,
+      closed_at TIMESTAMPTZ
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_assessment_questions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      assessment_id UUID NOT NULL REFERENCES hw_assessments(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      question_type TEXT NOT NULL CHECK (question_type IN ('mcq', 'subjective')),
+      prompt TEXT NOT NULL,
+      options JSONB NOT NULL DEFAULT '[]'::JSONB,
+      correct_answer TEXT,
+      marks NUMERIC(8,2) NOT NULL CHECK (marks > 0),
+      answer_key TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_assessment_attempts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      assessment_id UUID NOT NULL REFERENCES hw_assessments(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      submitted_at TIMESTAMPTZ,
+      status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'submitted', 'graded')),
+      score NUMERIC(8,2),
+      feedback TEXT NOT NULL DEFAULT '',
+      UNIQUE (assessment_id, student_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_assessment_answers (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      attempt_id UUID NOT NULL REFERENCES hw_assessment_attempts(id) ON DELETE CASCADE,
+      question_id UUID NOT NULL REFERENCES hw_assessment_questions(id) ON DELETE CASCADE,
+      response TEXT NOT NULL DEFAULT '',
+      marks_awarded NUMERIC(8,2),
+      feedback TEXT NOT NULL DEFAULT '',
+      UNIQUE (attempt_id, question_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_grades (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id),
+      subject_id TEXT,
+      subject TEXT NOT NULL,
+      teacher_id TEXT NOT NULL,
+      assessment_id UUID REFERENCES hw_assessments(id) ON DELETE SET NULL,
+      homework_id UUID REFERENCES hw_homework(id) ON DELETE SET NULL,
+      maximum_marks NUMERIC(8,2) NOT NULL CHECK (maximum_marks > 0),
+      obtained_marks NUMERIC(8,2) NOT NULL CHECK (obtained_marks >= 0),
+      percentage NUMERIC(6,2) NOT NULL CHECK (percentage >= 0 AND percentage <= 100),
+      grade TEXT,
+      feedback TEXT NOT NULL DEFAULT '',
+      publication_status TEXT NOT NULL DEFAULT 'draft' CHECK (publication_status IN ('draft', 'published')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      published_at TIMESTAMPTZ,
+      CHECK (obtained_marks <= maximum_marks),
+      CHECK (assessment_id IS NOT NULL OR homework_id IS NOT NULL)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_report_cards (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id),
+      class_id TEXT,
+      section_id TEXT,
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'published')),
+      overall_percentage NUMERIC(6,2),
+      overall_grade TEXT,
+      attendance_percentage NUMERIC(6,2),
+      teacher_feedback TEXT NOT NULL DEFAULT '',
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      published_at TIMESTAMPTZ,
+      UNIQUE (student_id, academic_year_id)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_report_card_subjects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      report_card_id UUID NOT NULL REFERENCES hw_report_cards(id) ON DELETE CASCADE,
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      subject_id TEXT,
+      subject TEXT NOT NULL,
+      maximum_marks NUMERIC(8,2) NOT NULL,
+      obtained_marks NUMERIC(8,2) NOT NULL,
+      percentage NUMERIC(6,2) NOT NULL,
+      grade TEXT,
+      teacher_feedback TEXT NOT NULL DEFAULT '',
+      UNIQUE (report_card_id, subject)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_timetable_entries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      academic_year_id TEXT NOT NULL REFERENCES hw_academic_years(id),
+      class_id TEXT NOT NULL,
+      section_id TEXT NOT NULL,
+      subject_id TEXT,
+      subject TEXT NOT NULL,
+      teacher_id TEXT NOT NULL,
+      room TEXT NOT NULL,
+      weekday INTEGER NOT NULL CHECK (weekday BETWEEN 0 AND 6),
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      CHECK (end_time > start_time)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_substitute_assignments (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      absent_teacher_id TEXT NOT NULL,
+      substitute_teacher_id TEXT NOT NULL,
+      date DATE NOT NULL,
+      class_id TEXT NOT NULL,
+      section_id TEXT NOT NULL,
+      subject_id TEXT,
+      subject TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'assigned' CHECK (status IN ('assigned', 'confirmed', 'cancelled')),
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (school_id, date, class_id, section_id, subject)
+    )`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_engagement_awards (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      student_id TEXT NOT NULL,
+      activity_key TEXT NOT NULL,
+      source_entity TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      xp INTEGER NOT NULL CHECK (xp > 0),
+      badge TEXT,
+      metadata JSONB NOT NULL DEFAULT '{}'::JSONB,
+      awarded_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (school_id, student_id, activity_key, source_entity, source_id)
+    )`;
+
+  await sql`CREATE INDEX IF NOT EXISTS hw_assessments_school_date_idx ON hw_assessments (school_id, assessment_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_grades_student_publication_idx ON hw_grades (school_id, student_id, publication_status)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_timetable_school_day_idx ON hw_timetable_entries (school_id, academic_year_id, weekday)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_report_cards_student_year_idx ON hw_report_cards (school_id, student_id, academic_year_id)`;
+
   console.log("Migration complete!");
   await sql.end();
 }

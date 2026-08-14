@@ -27,6 +27,7 @@ import {
 } from "@/data/mock/operations";
 import { CONTEXT_ENTRIES, EXPERIMENTS, HELP_MATCHES, INTERVENTIONS } from "@/data/mock/support";
 import { PersistedV1Workspace } from "@/components/v1/persisted-v1-workspace";
+import { AcademicWorkspace } from "@/components/v2/academic-workspace";
 import {
   ACTIVITY_FEED,
   AI_RECOMMENDATIONS,
@@ -76,6 +77,20 @@ function ModuleWorkspace() {
     )
   ) {
     return <PersistedV1Workspace pathname={pathname} item={item} />;
+  }
+  if (
+    [
+      "/app/exams",
+      "/app/quizzes",
+      "/app/assessments",
+      "/app/gradebook",
+      "/app/reports",
+      "/app/report-cards",
+      "/app/timetable",
+      "/app/analytics",
+    ].includes(pathname)
+  ) {
+    return <AcademicWorkspace pathname={pathname} title={item.label} />;
   }
 
   const data = buildWorkspaceData(item, school.name);

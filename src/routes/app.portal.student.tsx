@@ -2,6 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import * as Icons from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { listStudents } from "@/actions/people";
+import {
+  listAssessments,
+  listGrades,
+  listTimetable,
+  getAcademicAnalytics,
+} from "@/actions/academic";
 import { useAppState } from "@/app/providers/app-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +74,26 @@ function StudentPortal() {
     enabled: Boolean(schoolId) && typeof window !== "undefined",
   });
   const student = studentQuery.data?.[0];
+  const assessmentsQuery = useQuery({
+    queryKey: ["student-assessments", schoolId],
+    queryFn: () => listAssessments(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const gradesQuery = useQuery({
+    queryKey: ["student-grades", schoolId],
+    queryFn: () => listGrades(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const timetableQuery = useQuery({
+    queryKey: ["student-timetable", schoolId],
+    queryFn: () => listTimetable(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
+  const analyticsQuery = useQuery({
+    queryKey: ["student-analytics", schoolId],
+    queryFn: () => getAcademicAnalytics(),
+    enabled: Boolean(schoolId) && typeof window !== "undefined",
+  });
 
   return (
     <div className="space-y-6">
@@ -117,6 +143,29 @@ function StudentPortal() {
         </div>
       )}
 
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryCard
+          icon={<Icons.ClipboardList className="size-4" />}
+          label="Upcoming assessments"
+          value={assessmentsQuery.data?.length ?? 0}
+        />
+        <SummaryCard
+          icon={<Icons.Award className="size-4" />}
+          label="Published grades"
+          value={gradesQuery.data?.length ?? 0}
+        />
+        <SummaryCard
+          icon={<Icons.CalendarDays className="size-4" />}
+          label="Timetable entries"
+          value={timetableQuery.data?.length ?? 0}
+        />
+        <SummaryCard
+          icon={<Icons.BarChart3 className="size-4" />}
+          label="Observed subjects"
+          value={analyticsQuery.data?.performance.length ?? 0}
+        />
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PORTAL_CARDS.map((card) => (
           <div
@@ -156,6 +205,26 @@ function StudentPortal() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="metric-panel p-4">
+      <span className="grid size-8 place-items-center rounded-lg bg-primary-soft text-primary">
+        {icon}
+      </span>
+      <p className="mt-3 text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-extrabold">{value}</p>
     </div>
   );
 }

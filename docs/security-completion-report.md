@@ -153,7 +153,7 @@ At minimum, production requires HTTPS, `DATABASE_URL` or `SUPABASE_DATABASE_URL`
 
 ## T. GitHub delivery
 
-**Commit hash:** Pending final security-hardening commit.  
-**Push status:** Pending final verification commit and push.  
-**Working tree:** Pending final staging confirmation.
+**Implementation commit:** `25a95f2f1e7f8eaae4590861aa82b95a843a9449`.  
+**Push status:** The security implementation is pushed to `origin/main`; this report records the implementation commit and is followed by a documentation-only synchronization commit.  
+**Working tree:** Clean after the final synchronization commit.
 

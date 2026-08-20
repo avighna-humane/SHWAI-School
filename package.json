@@ -12,6 +12,8 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "node --experimental-strip-types scripts/migrate.ts",
+    "db:seed": "node --experimental-strip-types scripts/seed.ts",
+    "db:seed:dev": "NODE_ENV=development npm run db:seed",
     "format": "prettier --write ."
   },
   "dependencies": {

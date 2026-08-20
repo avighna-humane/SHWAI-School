@@ -92,6 +92,14 @@ export const listNotices = createServerFn({ method: "POST" })
       SELECT * FROM hw_notices WHERE school_id = ${context.schoolId} ORDER BY created_at DESC`;
     const reads = await sql<{ notice_id: string }[]>`
       SELECT notice_id FROM hw_notice_reads WHERE reader_id = ${context.userId}`;
+    const linkedClasses = await sql<{ class_id: string }[]>`
+      SELECT e.class_id FROM hw_enrollments e
+      WHERE e.school_id = ${context.schoolId} AND (
+        e.student_id = ${context.userId}
+        OR EXISTS (SELECT 1 FROM hw_parent_students ps WHERE ps.school_id = e.school_id AND ps.student_id = e.student_id AND ps.parent_id = ${context.userId} AND ps.active = TRUE)
+      )
+      ORDER BY e.status DESC LIMIT 1`;
+    const effectiveClassId = data.classId ?? linkedClasses[0]?.class_id;
     const readSet = new Set(reads.map((r) => r.notice_id));
 
     // Teachers see: notices they authored + notices addressed to all-teachers
@@ -103,11 +111,11 @@ export const listNotices = createServerFn({ method: "POST" })
       filtered = rows.filter(
         (n) =>
           n.author_id === context.userId ||
-          audienceMatchesRole(n.audience, context.role, data.classId, context.userId),
+          audienceMatchesRole(n.audience, context.role, effectiveClassId, context.userId),
       );
     } else {
       filtered = rows.filter((n) =>
-        audienceMatchesRole(n.audience, context.role, data.classId, context.userId),
+        audienceMatchesRole(n.audience, context.role, effectiveClassId, context.userId),
       );
     }
     return filtered.map((n) => ({ ...n, is_read: readSet.has(n.id) })) as NoticeWithRead[];

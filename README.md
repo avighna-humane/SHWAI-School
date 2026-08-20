@@ -13,6 +13,52 @@ npm run build
 npm run db:migrate # requires DATABASE_URL or SUPABASE_DATABASE_URL
 ```
 
+## Running SHWAI locally
+
+### Prerequisites
+
+Use Node.js 22 or newer and npm. PostgreSQL is optional for the public preview, but required for authentication, migrations, imports, attendance, homework, grades, notices, notifications, audit logs, V1–V6 persistence, and the fictional role accounts.
+
+### Install and configure
+
+```bash
+npm install
+cp .env.example .env
+```
+
+Keep `.env` local and never commit it. For a public-only preview, leave database/provider secrets empty. For a complete fictional school preview, set `NODE_ENV=development`, `PUBLIC_APP_URL=http://localhost:8080`, and either `DATABASE_URL` or `SUPABASE_DATABASE_URL` to a local PostgreSQL database.
+
+### Migrate and seed fictional data
+
+```bash
+npm run db:migrate
+npm run db:seed:dev
+```
+
+The seed command refuses to run outside `NODE_ENV=development`, contains no real student/teacher/parent data, and uses the real PBKDF2/session/membership authentication architecture. Local demo accounts use the documented fictional password `DemoOnly!2026`:
+
+| Role | Email |
+| --- | --- |
+| Owner | `owner@demo.local` |
+| Principal | `principal@demo.local` |
+| Administrator | `admin@demo.local` |
+| Teacher | `teacher@demo.local` |
+| Student | `student@demo.local` |
+| Parent | `parent@demo.local` |
+| Staff | `staff@demo.local` |
+
+These credentials are for local development only and must never be used in production. Every account is linked to the fictional `SHWAI Demo Academy` school through an active membership; server-side school, role, and permission checks remain enabled.
+
+### Start and preview
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:8080](http://localhost:8080). Public routes such as `/`, `/login`, `/register`, `/pricing`, `/health`, and `/readiness` load without PostgreSQL. `/readiness` reports database-not-ready rather than pretending persistence works when no database URL is configured. With PostgreSQL migrated and seeded, log in through `/login` and preview the authenticated dashboard, portals, attendance, homework, notices, notifications, grading, intelligence, audit, AI governance, knowledge, prediction, import/export, privacy, and onboarding routes according to the selected account’s server-backed role and school membership.
+
+If AI, email, storage, payment, or other provider credentials are absent, the application reports an explicit configuration-required state and does not fabricate success.
+
 ## V3 AI features
 
 V3 uses a server-only provider abstraction in `src/lib/ai/provider.ts`. It supports model discovery, structured JSON generation, text generation, bounded timeouts, retries, request IDs, normalized provider errors, output-token metadata, and an explicit configuration-required error when no provider is available. The client never receives provider credentials or internal prompts.

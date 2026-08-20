@@ -59,7 +59,11 @@ function createRawToken() {
 }
 
 function appUrl(path: string, token: string) {
-  const base = (process.env.PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = (
+    process.env.PUBLIC_APP_URL ??
+    (process.env.NODE_ENV === "production" ? "" : "http://localhost:8080")
+  ).replace(/\/$/, "");
+  if (!base) throw new Error("PUBLIC_APP_URL is required in production");
   return `${base}${path}?token=${encodeURIComponent(token)}`;
 }
 

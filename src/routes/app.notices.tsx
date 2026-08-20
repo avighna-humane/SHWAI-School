@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { useAppState } from "@/app/providers/app-state";
-import { getDemoIds } from "@/lib/demo-ids";
 import {
   listNotices,
   createNotice,
@@ -69,7 +68,6 @@ const EMPTY_FORM: FormState = {
 
 function NoticesPage() {
   const { role, schoolId } = useAppState();
-  const { userId, userName, classId } = getDemoIds(role);
   const qc = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -84,8 +82,8 @@ function NoticesPage() {
 
   // ── Queries ─────────────────────────────────────────────────────────────
   const { data: notices = [], isLoading } = useQuery({
-    queryKey: ["notices", schoolId, role, userId, classId],
-    queryFn: () => listNotices({ data: { classId } }),
+    queryKey: ["notices", schoolId, role],
+    queryFn: () => listNotices({ data: {} }),
     refetchInterval: 15_000,
   });
 

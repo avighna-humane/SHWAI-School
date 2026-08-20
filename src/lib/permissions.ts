@@ -28,7 +28,8 @@ export type Permission =
   | "data.import"
   | "data.export"
   | "data.delete"
-  | "security.manage";
+  | "security.manage"
+  | "billing.manage";
 
 const ALL_ROLES: Role[] = ["student", "teacher", "parent", "staff", "admin", "principal", "owner"];
 const LEADERSHIP: Role[] = ["admin", "principal", "owner"];
@@ -62,6 +63,7 @@ const ROLE_PERMISSIONS: Record<Permission, Role[]> = {
   "data.export": ["principal", "owner"],
   "data.delete": ["owner"],
   "security.manage": ["owner"],
+  "billing.manage": ["owner"],
 };
 
 const PLAN_RANK: Record<PlanId, number> = { starter: 0, professional: 1, enterprise: 2 };
@@ -88,4 +90,33 @@ export function planAllowsFeature(plan: PlanId, feature: keyof typeof FEATURE_MI
 
 export function minimumPlanForFeature(feature: keyof typeof FEATURE_MINIMUM_PLAN) {
   return FEATURE_MINIMUM_PLAN[feature];
+}
+
+const ENTITLED_SUBSCRIPTION_STATES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "grace_period",
+  "system",
+]);
+
+export function hasFeatureEntitlement(
+  context: AuthContext,
+  feature: keyof typeof FEATURE_MINIMUM_PLAN,
+) {
+  return (
+    ENTITLED_SUBSCRIPTION_STATES.has(context.subscriptionStatus) &&
+    planAllowsFeature(context.plan, feature)
+  );
+}
+
+export function requireFeatureEntitlement(
+  context: AuthContext,
+  feature: keyof typeof FEATURE_MINIMUM_PLAN,
+) {
+  if (!hasFeatureEntitlement(context, feature)) {
+    throw new Error(
+      `The ${feature} feature requires an active ${minimumPlanForFeature(feature)} subscription`,
+    );
+  }
 }

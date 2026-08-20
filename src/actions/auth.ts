@@ -22,6 +22,7 @@ import {
   EmailDeliveryError,
   sendEmail,
 } from "@/lib/notifications/email";
+import { decryptTotpSecret, verifyTotpCode } from "@/lib/totp";
 
 export type AuthenticatedUser =
   Awaited<ReturnType<typeof getAuthContext>> extends infer T ? Exclude<T, null> : never;
@@ -42,6 +43,12 @@ const loginInput = z.object({
     .string()
     .regex(/^[A-Za-z0-9_-]{1,160}$/)
     .optional(),
+  mfaCode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/)
+    .optional(),
+  recoveryCode: z.string().trim().max(32).optional(),
 });
 
 function slugify(value: string) {
@@ -208,16 +215,23 @@ export const login = createServerFn({ method: "POST" })
         require_mfa_for_privileged: boolean;
         failed_login_count: number;
         locked_until: string | null;
+        mfa_enabled: boolean;
+        mfa_secret_ciphertext: string | null;
+        recovery_code_hashes: string[] | null;
       }[]
     >`
       SELECT u.id AS user_id, u.email, u.name, u.password_hash, u.email_verified_at,
              u.failed_login_count, u.locked_until,
              m.school_id, s.name AS school_name, m.id AS membership_id, m.role,
              COALESCE((SELECT require_email_verification FROM hw_identity_policies WHERE school_id = m.school_id), TRUE) AS require_email_verification,
-             COALESCE((SELECT require_mfa_for_privileged FROM hw_identity_policies WHERE school_id = m.school_id), FALSE) AS require_mfa_for_privileged
+             COALESCE((SELECT require_mfa_for_privileged FROM hw_identity_policies WHERE school_id = m.school_id), FALSE) AS require_mfa_for_privileged,
+             COALESCE(mfa.enabled, FALSE) AS mfa_enabled,
+             mfa.secret_ciphertext AS mfa_secret_ciphertext,
+             mfa.recovery_code_hashes
       FROM hw_users u
       JOIN hw_memberships m ON m.user_id = u.id AND m.active = TRUE
       JOIN hw_schools s ON s.id = m.school_id AND s.active = TRUE
+      LEFT JOIN hw_user_mfa mfa ON mfa.user_id = u.id
         WHERE LOWER(u.email) = LOWER(${email})
         AND u.active = TRUE
         ${data.schoolId ? sql`AND m.school_id = ${data.schoolId}` : sql``}
@@ -264,7 +278,10 @@ export const login = createServerFn({ method: "POST" })
       throw new Error("Invalid email or password");
     }
 
-    if (user.require_mfa_for_privileged && ["owner", "principal", "admin"].includes(user.role)) {
+    const mfaRequired =
+      user.mfa_enabled ||
+      (user.require_mfa_for_privileged && ["owner", "principal", "admin"].includes(user.role));
+    if (mfaRequired && !user.mfa_enabled) {
       await recordSecurityEvent(sql, {
         eventType: "login",
         outcome: "blocked",
@@ -272,11 +289,48 @@ export const login = createServerFn({ method: "POST" })
         requestId: security.requestId,
         context: { userId: user.user_id, schoolId: user.school_id, role: user.role },
         resource: "auth.login",
-        detail: { reason: "mfa_required_provider_unconfigured" },
+        detail: { reason: "mfa_enrollment_required" },
       });
-      throw new Error(
-        "MFA is required for this school, but no verified MFA provider is configured",
-      );
+      throw new Error("MFA enrollment is required before this account can sign in");
+    }
+    if (mfaRequired && user.mfa_enabled) {
+      let mfaValid = false;
+      if (data.mfaCode && user.mfa_secret_ciphertext) {
+        mfaValid = await verifyTotpCode(
+          await decryptTotpSecret(user.mfa_secret_ciphertext),
+          data.mfaCode,
+        );
+      }
+      if (!mfaValid && data.recoveryCode) {
+        const recoveryHash = await hashIdentifier(
+          data.recoveryCode.replace(/\s+/g, "").toUpperCase(),
+        );
+        const consumed = await sql<{ user_id: string }[]>`
+          UPDATE hw_user_mfa
+          SET recovery_code_hashes = (
+            SELECT COALESCE(jsonb_agg(value), '[]'::JSONB)
+            FROM jsonb_array_elements_text(recovery_code_hashes) AS item(value)
+            WHERE value <> ${recoveryHash}
+          ), last_verified_at = NOW(), updated_at = NOW()
+          WHERE user_id = ${user.user_id} AND enabled = TRUE AND recovery_code_hashes @> ${JSON.stringify([recoveryHash])}::JSONB
+          RETURNING user_id`;
+        mfaValid = Boolean(consumed[0]);
+      }
+      if (!mfaValid) {
+        await recordSecurityEvent(sql, {
+          eventType: "mfa_challenge",
+          outcome: "denied",
+          severity: "warning",
+          requestId: security.requestId,
+          context: { userId: user.user_id, schoolId: user.school_id, role: user.role },
+          resource: "auth.login",
+          detail: { reason: "invalid_mfa_challenge" },
+        });
+        throw new Error("MFA code or recovery code is invalid");
+      }
+      if (data.mfaCode) {
+        await sql`UPDATE hw_user_mfa SET last_verified_at = NOW(), updated_at = NOW() WHERE user_id = ${user.user_id}`;
+      }
     }
 
     if (user.require_email_verification && !user.email_verified_at) {
@@ -318,6 +372,66 @@ export const login = createServerFn({ method: "POST" })
   });
 
 const tokenInput = z.object({ token: z.string().trim().min(20).max(240) });
+const emailInput = z.object({ email: z.string().trim().email().max(320) });
+
+export const resendVerification = createServerFn({ method: "POST" })
+  .validator(emailInput)
+  .handler(async ({ data }) => {
+    const sql = requireDatabase();
+    const security = getRequestSecurityContext();
+    const email = data.email.toLowerCase();
+    await consumeSecurityRateLimit(sql, {
+      scope: "verification_resend_ip",
+      subject: security.ipHash ?? "unknown",
+      limit: 5,
+      windowSeconds: 60 * 60,
+    });
+    await consumeSecurityRateLimit(sql, {
+      scope: "verification_resend_email",
+      subject: await hashIdentifier(email),
+      limit: 3,
+      windowSeconds: 24 * 60 * 60,
+    });
+    const users = await sql<
+      { user_id: string; name: string; school_id: string; email_verified_at: string | null }[]
+    >`
+      SELECT u.id AS user_id, u.name, m.school_id, u.email_verified_at
+      FROM hw_users u JOIN hw_memberships m ON m.user_id = u.id AND m.active = TRUE
+      WHERE LOWER(u.email) = LOWER(${email}) ORDER BY m.created_at ASC LIMIT 1`;
+    const user = users[0];
+    if (user && !user.email_verified_at) {
+      const token = createRawToken();
+      await sql.begin(async (tx) => {
+        await tx`UPDATE hw_email_verification_tokens SET used_at = NOW() WHERE user_id = ${user.user_id} AND used_at IS NULL`;
+        await tx`INSERT INTO hw_email_verification_tokens (user_id, token_hash, expires_at) VALUES (${user.user_id}, ${await hashIdentifier(token)}, NOW() + INTERVAL '24 hours')`;
+      });
+      try {
+        await sendEmail({
+          to: email,
+          subject: "Verify your SHWAI school account",
+          text: `Verify your SHWAI account within 24 hours: ${appUrl("/verify-email", token)}`,
+          html: `<p>Verify your SHWAI account within 24 hours.</p><p><a href="${appUrl("/verify-email", token)}">Verify email</a></p>`,
+        });
+      } catch (error) {
+        await recordSecurityEvent(sql, {
+          eventType: "email_verification_resend",
+          outcome: "failed",
+          severity: "warning",
+          requestId: security.requestId,
+          context: { userId: user.user_id, schoolId: user.school_id },
+          resource: "auth.resend_verification",
+          detail: {
+            emailHash: await hashIdentifier(email),
+            reason: error instanceof Error ? error.name : "delivery_failed",
+          },
+        });
+      }
+    }
+    return {
+      ok: true as const,
+      message: "If the account requires verification, a new verification email has been requested.",
+    };
+  });
 
 export const verifyEmail = createServerFn({ method: "POST" })
   .validator(tokenInput)
@@ -501,3 +615,75 @@ export const logout = createServerFn({ method: "POST" }).handler(async () => {
   await clearSession();
   return { ok: true as const };
 });
+
+const changePasswordInput = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(12).max(200),
+});
+
+export const changePassword = createServerFn({ method: "POST" })
+  .validator(changePasswordInput)
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    const sql = requireDatabase();
+    const rows = await sql<{ password_hash: string }[]>`
+      SELECT password_hash FROM hw_users WHERE id = ${context.userId} AND active = TRUE LIMIT 1`;
+    if (!rows[0] || !(await verifyPassword(data.currentPassword, rows[0].password_hash))) {
+      throw new Error("Current password is invalid");
+    }
+    const passwordHash = await hashPassword(data.newPassword);
+    await sql.begin(async (tx) => {
+      await tx`
+        UPDATE hw_users SET password_hash = ${passwordHash}, password_changed_at = NOW(), updated_at = NOW()
+        WHERE id = ${context.userId}`;
+      await tx`DELETE FROM hw_sessions WHERE user_id = ${context.userId}`;
+      await tx`
+        INSERT INTO hw_audit_events (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail)
+        VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'update', 'password', ${context.userId}, 'Password changed and all sessions revoked')`;
+    });
+    await clearSession();
+    await createSession(context.userId, context.schoolId, context.membershipId);
+    await recordSecurityEvent(sql, {
+      eventType: "password_change",
+      outcome: "allowed",
+      severity: "warning",
+      requestId: getRequestSecurityContext().requestId,
+      context,
+      resource: "auth.change_password",
+    });
+    return { ok: true as const };
+  });
+
+export const listSessions = createServerFn({ method: "GET" }).handler(async () => {
+  const context = await requireAuth();
+  const sql = requireDatabase();
+  return sql<{ id: string; created_at: string; last_seen_at: string; expires_at: string }[]>`
+    SELECT id, created_at, last_seen_at, expires_at
+    FROM hw_sessions
+    WHERE user_id = ${context.userId} AND expires_at > NOW()
+    ORDER BY last_seen_at DESC
+    LIMIT 50`;
+});
+
+export const revokeSession = createServerFn({ method: "POST" })
+  .validator(z.object({ id: z.string().uuid() }))
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    const sql = requireDatabase();
+    const rows = await sql<{ id: string }[]>`
+      DELETE FROM hw_sessions WHERE id = ${data.id} AND user_id = ${context.userId} RETURNING id`;
+    if (!rows[0]) throw new Error("Session not found");
+    await sql`
+      INSERT INTO hw_audit_events (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail)
+      VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'delete', 'session', ${data.id}, 'Session revoked by account owner')`;
+    await recordSecurityEvent(sql, {
+      eventType: "session_revoked",
+      outcome: "allowed",
+      severity: "warning",
+      requestId: getRequestSecurityContext().requestId,
+      context,
+      resource: "auth.revoke_session",
+      detail: { sessionId: data.id },
+    });
+    return { ok: true as const };
+  });

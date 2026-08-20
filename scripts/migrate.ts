@@ -92,6 +92,18 @@ async function migrate() {
       updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
   await sql`
+    CREATE TABLE IF NOT EXISTS hw_user_mfa (
+      user_id TEXT PRIMARY KEY REFERENCES hw_users(id) ON DELETE CASCADE,
+      secret_ciphertext TEXT NOT NULL,
+      recovery_code_hashes JSONB NOT NULL DEFAULT '[]'::JSONB,
+      enabled BOOLEAN NOT NULL DEFAULT FALSE,
+      enrolled_at TIMESTAMPTZ,
+      last_verified_at TIMESTAMPTZ,
+      disabled_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
     CREATE TABLE IF NOT EXISTS hw_user_consents (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id TEXT NOT NULL REFERENCES hw_users(id) ON DELETE CASCADE,
       school_id TEXT REFERENCES hw_schools(id) ON DELETE CASCADE, consent_type TEXT NOT NULL, version TEXT NOT NULL,
@@ -108,6 +120,7 @@ async function migrate() {
       expires_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+  await sql`ALTER TABLE hw_sessions ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_security_rate_limits (
@@ -1147,6 +1160,64 @@ async function migrate() {
   await sql`
     CREATE TABLE IF NOT EXISTS hw_v5_provider_configs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, provider_type TEXT NOT NULL CHECK (provider_type IN ('payment','gps','sms','whatsapp','payroll','storage','translation')), enabled BOOLEAN NOT NULL DEFAULT FALSE, configuration_status TEXT NOT NULL DEFAULT 'not_configured' CHECK (configuration_status IN ('not_configured','configured','verified','failed')), public_label TEXT NOT NULL DEFAULT '', secret_reference TEXT NOT NULL DEFAULT '', updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE (school_id, provider_type)
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_billing_customers (
+      school_id TEXT PRIMARY KEY REFERENCES hw_schools(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      provider_customer_id TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive','failed')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_billing_subscriptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      provider_subscription_id TEXT NOT NULL UNIQUE,
+      provider_customer_id TEXT NOT NULL,
+      plan TEXT NOT NULL CHECK (plan IN ('starter','professional','enterprise')),
+      status TEXT NOT NULL CHECK (status IN ('trialing','active','past_due','grace_period','canceled','incomplete','paused')),
+      trial_ends_at TIMESTAMPTZ,
+      current_period_start TIMESTAMPTZ,
+      current_period_end TIMESTAMPTZ,
+      grace_period_ends_at TIMESTAMPTZ,
+      cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE,
+      canceled_at TIMESTAMPTZ,
+      raw_provider_state JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (school_id)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_billing_subscriptions_status_idx ON hw_billing_subscriptions (status, current_period_end)`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_billing_invoices (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      provider_invoice_id TEXT NOT NULL UNIQUE,
+      provider_subscription_id TEXT,
+      amount_minor BIGINT NOT NULL DEFAULT 0,
+      currency TEXT NOT NULL DEFAULT 'INR',
+      status TEXT NOT NULL CHECK (status IN ('draft','open','paid','void','uncollectible','failed')),
+      hosted_invoice_url TEXT NOT NULL DEFAULT '',
+      due_at TIMESTAMPTZ,
+      paid_at TIMESTAMPTZ,
+      raw_provider_state JSONB NOT NULL DEFAULT '{}'::JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS hw_billing_webhook_events (
+      provider TEXT NOT NULL,
+      event_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      processed_at TIMESTAMPTZ,
+      status TEXT NOT NULL DEFAULT 'received' CHECK (status IN ('received','processed','ignored','failed')),
+      failure_reason TEXT NOT NULL DEFAULT '',
+      PRIMARY KEY (provider, event_id)
     )`;
   await sql`
     CREATE TABLE IF NOT EXISTS hw_data_access_logs (

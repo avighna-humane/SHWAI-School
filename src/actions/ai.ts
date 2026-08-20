@@ -14,6 +14,7 @@ import {
   AI_MAX_OUTPUT_TOKENS,
   minimizeAcademicContext,
 } from "@/lib/ai/policy";
+import { requireFeatureEntitlement } from "@/lib/permissions";
 import {
   activitySchema,
   answerKeySchema,
@@ -164,6 +165,7 @@ async function runStructured<T>(
   systemPrompt: string,
 ) {
   const sql = requireDatabase();
+  requireFeatureEntitlement(context, "ai");
   assertPromptSafe(inputText);
   assertInputSize(inputText);
   await enforceAiUsage(sql, context, feature, inputText.length);

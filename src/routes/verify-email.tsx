@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { verifyEmail } from "@/actions/auth";
+import { resendVerification, verifyEmail } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/verify-email")({ component: VerifyEmail }
 function VerifyEmail() {
   const navigate = useNavigate();
   const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const mutation = useMutation({
     mutationFn: () => verifyEmail({ data: { token } }),
@@ -19,6 +20,12 @@ function VerifyEmail() {
       setMessage("Email verified. You can now sign in.");
       setTimeout(() => void navigate({ to: "/login" }), 900);
     },
+    onError: (error: Error) => setMessage(error.message),
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: () => resendVerification({ data: { email } }),
+    onSuccess: (result) => setMessage(result.message),
     onError: (error: Error) => setMessage(error.message),
   });
 
@@ -67,6 +74,27 @@ function VerifyEmail() {
             {mutation.isPending ? "Verifying…" : "Verify email"}
           </Button>
         </form>
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-sm font-semibold">Need a new verification email?</p>
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              resendMutation.mutate();
+            }}
+          >
+            <Input
+              type="email"
+              placeholder="you@school.org"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+            <Button type="submit" variant="outline" disabled={resendMutation.isPending}>
+              {resendMutation.isPending ? "Sending…" : "Resend"}
+            </Button>
+          </form>
+        </div>
         <p className="text-center text-sm text-muted-foreground">
           <Link className="font-semibold text-primary hover:underline" to="/login">
             Return to sign in

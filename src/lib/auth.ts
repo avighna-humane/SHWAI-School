@@ -137,8 +137,13 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     JOIN hw_users u ON u.id = session.user_id AND u.active = TRUE
     JOIN hw_memberships m ON m.id = session.membership_id AND m.active = TRUE
     JOIN hw_schools s ON s.id = m.school_id AND s.active = TRUE
-    WHERE session.token_hash = ${tokenHash} AND session.expires_at > NOW()
+          WHERE session.token_hash = ${tokenHash}
+        AND session.expires_at > NOW()
+        AND session.last_seen_at > NOW() - INTERVAL '2 hours'
+
     LIMIT 1`;
+  if (rows[0])
+    await sql`UPDATE hw_sessions SET last_seen_at = NOW() WHERE token_hash = ${tokenHash}`;
   return rows[0] ?? null;
 }
 

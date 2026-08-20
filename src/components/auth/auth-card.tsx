@@ -9,7 +9,14 @@ import { Label } from "@/components/ui/label";
 
 export function AuthCard({ mode }: { mode: "login" | "register" }) {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", schoolName: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    schoolName: "",
+    mfaCode: "",
+    recoveryCode: "",
+  });
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +35,14 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
         });
         return { kind: "register" as const, message: result.message };
       }
-      await login({ data: { email: form.email, password: form.password } });
+      await login({
+        data: {
+          email: form.email,
+          password: form.password,
+          mfaCode: form.mfaCode || undefined,
+          recoveryCode: form.recoveryCode || undefined,
+        },
+      });
       return { kind: "login" as const };
     },
     onSuccess: (result) => {
@@ -148,6 +162,33 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
                 <p className="text-xs text-muted-foreground">Use at least 12 characters.</p>
               ) : null}
             </div>
+            {!isRegister ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="mfaCode">Authenticator code (if enabled)</Label>
+                  <Input
+                    id="mfaCode"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={form.mfaCode}
+                    onChange={(event) => update("mfaCode", event.target.value)}
+                    placeholder="123456"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recoveryCode">
+                    Recovery code (instead of authenticator code)
+                  </Label>
+                  <Input
+                    id="recoveryCode"
+                    autoComplete="one-time-code"
+                    value={form.recoveryCode}
+                    onChange={(event) => update("recoveryCode", event.target.value)}
+                    placeholder="XXXXX-XXXXX"
+                  />
+                </div>
+              </>
+            ) : null}
             {isRegister ? (
               <label className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
                 <input

@@ -1,25 +1,34 @@
 # SHWAI billing and entitlements
 
-**Current classification:** `NOT IMPLEMENTED FOR LIVE BILLING` with server-side plan context and feature minimums present.
+**Current classification:** `PARTIAL SERVER BOUNDARY — NOT READY FOR LIVE SALES`. The repository now has durable subscription, invoice, webhook-event, and provider-customer tables; signed webhook verification; duplicate-event idempotency; subscription/payment-failure/cancellation state transitions; and server-side plan-plus-status entitlement checks. It still does not provide a verified provider checkout or evidence from a provider sandbox.
 
-The application contains Starter, Professional, and Enterprise plan identifiers and server-side plan feature checks. The active plan and subscription status are read from the authenticated school context rather than accepted from browser state. The subscription page is an informational surface; it is not evidence of a provider-hosted checkout or paid entitlement.
+The active plan and subscription status are read from the authenticated school context and reconciled database state rather than accepted from browser state. The owner subscription page reads persisted billing records and shows empty/configuration-required states when no provider data exists. It never fabricates an invoice, renewal date, payment method, or successful purchase.
 
-## Not yet implemented
+## Implemented server boundary
 
-The repository does not currently provide a verified provider checkout, customer creation, invoice synchronization, payment-failure handling, grace-period state machine, cancellation flow, or signed webhook reconciliation. Razorpay or another provider may be integrated only through a server-side adapter with signature verification, idempotency keys, auditable state transitions, and provider sandbox evidence.
+The public endpoint `POST /api/billing/webhook` requires `PAYMENT_PROVIDER`, `PAYMENT_API_KEY`, and `PAYMENT_WEBHOOK_SECRET`. It verifies an HMAC-SHA256 digest over the raw request body supplied in `x-shwai-billing-signature`, rejects oversized or malformed payloads, stores event IDs for idempotency, maps provider customer/subscription IDs to a school, and applies only the supported event types:
 
-## Required production integration
+| Event                                           | Server behavior                                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `subscription.created` / `subscription.updated` | Upsert the school subscription, plan, provider status, trial/renewal/cancellation timestamps, and raw provider state.    |
+| `subscription.canceled`                         | Reconcile the subscription and school status to `canceled`; entitlement checks stop treating the subscription as active. |
+| `invoice.paid`                                  | Persist a paid invoice and reconcile the associated subscription to `active`.                                            |
+| `invoice.payment_failed`                        | Persist a failed invoice and place the subscription in `past_due` with a seven-day grace-period timestamp.               |
 
-A live billing implementation must add a provider abstraction with the following server-owned records and transitions:
+Every processed event is recorded in `hw_billing_webhook_events` and emits an audit/security event. An event with no server-side school mapping is rejected with a conflict response and remains marked failed for operator inspection. The provider payload is not allowed to choose a school ID directly.
 
-| Concern        | Required behavior                                                                               |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| Customer       | Create and map one provider customer to one school organization.                                |
-| Subscription   | Store provider ID, plan, status, trial, renewal, cancellation, and grace-period timestamps.     |
-| Webhook        | Verify the provider signature before applying any state transition.                             |
-| Idempotency    | Reject duplicate event IDs and make retries safe.                                               |
-| Entitlements   | Derive feature access from the reconciled server subscription, never a frontend success screen. |
-| Audit          | Record plan changes, payment failures, cancellations, and operator overrides.                   |
-| Reconciliation | Provide a periodic or operator-triggered comparison between provider and local state.           |
+## Still required for live billing
 
-Until those items are implemented and tested against a provider sandbox, do not advertise paid checkout or claim that a school has purchased a plan through SHWAI.
+The application does not yet create provider customers, create provider-hosted checkout sessions, open a customer billing portal, reconcile provider state on a scheduled basis, calculate invoices locally, or provide a tested payment-provider adapter. Those items require a concrete provider choice, provider sandbox credentials, legal/tax configuration, and deployment evidence. A deployment must not advertise paid checkout merely because the environment variables are present.
+
+| Concern            | Current status                                                         | Production evidence still required                                       |
+| ------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Customer mapping   | Schema and webhook lookup exist; creation is not implemented.          | Provider customer creation and one-school mapping test.                  |
+| Checkout           | Not implemented.                                                       | Provider-hosted checkout session and cancellation behavior.              |
+| Subscription state | Implemented for signed supported events.                               | Provider sandbox event fixtures and retry/replay tests.                  |
+| Invoice state      | Persisted for signed invoice events.                                   | Provider invoice fixture, tax/amount semantics, and reconciliation test. |
+| Entitlements       | Server-side plan/status guard implemented for AI and data portability. | Product-wide entitlement inventory and provider-backed acceptance tests. |
+| Reconciliation     | Not implemented.                                                       | Scheduled/operator-triggered comparison and discrepancy workflow.        |
+| Refunds/disputes   | Not implemented.                                                       | Provider event mapping, audit trail, and finance ownership.              |
+
+Until those remaining items are implemented and tested against a provider sandbox, do not represent SHWAI as having live paid checkout or a commercially verified payment flow.

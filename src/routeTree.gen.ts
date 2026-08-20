@@ -45,6 +45,7 @@ import { Route as AppSubmissionsRouteImport } from './routes/app.submissions'
 import { Route as AppSubscriptionRouteImport } from './routes/app.subscription'
 import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as AppSystemHealthRouteImport } from './routes/app.system-health'
+import { Route as ApiBillingWebhookRouteImport } from './routes/api.billing.webhook'
 import { Route as ApiIntelligenceRunRouteImport } from './routes/api.intelligence.run'
 import { Route as ApiJobsRunRouteImport } from './routes/api.jobs.run'
 import { Route as AppAiClassroomAssistantRouteImport } from './routes/app.ai.classroom-assistant'
@@ -244,6 +245,11 @@ const AppSystemHealthRoute = AppSystemHealthRouteImport.update({
   path: '/system-health',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
+  id: '/api/billing/webhook',
+  path: '/api/billing/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIntelligenceRunRoute = ApiIntelligenceRunRouteImport.update({
   id: '/api/intelligence/run',
   path: '/api/intelligence/run',
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/app/support': typeof AppSupportRoute
   '/app/system-health': typeof AppSystemHealthRoute
   '/app/': typeof AppIndexRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/app/support': typeof AppSupportRoute
   '/app/system-health': typeof AppSystemHealthRoute
   '/app': typeof AppIndexRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/app/support': typeof AppSupportRoute
   '/app/system-health': typeof AppSystemHealthRoute
   '/app/': typeof AppIndexRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/intelligence/run': typeof ApiIntelligenceRunRoute
   '/api/jobs/run': typeof ApiJobsRunRoute
   '/app/ai/classroom-assistant': typeof AppAiClassroomAssistantRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/system-health'
     | '/app/'
+    | '/api/billing/webhook'
     | '/api/intelligence/run'
     | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
@@ -599,6 +609,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/system-health'
     | '/app'
+    | '/api/billing/webhook'
     | '/api/intelligence/run'
     | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/app/system-health'
     | '/app/'
+    | '/api/billing/webhook'
     | '/api/intelligence/run'
     | '/api/jobs/run'
     | '/app/ai/classroom-assistant'
@@ -688,6 +700,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiIntelligenceRunRoute: typeof ApiIntelligenceRunRoute
   ApiJobsRunRoute: typeof ApiJobsRunRoute
 }
@@ -946,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSystemHealthRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/billing/webhook': {
+      id: '/api/billing/webhook'
+      path: '/api/billing/webhook'
+      fullPath: '/api/billing/webhook'
+      preLoaderRoute: typeof ApiBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/intelligence/run': {
       id: '/api/intelligence/run'
       path: '/api/intelligence/run'
@@ -1186,6 +1206,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiIntelligenceRunRoute: ApiIntelligenceRunRoute,
   ApiJobsRunRoute: ApiJobsRunRoute,
 }

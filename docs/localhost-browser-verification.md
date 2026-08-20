@@ -32,3 +32,9 @@ Post-hardening browser checks:
 | -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `/ready` | PASS for graceful failure | Returns `{"status":"not_ready","dependencies":{"database":"not_ready"}}` without stack traces or secrets when PostgreSQL is unavailable. |
 | `/login` | PASS                      | Login form and server-derived identity messaging still render after the auth/session changes.                                            |
+
+## Commercial-launch hardening browser verification — 2026-08-20
+
+The live localhost probe at `http://127.0.0.1:8080/ready` returned the expected non-sensitive JSON response `{"status":"not_ready","dependencies":{"database":"not_ready"}}` because PostgreSQL is not configured in the sandbox. It did not expose secrets or pretend that persistence was available.
+
+The live `http://127.0.0.1:8080/login` route rendered successfully after the authentication hardening changes. The public form includes email, password, optional authenticator code, optional recovery code, and the existing forgot-password/register links. Successful database-backed login and MFA challenge verification remain blocked until PostgreSQL is migrated and a fictional or approved staging account is available.

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { requireDatabase } from "@/lib/db";
-import { requirePermission } from "@/lib/permissions";
+import { requireFeatureEntitlement, requirePermission } from "@/lib/permissions";
 import { consumeSecurityRateLimit } from "@/lib/security";
 
 const entitySchema = z.enum(["students", "teachers", "parents"]);
@@ -171,6 +171,7 @@ export const createImportJob = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requirePermission(context, "data.import");
+    requireFeatureEntitlement(context, "data_import");
     const sql = requireDatabase();
     await consumeSecurityRateLimit(sql, {
       scope: "import_school_user",
@@ -241,6 +242,7 @@ export const commitStudentImport = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requirePermission(context, "data.import");
+    requireFeatureEntitlement(context, "data_import");
     const sql = requireDatabase();
     const result = (await sql.begin(async (tx) => {
       const jobs = await tx<

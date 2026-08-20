@@ -41,13 +41,21 @@ jobs:
           npx eslint
           scripts/migrate.ts
           scripts/readiness.ts
+          src/actions/ai.ts
           src/actions/auth.ts
+          src/actions/billing.ts
           src/actions/data.ts
           src/actions/imports.ts
+          src/actions/mfa.ts
           src/actions/invitations.ts
           src/actions/onboarding.ts
           src/app/providers/app-state.tsx
           src/components/auth/auth-card.tsx
+          src/lib/auth.ts
+          src/lib/billing.ts
+          src/lib/permissions.test.ts
+          src/lib/totp.ts
+          src/routes/api.billing.webhook.ts
           src/config/navigation.ts
           src/lib/jobs.ts
           src/lib/permissions.ts
@@ -59,6 +67,8 @@ jobs:
           src/routes/app.onboarding.tsx
           src/routes/forgot-password.tsx
           src/routes/health.ts
+          src/routes/app.settings.tsx
+          src/routes/app.subscription.tsx
           src/routes/readiness.ts
           src/routes/ready.ts
           src/routes/reset-password.tsx

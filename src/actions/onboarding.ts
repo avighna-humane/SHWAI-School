@@ -11,11 +11,16 @@ const onboardingStep = z.enum([
   "data_import",
   "operational_ready",
 ]);
-const identityPolicySchema = z.object({
-  requireEmailVerification: z.boolean(),
-  requireMfaForPrivileged: z.boolean(),
-  mfaProvider: z.literal("configuration_required"),
-});
+const identityPolicySchema = z
+  .object({
+    requireEmailVerification: z.boolean(),
+    requireMfaForPrivileged: z.boolean(),
+    mfaProvider: z.enum(["totp", "configuration_required"]),
+  })
+  .refine(
+    (value) => !value.requireMfaForPrivileged || value.mfaProvider === "totp",
+    "TOTP must be selected when privileged MFA is required",
+  );
 
 const schoolSettingsSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -54,6 +59,18 @@ export const updateIdentityPolicy = createServerFn({ method: "POST" })
     const context = await requireAuth();
     requireRole(context, ["owner"]);
     const sql = requireDatabase();
+    if (data.requireMfaForPrivileged) {
+      const unenrolled = await sql`
+        SELECT u.id FROM hw_users u
+        JOIN hw_memberships m ON m.user_id = u.id AND m.school_id = ${context.schoolId} AND m.active = TRUE
+        LEFT JOIN hw_user_mfa mfa ON mfa.user_id = u.id AND mfa.enabled = TRUE
+        WHERE m.role IN ('owner', 'principal', 'admin') AND mfa.user_id IS NULL
+        LIMIT 1`;
+      if (unenrolled[0])
+        throw new Error(
+          "Every owner, principal, and administrator must enroll in TOTP before privileged MFA can be required",
+        );
+    }
     await sql`
       INSERT INTO hw_identity_policies (school_id, require_email_verification, require_mfa_for_privileged, mfa_provider, updated_by)
       VALUES (${context.schoolId}, ${data.requireEmailVerification}, ${data.requireMfaForPrivileged}, ${data.mfaProvider}, ${context.userId})
@@ -65,7 +82,7 @@ export const updateIdentityPolicy = createServerFn({ method: "POST" })
       VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'update', 'identity_policy', ${context.schoolId}, 'Identity policy updated')`;
     return {
       ok: true as const,
-      mfaState: data.requireMfaForPrivileged ? "BLOCKED_UNTIL_PROVIDER_CONFIGURED" : "OPTIONAL",
+      mfaState: data.requireMfaForPrivileged ? "REQUIRED_TOTP" : "OPTIONAL",
     };
   });
 

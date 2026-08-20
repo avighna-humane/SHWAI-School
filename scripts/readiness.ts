@@ -41,15 +41,38 @@ if (!databaseUrl) {
     await sql`SELECT 1`;
     databaseReady = true;
     add("database", "READY", "PostgreSQL accepted a health query.");
-    const schemaRows = await sql<{ schema_name: string | null }[]>`
-      SELECT to_regclass('public.hw_schools') AS schema_name`;
-    schemaReady = Boolean(schemaRows[0]?.schema_name);
+    const schemaRows = await sql<
+      {
+        schools: string | null;
+        sessions: string | null;
+        mfa: string | null;
+        billing: string | null;
+        webhooks: string | null;
+      }[]
+    >`
+      SELECT
+        to_regclass('public.hw_schools') AS schools,
+        to_regclass('public.hw_sessions') AS sessions,
+        to_regclass('public.hw_user_mfa') AS mfa,
+        to_regclass('public.hw_billing_subscriptions') AS billing,
+        to_regclass('public.hw_billing_webhook_events') AS webhooks`;
+    const schema = schemaRows[0];
+    const missingTables = [
+      ["hw_schools", schema?.schools],
+      ["hw_sessions", schema?.sessions],
+      ["hw_user_mfa", schema?.mfa],
+      ["hw_billing_subscriptions", schema?.billing],
+      ["hw_billing_webhook_events", schema?.webhooks],
+    ]
+      .filter(([, value]) => !value)
+      .map(([name]) => name);
+    schemaReady = missingTables.length === 0;
     add(
       "migrations",
       schemaReady ? "READY" : "BLOCKED",
       schemaReady
-        ? "The core SHWAI schema is present."
-        : "Run npm run db:migrate before serving persisted workflows.",
+        ? "Core, MFA, and billing tables are present."
+        : `Run npm run db:migrate; missing tables: ${missingTables.join(", ")}.`,
     );
   } catch {
     add(
@@ -93,6 +116,16 @@ add(
     : "Set SHWAI_TRUSTED_ORIGINS before exposing authenticated browser requests.",
 );
 
+add(
+  "mfa",
+  process.env.NODE_ENV === "production" && !configured("MFA_ENCRYPTION_KEY")
+    ? "CONFIGURATION_REQUIRED"
+    : "READY",
+  process.env.NODE_ENV === "production" && !configured("MFA_ENCRYPTION_KEY")
+    ? "Production TOTP enrollment requires MFA_ENCRYPTION_KEY in secret storage."
+    : "TOTP enrollment and login challenge code are available in the application.",
+);
+
 const providerChecks: Array<{ component: string; variables: string[]; detail: string }> = [
   {
     component: "email",
@@ -123,11 +156,25 @@ const providerChecks: Array<{ component: string; variables: string[]; detail: st
 ];
 
 for (const provider of providerChecks) {
-  const ready = provider.variables.every(configured);
+  const ready =
+    provider.component === "ai"
+      ? provider.variables.every(configured) ||
+        (configured("OPENAI_API_BASE") && configured("OPENAI_API_KEY"))
+      : provider.variables.every(configured);
+  const state =
+    provider.component === "billing" && ready
+      ? "WARNING"
+      : ready
+        ? "READY"
+        : "CONFIGURATION_REQUIRED";
   add(
     provider.component,
-    ready ? "READY" : "CONFIGURATION_REQUIRED",
-    ready ? "Required provider variables are present." : provider.detail,
+    state,
+    provider.component === "billing" && ready
+      ? "Signed webhook variables are present; checkout, customer creation, and provider sandbox evidence are still required."
+      : ready
+        ? "Required provider variables are present."
+        : provider.detail,
   );
 }
 

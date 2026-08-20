@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { requireDatabase } from "@/lib/db";
-import { requirePermission } from "@/lib/permissions";
+import { requireFeatureEntitlement, requirePermission } from "@/lib/permissions";
 import { consumeSecurityRateLimit } from "@/lib/security";
 
 const exportSchema = z.object({
@@ -29,6 +29,7 @@ export const exportSchoolData = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const context = await requireAuth();
     requirePermission(context, "data.export");
+    requireFeatureEntitlement(context, "data_export");
     const sql = requireDatabase();
     await consumeSecurityRateLimit(sql, {
       scope: "export_school_user",

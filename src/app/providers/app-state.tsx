@@ -12,7 +12,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import type { Locale, PlanId, Role } from "@/types";
 import { ACADEMIC_YEARS, SCHOOLS } from "@/data/mock/core";
-import { NOTIFICATIONS } from "@/data/mock/platform";
 import { ROLE_LABEL } from "@/config/roles";
 import {
   currentUser,
@@ -20,6 +19,12 @@ import {
   switchSchool as switchSchoolAction,
   type AuthenticatedUser,
 } from "@/actions/auth";
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  type NotificationRow,
+} from "@/actions/notifications";
 import { withTimeout } from "@/lib/request-timeout";
 
 const STORAGE_KEY = "shwai.user.preferences";
@@ -38,7 +43,15 @@ interface PersistedPreferences {
   plan: PlanId;
   locale: Locale;
   offline: boolean;
-  readIds: string[];
+}
+
+export interface ShellNotification {
+  id: string;
+  title: string;
+  body: string;
+  severity: NotificationRow["severity"];
+  createdAt: string;
+  read: boolean;
 }
 
 const DEFAULTS: PersistedPreferences = {
@@ -47,9 +60,6 @@ const DEFAULTS: PersistedPreferences = {
   plan: "enterprise",
   locale: "en",
   offline: false,
-  readIds: NOTIFICATIONS.filter((notification) => notification.read).map(
-    (notification) => notification.id,
-  ),
 };
 
 interface AppStateValue extends PersistedPreferences {
@@ -72,9 +82,9 @@ interface AppStateValue extends PersistedPreferences {
   setPlan: (plan: PlanId) => void;
   setLocale: (locale: Locale) => void;
   setOffline: (offline: boolean) => void;
+  notifications: ShellNotification[];
   markRead: (id: string) => void;
   markAllRead: () => void;
-  markUnread: (id: string) => void;
   unreadCount: number;
   isRead: (id: string) => boolean;
 }
@@ -105,6 +115,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     enabled: Boolean(authQuery.data?.userId),
     retry: false,
   });
+  const notificationsQuery = useQuery({
+    queryKey: ["current-user-notifications", authQuery.data?.userId, authQuery.data?.schoolId],
+    queryFn: () => listNotifications(),
+    enabled: Boolean(authQuery.data?.userId && authQuery.data?.schoolId),
+    retry: false,
+  });
 
   useEffect(() => {
     try {
@@ -130,6 +146,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const refetchAuth = authQuery.refetch;
   const refetchMemberships = membershipsQuery.refetch;
+  const refetchNotifications = notificationsQuery.refetch;
+  const markRead = useCallback(
+    (id: string) => {
+      void markNotificationRead({ data: { id } })
+        .then(() => refetchNotifications())
+        .catch(() => undefined);
+    },
+    [refetchNotifications],
+  );
+  const markAllRead = useCallback(() => {
+    void markAllNotificationsRead()
+      .then(() => refetchNotifications())
+      .catch(() => undefined);
+  }, [refetchNotifications]);
   const switchSchool = useCallback(
     async (membershipId: string) => {
       await switchSchoolAction({ data: { membershipId } });
@@ -155,7 +185,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       : SCHOOLS[0]!;
     const year =
       ACADEMIC_YEARS.find((item) => item.id === preferences.yearId) ?? ACADEMIC_YEARS[0]!;
-    const readSet = new Set(preferences.readIds);
+    const notifications: ShellNotification[] = (notificationsQuery.data ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      body: row.body,
+      severity: row.severity,
+      createdAt: new Date(row.created_at).toLocaleString(),
+      read: Boolean(row.read_at),
+    }));
+    const readSet = new Set(
+      notifications
+        .filter((notification) => notification.read)
+        .map((notification) => notification.id),
+    );
     return {
       ...preferences,
       plan: (auth?.plan ?? "starter") as PlanId,
@@ -190,22 +232,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
       setLocale: (locale) => update({ locale }),
       setOffline: (offline) => update({ offline }),
-      markRead: (id) => update({ readIds: Array.from(new Set([...preferences.readIds, id])) }),
-      markUnread: (id) => update({ readIds: preferences.readIds.filter((item) => item !== id) }),
-      markAllRead: () => update({ readIds: NOTIFICATIONS.map((notification) => notification.id) }),
+      notifications,
+      markRead,
+      markAllRead,
       isRead: (id) => readSet.has(id),
-      unreadCount: NOTIFICATIONS.filter(
-        (notification) => notification.roles.includes(role) && !readSet.has(notification.id),
-      ).length,
+      unreadCount: notifications.filter((notification) => !notification.read).length,
     };
   }, [
     authQuery.data,
     authQuery.error,
     authQuery.isLoading,
     membershipsQuery.data,
+    notificationsQuery.data,
     preferences,
     switchSchool,
     update,
+    markAllRead,
+    markRead,
   ]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

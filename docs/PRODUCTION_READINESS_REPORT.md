@@ -1,94 +1,146 @@
-# SHWAI production-readiness report
+# SHWAI Production Readiness Report
 
-**Repository:** `avighna-humane/SHWAI-School`  
-**Audit date:** 2026-08-14  
-**Release scope:** Production-readiness foundations on top of V1–V6  
+**Repository:** `avighna-humane/SHWAI-School`
+**Branch:** `main`
+**Audit date:** 2026-08-20
 **Author:** Manus AI
 
-## Executive conclusion
+## 1. Executive status
 
-SHWAI is **PRODUCTION-CODE READY — DEPLOYMENT VERIFICATION REQUIRED** for the repository controls implemented in this pass. It is **not yet honest to call the product production-ready** because the environment contains no live PostgreSQL, seeded school tenants, email provider, object storage, payment account, OAuth tenant, durable worker, monitoring destination, backup/PITR evidence, or staging deployment.
+# NOT YET SELLABLE
 
-The implementation now moves the product from a feature/demo-heavy baseline toward a real multi-tenant school onboarding foundation. School context, role, membership, and plan are server-derived. Leadership can configure onboarding state, invite members, link invitations to persisted student/teacher/parent/staff records, switch among authorized memberships, stage and atomically commit student CSV/JSON imports, generate bounded audited exports, request/review privacy deletion, inspect owner-only system health, revoke sessions, and use deployment health/readiness probes. External services remain explicit configuration boundaries; the application does not fabricate provider success.
+SHWAI has a materially stronger production foundation, but the evidence does not support a `SELLABLE` or `PRODUCTION READY` claim. The repository contains authenticated, school-scoped server workflows and explicit provider boundaries. A real-school launch remains blocked until deployment infrastructure, PostgreSQL migration and restore evidence, provider credentials, live authenticated browser verification, and remaining production integrations are completed.
 
-## Verification evidence
+> The application now fails closed where infrastructure is missing. It does not treat a visible route, configured plan label, attempted provider request, or local demo seed as evidence of production readiness.
 
-| Check | Result | Evidence or limitation |
-| --- | --- | --- |
-| TypeScript | PASS | `npm run check` completed successfully. |
-| Regression tests | PASS | Vitest: **10 test files / 44 tests** passed. |
-| Focused lint | PASS | All production-readiness-modified TypeScript files passed `--max-warnings=0`. |
-| Dependency audit | PASS | `npm audit --omit=dev --audit-level=high` reported **0 vulnerabilities**. |
-| Production build | PASS | `npm run build` completed and regenerated the route tree. Existing chunk-size warning remains informational. |
-| Whitespace | PASS | `git diff --check` completed successfully. |
-| Health browser smoke test | PASS | `GET /health` returned healthy JSON without sensitive diagnostics. |
-| Readiness browser smoke test | PASS for safe degraded state | `GET /readiness` returned HTTP-level not-ready/database-not-ready because no database URL exists in the sandbox. |
-| Authenticated workflow browser tests | BLOCKED | Requires a live database, seeded memberships, and authenticated sessions. |
-| Migration execution | BLOCKED | Requires `DATABASE_URL` or `SUPABASE_DATABASE_URL`; no live database is available. |
+## 2. What was actually implemented
 
-## Implemented repository changes
+This pass applied focused production-engineering changes rather than redesigning the application. The global notification menu now reads persisted, school- and recipient-scoped notifications through existing server actions. Read and mark-all-read operations use the authenticated server identity instead of local mock notification state.
 
-### Tenant context, onboarding, and identity
+The application now exposes both `/ready` and the backward-compatible `/readiness` endpoint through one shared fail-closed handler. A new `npm run readiness:check` command reports machine-readable `READY`, `WARNING`, `CONFIGURATION_REQUIRED`, and `BLOCKED` states for database, migrations, authentication, environment, trusted origins, email, storage, AI, billing, background jobs, monitoring, backups, and security headers.
 
-The authenticated provider now queries active memberships and offers an authorized school switcher. Switching invokes the server action, validates the target membership, rotates the session, and refreshes server-backed context. The local plan preference no longer controls entitlement state; the active school plan and subscription status are selected from the server session context.
+Node-backed migration and seed commands load `.env` automatically when present. A development-only fictional seed remains available through `npm run db:seed:dev`; it never runs in non-development mode and never contains real school data.
 
-`/app/onboarding` persists school name, timezone, country, currency, grading system, curriculum, language, onboarding step, onboarding status, and completion state. Academic readiness counts persisted years, classes, sections, and subjects and blocks the academic step when prerequisites are absent.
+Authentication now includes a database-backed failed-login counter and temporary account lockout after repeated invalid attempts, while preserving generic invalid-credential responses. A server-enforced `logoutAllSessions` action revokes every session for the current user, records an audit event and security event, and is available from the existing account menu. CI focused lint now covers the added readiness and session-related files.
 
-Registration requires terms/privacy consent. Verification and password recovery use one-time hashed tokens, session revocation, generic account-existence responses, and explicit email-provider configuration states. A leadership user can create a school-scoped invitation; acceptance provisions or activates the server user, membership, consent record, and linked student/teacher/parent/staff entity in one transaction.
+The repository also includes the deployment setup, billing, AI governance, administrator, teacher, parent, and student runbooks created from actual repository behavior. Existing import, export, privacy, invitation, onboarding, jobs, audit, provider-boundary, and V1–V6 documentation remains authoritative for those areas.
 
-### Authorization and plan enforcement
+## 3. Authentication
 
-`src/lib/permissions.ts` provides a server permission matrix for school-wide reads, writes, people management, audit/export, context, simulation/experiment approval, school configuration, import/export/deletion, and security management. The new production-sensitive actions use the matrix rather than client role or school fields. Privileged MFA can be required by school policy, but sign-in is blocked with an explicit configuration-required message until a verified MFA provider is available.
+| Capability                 | Status                               | Evidence and limitation                                                                                                                                    |
+| -------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Registration               | COMPLETE IN CODE                     | Creates a school, owner user, membership, consent, and verification token in a transaction. Email delivery is provider-dependent.                          |
+| Login                      | COMPLETE IN CODE / DATABASE REQUIRED | Uses PBKDF2-SHA-256, active membership, verified email policy, server-derived school/role/plan, throttling, and generic failure responses.                 |
+| Logout                     | COMPLETE IN CODE                     | Deletes the current session and records audit/security events.                                                                                             |
+| Logout all sessions        | COMPLETE IN CODE                     | Deletes every session for the authenticated user and records audit/security events.                                                                        |
+| Session expiration         | COMPLETE IN CODE                     | HTTP-only sessions have an eight-hour expiration and server-side expiry checks.                                                                            |
+| Session rotation           | PARTIAL                              | Login, school switching, invitation acceptance, and logout-all flows create or revoke sessions; device listing and per-device management are not complete. |
+| Password reset             | COMPLETE IN CODE / EMAIL REQUIRED    | One-time hashed reset tokens revoke sessions after reset. Delivery requires an email provider.                                                             |
+| MFA/TOTP/WebAuthn          | NOT IMPLEMENTED                      | Privileged MFA policy can block sign-in, but enrollment and verification are absent.                                                                       |
+| Account lock/rate limiting | COMPLETE IN CODE                     | IP/email throttles and persistent failed-login lockout are implemented; distributed deployment behavior needs staging verification.                        |
 
-### Import, export, jobs, and reliability
+## 4. School onboarding
 
-`/app/data-import` supports bounded student CSV/JSON staging, header alias normalization, required-field/date/duplicate/enrollment validation, row error reports, and atomic commit. XLSX, teacher/parent adapters, and large file storage remain explicit boundaries. `/app/data-export` supports owner/principal bounded CSV/JSON exports for students, attendance, and grades, with a five-thousand-row limit, rate limiting, audit records, and short-lived artifact semantics.
+School registration, server-backed onboarding settings, academic prerequisites, memberships, invitations, role assignment, consent records, and linked student/teacher/parent/staff entities exist in code. A real PostgreSQL migration and authenticated browser run are required before declaring onboarding operational for a customer. Campus hierarchy, extensive checklist automation, guardian approval, and complete school activation lifecycle remain partial.
 
-`hw_jobs` persistence and `src/lib/jobs.ts` provide idempotency keys, bounded payloads, claim/complete states, attempts, and failure reasons. `/api/jobs/run` authenticates a secret, uses `FOR UPDATE SKIP LOCKED`, processes cleanup jobs, and reports unconfigured processors as failed/configuration-required rather than successful. A durable worker and dead-letter/queue monitoring remain deployment requirements.
+## 5. Real data import/export
 
-### Privacy, operations, observability, and support boundaries
+Student CSV/JSON staging includes alias normalization, bounded input, validation, duplicate detection, preview/error rows, school authorization, and atomic commit. Bounded school-scoped CSV/JSON exports are audited and rate-limited. XLSX, teacher/parent/staff adapters, private export artifacts, large asynchronous exports, reusable mapping UI, and restore-tested import operations remain partial or configuration-required.
 
-`/app/privacy` adds owner-controlled deletion requests and leadership review with explicit legal-hold and destructive-execution boundaries. `/health` and `/readiness` support deployment probes; the latter returns 503 without leaking database details when readiness fails. `/app/system-health` gives the owner school-scoped job/provider/security-event visibility and session containment actions. `.env.example`, CI, deployment, architecture, integration, backup/recovery, privacy, import, export, and incident-response documentation are included.
+## 6. Roles and permissions
 
-## Status matrix
+The current server permission matrix covers student, teacher, parent, staff, admin, principal, and owner roles, with server-derived school membership and plan context. Tenant filters and permission checks are present on the newer production-sensitive actions. Vice principal, subject teacher, class teacher, counselor, accountant, librarian, transport staff, support staff, and separate platform-owner role granularity are not implemented as distinct persisted roles. Legacy V1–V6 actions still require a complete permission-by-permission and cross-tenant staging audit.
 
-| Capability | Status | Honest interpretation |
-| --- | --- | --- |
-| PostgreSQL migrations and tenant-scoped persistence | PARTIAL / DEPLOYMENT REQUIRED | Code and indexes exist; live migration, RLS review, backup, restore, and concurrency evidence are missing. |
-| Server-derived school/user/role/plan context | IMPLEMENTED IN CODE | Active membership switching and server plan selection are implemented; authenticated multi-school browser testing is blocked. |
-| School onboarding/settings | IMPLEMENTED IN CODE | Leadership workflow persists settings and readiness steps; real school seed/migration is required. |
-| Controlled invitations | IMPLEMENTED IN CODE | Token, role, school, entity link, consent, audit, and provider boundary exist; email delivery requires configuration. |
-| Email verification/password recovery | IMPLEMENTED IN CODE | One-time hashed tokens and session invalidation exist; deliverability and domain verification require an email provider. |
-| MFA | CONFIGURATION REQUIRED / BLOCKED | Policy can block privileged sign-in when required; no TOTP/WebAuthn/SSO factor enrollment or verification is implemented. |
-| Parent/student provisioning | PARTIAL | Invitation target linking exists; bulk parent/student adapter, guardian approval, unlink workflow, and live identity testing remain. |
-| Permission matrix | IMPLEMENTED FOR NEW PRODUCTION ACTIONS | New sensitive surfaces use server permissions; legacy V1–V6 actions still need a complete permission migration review. |
-| Student CSV/JSON import | IMPLEMENTED IN CODE | Staging, validation, error report, and atomic commit exist; real schema migration and large-school testing are blocked. |
-| XLSX/import storage | CONFIGURATION REQUIRED | Requires parser, private storage, MIME/content validation, malware scan, expiry, and access audit. |
-| Data export | IMPLEMENTED BOUNDED FOUNDATION | Owner/principal CSV/JSON export capped at 5,000 rows; large async exports/signed private artifacts are not complete. |
-| Privacy/deletion | PARTIAL | Request/review/audit exists; retention execution, legal holds, deletion proof, and restore-tested recovery are not implemented. |
-| Background jobs | PARTIAL | Persistent job ledger and cleanup runner exist; durable worker, retry queue, dead-letter state, and monitoring are deployment-required. |
-| Email/SMS/WhatsApp/push | CONFIGURATION REQUIRED | Email adapter boundary exists; no verified production delivery adapter/end-to-end evidence. SMS/WhatsApp/push are not implemented. |
-| Payments/subscriptions | NOT IMPLEMENTED FOR LIVE BILLING | Plan catalog and display exist; provider-hosted checkout, webhook verification, reconciliation, and idempotency are absent. |
-| SSO/OAuth/Google/Microsoft/Classroom/Teams | NOT IMPLEMENTED | Connector architecture/documentation exists; authorization, mapping, sync, revocation, and staging tests are absent. |
-| Storage | CONFIGURATION REQUIRED | Safe metadata references exist; private object storage, signed URLs, scanning, expiry, and restore are absent. |
-| AI V3–V6 | PARTIAL / PROVIDER REQUIRED | Governance, provenance, safety, and persistence exist; live provider, cost caps, embeddings/OCR/speech, and monitoring require deployment. |
-| Observability | PARTIAL | Correlation/security events, redacted errors, health/readiness exist; metrics, traces, alert routing, SLOs, and SIEM delivery are absent. |
-| Security | PARTIAL / DEPLOYMENT REQUIRED | Repository hardening is implemented; MFA, RLS, WAF/DDoS, SIEM, backups, restore drills, and live attack tests remain. |
-| Accessibility/performance | PARTIAL | Responsive UI and bounded queries exist; WCAG audit, Lighthouse/real-device test, load test, pagination audit, and large-school performance evidence are missing. |
-| CI/CD | IMPLEMENTED FOUNDATION | GitHub Actions checks typecheck, tests, audit, build, diff, focused lint, and conditional staging migration. Deployment promotion, secret scanning, image scanning, and required-branch policy need repository configuration. |
-| Browser/API verification | PARTIAL | Health/readiness public smoke tests pass safely; authenticated workflows require staging infrastructure. |
-| Regulatory compliance | NOT CLAIMED | Requires school/jurisdiction legal, contractual, DPA, retention, consent, and processor review. |
+## 7. Security
 
-## Required production acceptance gates
+Implemented protections include HTTP-only sessions, production-secure cookies, PBKDF2 password hashing, one-time hashed verification/reset/invitation tokens, request body limits, trusted-origin checks, CSRF protection for server functions, CSP/HSTS/referrer/frame/permissions headers, constant-time comparisons, redacted error handling, request IDs, server-side tenant and role checks, rate limiting, safe attachment validation, security events, audit records, and failed-login lockout.
 
-Before onboarding a real school, configure and verify managed PostgreSQL TLS, migrations, RLS defense-in-depth, tested backups/PITR, private object storage and scanning, email delivery, a durable worker, secret management/rotation, monitoring/alerts, domain/TLS/WAF, staging seed data, provider sandboxes, error-budget/SLO policy, and a complete authenticated browser matrix across owner, admin, principal, teacher, staff, parent, and student.
+RLS defense-in-depth, TOTP/WebAuthn, WAF/DDoS controls, private storage malware scanning, SIEM/error-monitoring delivery, secret rotation evidence, dependency exception review, live attacker testing, and legal/privacy review remain deployment or implementation requirements.
 
-The acceptance matrix must include registration/verification/recovery, invitation acceptance, membership switching, onboarding resume, student/parent linking, import validation/commit/duplicate retry, export expiry, deletion request/legal hold, logout/session revocation, permission denial, provider failure, job retry, database failure, mobile layout, keyboard navigation, and cross-school isolation. No external provider should be classified as verified without a recorded staging test and auditable status.
+## 8. Integrations
 
-## Changed-file groups
+| Integration                           | Status                                   | Exact interpretation                                                                                          |
+| ------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL                            | CONFIGURATION-REQUIRED                   | Migration and persistence code exists; no database is available in this sandbox.                              |
+| Email                                 | CONFIGURATION-REQUIRED                   | Server adapter exists for verification, recovery, and invitations; delivery is unverified.                    |
+| AI provider                           | CONFIGURATION-REQUIRED                   | Server-only OpenAI-compatible abstraction exists; credentials and provider tests are absent here.             |
+| Private object storage                | NOT IMPLEMENTED / CONFIGURATION-REQUIRED | Metadata and validation boundaries exist; private bucket, signed URLs, scanning, and expiry are not complete. |
+| SMS/WhatsApp/push                     | NOT IMPLEMENTED                          | No verified production delivery adapter is present.                                                           |
+| Google/Microsoft/education connectors | NOT IMPLEMENTED                          | OAuth, token storage, sync, conflict handling, and revocation are not present.                                |
+| Monitoring                            | CONFIGURATION-REQUIRED                   | Redacted error/security hooks exist; a real destination must be configured and tested.                        |
+| Payment provider                      | NOT IMPLEMENTED FOR LIVE BILLING         | Plan identifiers and server-side minimum feature checks exist; checkout and verified webhooks do not.         |
 
-The production pass adds or updates authentication/session context, onboarding and invitation actions/routes, permissions, import/export/privacy/system actions/routes, jobs, health/readiness routes, migration indexes and job tables, navigation, CI, environment template, README, and production runbooks. Earlier V1–V6 and security files remain part of the integrated application and were regression-tested by the verification suite.
+## 9. Billing
 
-## Final claim
+Billing is **not implemented for live payment processing**. The plan catalog and server-side plan context must not be interpreted as a completed subscription system. Provider customer records, checkout, signed webhooks, reconciliation, invoices, payment failures, grace periods, cancellation, and entitlement transitions remain required. See [`docs/BILLING.md`](BILLING.md).
 
-The correct release claim is: **SHWAI has a materially stronger production foundation and can proceed to a controlled staging deployment, but it must not be marketed or operated as production-ready until the external deployment gates above are evidenced.**
+## 10. AI
+
+AI is **PARTIAL / PROVIDER REQUIRED**. Server-only generation, safety policy, bounded requests, retries, request IDs, usage metadata, provenance, approval state, approved-source retrieval, and human-review boundaries exist. Live provider credentials, per-school budget enforcement, embeddings, OCR, speech, independent red-team evidence, provider data-use review, and monitoring remain required. See [`docs/AI_GOVERNANCE.md`](AI_GOVERNANCE.md).
+
+## 11. Database
+
+The PostgreSQL migration is deterministic and repeatable in code, with tables, indexes, foreign keys, check constraints, and transaction-backed workflows. The new readiness checker verifies database reachability and the core schema table. No live migration, rollback drill, RLS review, backup, point-in-time recovery, restore test, concurrency test, or large-school query audit was possible in this sandbox.
+
+## 12. Storage
+
+Attachment metadata and strict filename/type/size/base64 validation exist. Private object storage, signed upload/download URLs, malware scanning, retention, deletion, access logging, and restore evidence are not complete. The application must not claim that private document delivery is active without configured storage and end-to-end verification.
+
+## 13. Background jobs
+
+A persistent job ledger with idempotency, bounded payloads, claims, completion, and failure state exists. Authenticated job and intelligence endpoints exist. A durable worker, retry/dead-letter operations, cancellation, monitoring, and deployment scheduling remain required.
+
+## 14. Monitoring
+
+Health, readiness, request IDs, redacted errors, security events, and provider status boundaries exist. The readiness checker reports monitoring as configuration-required unless `SENTRY_DSN` or `OTEL_EXPORTER_OTLP_ENDPOINT` is present. Metrics, traces, alert routing, SLOs, log retention, and incident escalation require deployment configuration.
+
+## 15. Testing
+
+The final verification run for this pass produced the following evidence:
+
+| Check             | Status                    | Limitation                                                                                                                                                                           |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TypeScript        | PASS                      | `npm run check` passed.                                                                                                                                                              |
+| Vitest            | PASS: 10 files / 44 tests | `npm test -- --run` passed.                                                                                                                                                          |
+| Focused lint      | PASS                      | All changed production files passed ESLint with `--max-warnings=0`.                                                                                                                  |
+| Full lint         | BASELINE FAILURE          | `npm run lint` reports 785 existing Prettier findings across the repository; the focused changed-file lint is clean, and no broad auto-format was applied to unrelated legacy files. |
+| Build             | PASS                      | `npm run build` passed; existing non-fatal Vite externalization/chunk warnings remain.                                                                                               |
+| Diff check        | PASS                      | `git diff --check` passed after formatting.                                                                                                                                          |
+| Security tests    | PARTIAL                   | Existing policy/unit coverage exists; live attacker testing is not complete.                                                                                                         |
+| E2E tests         | BLOCKED                   | Authenticated workflows require migrated PostgreSQL and seeded sessions.                                                                                                             |
+| Dependency audit  | PASS                      | `npm audit --omit=dev --audit-level=high` reported 0 vulnerabilities.                                                                                                                |
+| Readiness checker | EXPECTED BLOCKED          | `npm run readiness:check` emitted non-sensitive JSON and exited 1 because the sandbox has no PostgreSQL/provider deployment configuration.                                           |
+
+## 16. Browser verification
+
+Public browser verification passed for `/`, `/login`, `/register`, `/health`, `/readiness`, and the unauthenticated `/app` boundary. The new `/ready` route returned the expected non-sensitive database-not-ready JSON, and `/login` still rendered after the hardening changes. Authenticated notification/session workflows require PostgreSQL-backed browser verification.
+School onboarding, admin/teacher/student/parent login, state transitions, import/export, documents, billing, and unauthorized-access attempts remain blocked by the absence of PostgreSQL and provider infrastructure in this sandbox.
+
+## 17. Production environment requirements
+
+A real deployment requires Node.js 22, PostgreSQL with TLS and managed backups/PITR, `PUBLIC_APP_URL`, `SHWAI_TRUSTED_ORIGINS`, secret storage and rotation, a durable job worker, an email provider and verified sending domain, private object storage and scanning, an AI provider if AI is enabled, a payment provider only if billing is enabled, HTTPS/DNS, monitoring and alert delivery, scheduled job infrastructure, incident ownership, backup/restore evidence, and school-specific privacy/data-processing approval. Exact variable names are documented in `.env.example`, [`docs/PRODUCTION_SETUP.md`](PRODUCTION_SETUP.md), and [`docs/ENVIRONMENT_VARIABLES.md`](ENVIRONMENT_VARIABLES.md).
+
+## 18. Remaining blockers
+
+The main blockers are the absence of a live deployment database and staging environment; no authenticated browser evidence; missing MFA enrollment; incomplete storage implementation; missing SMS/WhatsApp/push and education connectors; live billing not implemented; no durable worker verification; no backup/PITR restore evidence; no WAF/SIEM/error-monitoring delivery evidence; incomplete role granularity; partial legacy mock-backed workspaces; and lack of legal/contractual approval for real student data. These are intentionally reported as blockers rather than hidden behind demo screens or fictional credentials.
+
+## 19. Git
+
+| Field        | Value                                                                        |
+| ------------ | ---------------------------------------------------------------------------- |
+| Repository   | `avighna-humane/SHWAI-School`                                                |
+| Branch       | `main`                                                                       |
+| Current work | Production-readiness implementation and verification completed for this pass |
+| Push status  | Pending commit and push at report-generation time                            |
+| Working tree | Contains only this pass’s reviewed changes before commit                     |
+
+## References
+
+1. [SHWAI production setup runbook](PRODUCTION_SETUP.md)
+2. [SHWAI billing status](BILLING.md)
+3. [SHWAI AI governance](AI_GOVERNANCE.md)
+4. [SHWAI security policy](SECURITY.md)
+5. [SHWAI deployment runbook](DEPLOYMENT.md)
+6. [SHWAI backup and recovery guidance](BACKUP_AND_RECOVERY.md)
+7. [SHWAI import documentation](DATA_IMPORT.md)
+8. [SHWAI export documentation](DATA_EXPORT.md)

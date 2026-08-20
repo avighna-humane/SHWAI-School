@@ -206,9 +206,12 @@ export const login = createServerFn({ method: "POST" })
         email_verified_at: string | null;
         require_email_verification: boolean;
         require_mfa_for_privileged: boolean;
+        failed_login_count: number;
+        locked_until: string | null;
       }[]
     >`
       SELECT u.id AS user_id, u.email, u.name, u.password_hash, u.email_verified_at,
+             u.failed_login_count, u.locked_until,
              m.school_id, s.name AS school_name, m.id AS membership_id, m.role,
              COALESCE((SELECT require_email_verification FROM hw_identity_policies WHERE school_id = m.school_id), TRUE) AS require_email_verification,
              COALESCE((SELECT require_mfa_for_privileged FROM hw_identity_policies WHERE school_id = m.school_id), FALSE) AS require_mfa_for_privileged
@@ -222,11 +225,34 @@ export const login = createServerFn({ method: "POST" })
       LIMIT 1`;
 
     const user = users[0];
+    if (user?.locked_until && new Date(user.locked_until).getTime() > Date.now()) {
+      await recordSecurityEvent(sql, {
+        eventType: "login",
+        outcome: "blocked",
+        severity: "high",
+        requestId: security.requestId,
+        context: { userId: user.user_id, schoolId: user.school_id, role: user.role },
+        resource: "auth.login",
+        detail: { reason: "account_locked" },
+      });
+      throw new Error("Invalid email or password");
+    }
     const valid = await verifyPassword(
       data.password,
       user?.password_hash ?? (await hashPassword("invalid-login-password")),
     );
     if (!user || !valid) {
+      if (user) {
+        await sql`
+          UPDATE hw_users
+          SET failed_login_count = failed_login_count + 1,
+              locked_until = CASE
+                WHEN failed_login_count + 1 >= 10 THEN NOW() + INTERVAL '15 minutes'
+                ELSE locked_until
+              END,
+              updated_at = NOW()
+          WHERE id = ${user.user_id}`;
+      }
       await recordSecurityEvent(sql, {
         eventType: "login",
         outcome: "denied",
@@ -266,6 +292,9 @@ export const login = createServerFn({ method: "POST" })
       throw new Error("Email verification required before sign-in");
     }
 
+    await sql`
+      UPDATE hw_users SET failed_login_count = 0, locked_until = NULL, updated_at = NOW()
+      WHERE id = ${user.user_id}`;
     await clearSession();
     await createSession(user.user_id, user.school_id, user.membership_id);
     await sql`
@@ -432,6 +461,26 @@ export const switchSchool = createServerFn({ method: "POST" })
 
 export const currentUser = createServerFn({ method: "GET" }).handler(async () => {
   return getAuthContext();
+});
+
+export const logoutAllSessions = createServerFn({ method: "POST" }).handler(async () => {
+  const context = await requireAuth();
+  const sql = requireDatabase();
+  await sql`DELETE FROM hw_sessions WHERE user_id = ${context.userId}`;
+  await sql`
+    INSERT INTO hw_audit_events
+      (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail)
+    VALUES
+      (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'logout-all', 'session', ${context.userId}, 'All authenticated sessions revoked')`;
+  await recordSecurityEvent(sql, {
+    eventType: "logout_all_sessions",
+    outcome: "allowed",
+    severity: "warning",
+    requestId: getRequestSecurityContext().requestId,
+    context,
+    resource: "auth.logout_all_sessions",
+  });
+  return clearSession().then(() => ({ ok: true as const }));
 });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {

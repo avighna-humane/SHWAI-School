@@ -46,6 +46,8 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     )`;
+  await sql`ALTER TABLE hw_users ADD COLUMN IF NOT EXISTS failed_login_count INTEGER NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE hw_users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMPTZ`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS hw_memberships (

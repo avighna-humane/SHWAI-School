@@ -17,6 +17,7 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReadinessRouteImport } from './routes/readiness'
+import { Route as ReadyRouteImport } from './routes/ready'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
@@ -101,6 +102,11 @@ const PricingRoute = PricingRouteImport.update({
 const ReadinessRoute = ReadinessRouteImport.update({
   id: '/readiness',
   path: '/readiness',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReadyRoute = ReadyRouteImport.update({
+  id: '/ready',
+  path: '/ready',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/readiness': typeof ReadinessRoute
+  '/ready': typeof ReadyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/readiness': typeof ReadinessRoute
+  '/ready': typeof ReadyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/readiness': typeof ReadinessRoute
+  '/ready': typeof ReadyRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -507,6 +516,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/readiness'
+    | '/ready'
     | '/register'
     | '/reset-password'
     | '/verify-email'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/readiness'
+    | '/ready'
     | '/register'
     | '/reset-password'
     | '/verify-email'
@@ -616,6 +627,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/readiness'
+    | '/ready'
     | '/register'
     | '/reset-password'
     | '/verify-email'
@@ -672,6 +684,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   ReadinessRoute: typeof ReadinessRoute
+  ReadyRoute: typeof ReadyRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -735,6 +748,13 @@ declare module '@tanstack/react-router' {
       path: '/readiness'
       fullPath: '/readiness'
       preLoaderRoute: typeof ReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ready': {
+      id: '/ready'
+      path: '/ready'
+      fullPath: '/ready'
+      preLoaderRoute: typeof ReadyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -1162,6 +1182,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   ReadinessRoute: ReadinessRoute,
+  ReadyRoute: ReadyRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,

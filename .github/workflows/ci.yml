@@ -40,6 +40,7 @@ jobs:
       - run: >-
           npx eslint
           scripts/migrate.ts
+          scripts/readiness.ts
           src/actions/auth.ts
           src/actions/data.ts
           src/actions/imports.ts
@@ -51,6 +52,7 @@ jobs:
           src/lib/jobs.ts
           src/lib/permissions.ts
           src/lib/notifications/email.ts
+          src/lib/readiness.ts
           src/routes/accept-invitation.tsx
           src/routes/app.data-export.tsx
           src/routes/app.data-import.tsx
@@ -58,6 +60,7 @@ jobs:
           src/routes/forgot-password.tsx
           src/routes/health.ts
           src/routes/readiness.ts
+          src/routes/ready.ts
           src/routes/reset-password.tsx
           src/routes/verify-email.tsx
           --max-warnings=0

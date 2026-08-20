@@ -37,15 +37,15 @@ npm run db:seed:dev
 
 The seed command refuses to run outside `NODE_ENV=development`, contains no real student/teacher/parent data, and uses the real PBKDF2/session/membership authentication architecture. Local demo accounts use the documented fictional password `DemoOnly!2026`:
 
-| Role | Email |
-| --- | --- |
-| Owner | `owner@demo.local` |
-| Principal | `principal@demo.local` |
-| Administrator | `admin@demo.local` |
-| Teacher | `teacher@demo.local` |
-| Student | `student@demo.local` |
-| Parent | `parent@demo.local` |
-| Staff | `staff@demo.local` |
+| Role          | Email                  |
+| ------------- | ---------------------- |
+| Owner         | `owner@demo.local`     |
+| Principal     | `principal@demo.local` |
+| Administrator | `admin@demo.local`     |
+| Teacher       | `teacher@demo.local`   |
+| Student       | `student@demo.local`   |
+| Parent        | `parent@demo.local`    |
+| Staff         | `staff@demo.local`     |
 
 These credentials are for local development only and must never be used in production. Every account is linked to the fictional `SHWAI Demo Academy` school through an active membership; server-side school, role, and permission checks remain enabled.
 
@@ -55,9 +55,10 @@ These credentials are for local development only and must never be used in produ
 npm run dev
 ```
 
-Open [http://localhost:8080](http://localhost:8080). Public routes such as `/`, `/login`, `/register`, `/pricing`, `/health`, and `/readiness` load without PostgreSQL. `/readiness` reports database-not-ready rather than pretending persistence works when no database URL is configured. With PostgreSQL migrated and seeded, log in through `/login` and preview the authenticated dashboard, portals, attendance, homework, notices, notifications, grading, intelligence, audit, AI governance, knowledge, prediction, import/export, privacy, and onboarding routes according to the selected account’s server-backed role and school membership.
+Open [http://localhost:8080](http://localhost:8080). Public routes such as `/`, `/login`, `/register`, `/pricing`, `/health`, `/ready`, and `/readiness` load without PostgreSQL. `/ready` and `/readiness` report database-not-ready rather than pretending persistence works when no database URL is configured. Node-backed migration and seed commands load `.env` automatically when it exists.
+With PostgreSQL migrated and seeded, log in through `/login` and preview the authenticated dashboard, portals, attendance, homework, notices, notifications, grading, intelligence, audit, AI governance, knowledge, prediction, import/export, privacy, and onboarding routes according to the selected account’s server-backed role and school membership.
 
-If AI, email, storage, payment, or other provider credentials are absent, the application reports an explicit configuration-required state and does not fabricate success.
+If AI, email, storage, payment, or other provider credentials are absent, the application reports an explicit configuration-required state and does not fabricate success. Run `npm run readiness:check` for a machine-readable readiness matrix; it exits nonzero whenever a required dependency is blocked or a provider is not configured.
 
 ## V3 AI features
 
@@ -101,7 +102,7 @@ The classroom assistant uses approved school context and reports provider/source
 
 ## Production readiness foundations
 
-The repository now includes a real production-code foundation for school onboarding at `/app/onboarding`, authorized multi-school membership switching, one-time email verification, password recovery with session revocation, controlled invitations at `/accept-invitation`, server-enforced permissions, server-derived plan context, staged student CSV/JSON import at `/app/data-import`, bounded audited CSV/JSON export at `/app/data-export`, privacy request review at `/app/privacy`, owner system health and incident controls at `/app/system-health`, `/health` and `/readiness` probes, persistent idempotent job records, a secure job-runner boundary, names-only `.env.example`, and a GitHub Actions verification workflow.
+The repository now includes a real production-code foundation for school onboarding at `/app/onboarding`, authorized multi-school membership switching, one-time email verification, password recovery with session revocation, controlled invitations at `/accept-invitation`, server-enforced permissions, server-derived plan context, staged student CSV/JSON import at `/app/data-import`, bounded audited CSV/JSON export at `/app/data-export`, privacy request review at `/app/privacy`, owner system health and incident controls at `/app/system-health`, `/health` and `/readiness` probes, a shared `/ready`/`/readiness` handler, persistent idempotent job records, a secure job-runner boundary, persisted notification shell integration, names-only `.env.example`, a machine-readable `npm run readiness:check` deployment gate, and a GitHub Actions verification workflow.
 
 These workflows are not claimed to be fully production-ready without deployment evidence. Email, private object storage, XLSX parsing, large background exports, durable workers, payment, SSO, Google/Microsoft education connectors, MFA providers, monitoring delivery, backups/PITR, restore testing, RLS review, WAF/DDoS controls, and production browser verification remain `CONFIGURATION REQUIRED`, `DEPLOYMENT REQUIRED`, `BLOCKED`, or `NOT VERIFIED`. Read [`docs/PRODUCTION_READINESS_REPORT.md`](docs/PRODUCTION_READINESS_REPORT.md), [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md), and [`docs/BACKUP_AND_RECOVERY.md`](docs/BACKUP_AND_RECOVERY.md) before enabling a real school.
 

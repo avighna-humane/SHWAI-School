@@ -6,7 +6,7 @@ import { MOBILE_NAV, NAV_GROUPS, findNavItem, navForRole } from "@/config/naviga
 import { ROLE_LABEL } from "@/config/roles";
 import { planAllows } from "@/config/plans";
 import { ACADEMIC_YEARS } from "@/data/mock/core";
-import { NOTIFICATIONS, SYSTEM_STATUS } from "@/data/mock/platform";
+import { SYSTEM_STATUS } from "@/data/mock/platform";
 import { LANGUAGES } from "@/data/mock/core";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { logout } from "@/actions/auth";
+import { logout, logoutAllSessions } from "@/actions/auth";
 import type { Role } from "@/types";
 
 export const Route = createFileRoute("/app")({
@@ -488,8 +488,8 @@ function SchoolYearSelectors() {
 }
 
 function NotificationsMenu() {
-  const { role, isRead, markRead, markAllRead, unreadCount } = useAppState();
-  const items = NOTIFICATIONS.filter((n) => n.roles.includes(role));
+  const { notifications, isRead, markRead, markAllRead, unreadCount } = useAppState();
+  const items = notifications;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -516,36 +516,44 @@ function NotificationsMenu() {
         </div>
         <Separator />
         <ScrollArea className="max-h-[360px]">
-          {items.map((n) => (
-            <button
-              key={n.id}
-              onClick={() => markRead(n.id)}
-              className="flex w-full gap-2.5 border-b border-border px-3 py-3 text-left last:border-0 hover:bg-muted"
-            >
-              <span
-                className={cn(
-                  "mt-1 size-2 shrink-0 rounded-full",
-                  n.severity === "critical"
-                    ? "bg-danger"
-                    : n.severity === "warning"
-                      ? "bg-warning"
-                      : n.severity === "success"
-                        ? "bg-success"
-                        : "bg-primary",
-                  isRead(n.id) && "opacity-25",
-                )}
-              />
-              <span className="min-w-0">
-                <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>
-                  {n.title}
+          {items.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              No notifications for this school account.
+            </p>
+          ) : (
+            items.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => markRead(n.id)}
+                className="flex w-full gap-2.5 border-b border-border px-3 py-3 text-left last:border-0 hover:bg-muted"
+              >
+                <span
+                  className={cn(
+                    "mt-1 size-2 shrink-0 rounded-full",
+                    n.severity === "critical"
+                      ? "bg-danger"
+                      : n.severity === "warning"
+                        ? "bg-warning"
+                        : n.severity === "success"
+                          ? "bg-success"
+                          : "bg-primary",
+                    isRead(n.id) && "opacity-25",
+                  )}
+                />
+                <span className="min-w-0">
+                  <span className={cn("block truncate text-sm", !isRead(n.id) && "font-semibold")}>
+                    {n.title}
+                  </span>
+                  <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
+                    {n.body}
+                  </span>
+                  <span className="mt-1 block text-[11px] text-muted-foreground">
+                    {n.createdAt}
+                  </span>
                 </span>
-                <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
-                  {n.body}
-                </span>
-                <span className="mt-1 block text-[11px] text-muted-foreground">{n.createdAt}</span>
-              </span>
-            </button>
-          ))}
+              </button>
+            ))
+          )}
         </ScrollArea>
         <Separator />
         <div className="p-2">
@@ -563,6 +571,11 @@ function ProfileMenu() {
   const navigate = useNavigate();
   const logoutMutation = useMutation({
     mutationFn: () => logout(),
+    onSuccess: () => navigate({ to: "/login" }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const logoutAllMutation = useMutation({
+    mutationFn: () => logoutAllSessions(),
     onSuccess: () => navigate({ to: "/login" }),
     onError: (error: Error) => toast.error(error.message),
   });
@@ -606,10 +619,16 @@ function ProfileMenu() {
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuItem
-          disabled={logoutMutation.isPending}
+          disabled={logoutMutation.isPending || logoutAllMutation.isPending}
           onClick={() => logoutMutation.mutate()}
         >
           {logoutMutation.isPending ? "Signing out…" : "Log out"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={logoutMutation.isPending || logoutAllMutation.isPending}
+          onClick={() => logoutAllMutation.mutate()}
+        >
+          {logoutAllMutation.isPending ? "Revoking sessions…" : "Log out all sessions"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

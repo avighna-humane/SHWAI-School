@@ -12,7 +12,7 @@ import {
 import {
   EmailConfigurationRequiredError,
   EmailDeliveryError,
-  sendEmail,
+  sendEmailWithRetry,
 } from "@/lib/notifications/email";
 
 const invitationSchema = z
@@ -74,7 +74,7 @@ export const createInvitation = createServerFn({ method: "POST" })
     const invitationId = rows[0]!.id;
     let delivery: "sent" | "configuration_required" | "failed" = "sent";
     try {
-      await sendEmail({
+      await sendEmailWithRetry({
         to: email,
         subject: `Invitation to join ${context.schoolName} on SHWAI`,
         text: `You have been invited to join ${context.schoolName} as ${data.role}. Accept within ${data.expiresInDays} days: ${publicUrl(token)}`,

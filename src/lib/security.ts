@@ -122,6 +122,7 @@ export function safeErrorMessage(error: unknown, fallback = "Request failed. Ple
       "AI_INPUT_TOO_LARGE",
       "AI_RATE_LIMIT",
       "AI_DAILY_LIMIT",
+      "AI_BUDGET_EXCEEDED",
     ]);
     if (safeCodes.has(code)) return error.message.slice(0, 240);
   }

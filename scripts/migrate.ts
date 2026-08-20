@@ -323,6 +323,27 @@ async function migrate() {
     )`;
 
   await sql`
+    CREATE TABLE IF NOT EXISTS hw_storage_objects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
+      document_id UUID REFERENCES hw_documents(id) ON DELETE SET NULL,
+      storage_key TEXT NOT NULL,
+      original_name TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 50000000),
+      checksum_sha256 TEXT NOT NULL DEFAULT '',
+      scan_status TEXT NOT NULL DEFAULT 'pending' CHECK (scan_status IN ('pending','clean','quarantined','failed')),
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','deleted','expired')),
+      created_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ,
+      deleted_at TIMESTAMPTZ,
+      UNIQUE (school_id, storage_key)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_storage_objects_school_status_idx ON hw_storage_objects (school_id, status, created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_storage_objects_document_idx ON hw_storage_objects (school_id, document_id, status)`;
+
+  await sql`
     CREATE TABLE IF NOT EXISTS hw_id_cards (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE,
@@ -1234,10 +1255,10 @@ async function migrate() {
   await sql`
     CREATE TABLE IF NOT EXISTS hw_jobs (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT REFERENCES hw_schools(id) ON DELETE CASCADE, job_type TEXT NOT NULL,
-      idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','succeeded','failed','cancelled')),
+      idempotency_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','running','succeeded','failed','cancelled','dead_letter')),
       attempts INTEGER NOT NULL DEFAULT 0, max_attempts INTEGER NOT NULL DEFAULT 3, payload JSONB NOT NULL DEFAULT '{}'::JSONB,
       result JSONB NOT NULL DEFAULT '{}'::JSONB, failure_reason TEXT NOT NULL DEFAULT '', available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      started_at TIMESTAMPTZ, completed_at TIMESTAMPTZ, created_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      started_at TIMESTAMPTZ, lease_until TIMESTAMPTZ, completed_at TIMESTAMPTZ, dead_lettered_at TIMESTAMPTZ, cancel_requested BOOLEAN NOT NULL DEFAULT FALSE, created_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE (school_id, job_type, idempotency_key)
     )`;
   await sql`
@@ -1287,7 +1308,13 @@ async function migrate() {
   await sql`CREATE INDEX IF NOT EXISTS hw_offline_operations_sync_idx ON hw_offline_operations (school_id, status, updated_at)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_access_logs_idx ON hw_data_access_logs (school_id, entity, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_v5_data_requests_idx ON hw_data_requests (school_id, request_type, status, created_at DESC)`;
+  await sql`ALTER TABLE hw_jobs DROP CONSTRAINT IF EXISTS hw_jobs_status_check`;
+  await sql`ALTER TABLE hw_jobs ADD CONSTRAINT hw_jobs_status_check CHECK (status IN ('queued','running','succeeded','failed','cancelled','dead_letter'))`;
+  await sql`ALTER TABLE hw_jobs ADD COLUMN IF NOT EXISTS lease_until TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_jobs ADD COLUMN IF NOT EXISTS dead_lettered_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE hw_jobs ADD COLUMN IF NOT EXISTS cancel_requested BOOLEAN NOT NULL DEFAULT FALSE`;
   await sql`CREATE INDEX IF NOT EXISTS hw_jobs_claim_idx ON hw_jobs (status, available_at, created_at)`;
+  await sql`CREATE INDEX IF NOT EXISTS hw_jobs_lease_idx ON hw_jobs (status, lease_until)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_jobs_school_idx ON hw_jobs (school_id, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_import_jobs_school_idx ON hw_import_jobs (school_id, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS hw_import_rows_job_status_idx ON hw_import_rows (job_id, status, row_number)`;
@@ -1347,8 +1374,11 @@ async function migrate() {
     )`;
   await sql`
     CREATE TABLE IF NOT EXISTS hw_ai_settings (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL UNIQUE REFERENCES hw_schools(id) ON DELETE CASCADE, enable_ai_tutor BOOLEAN NOT NULL DEFAULT TRUE, enable_content_generation BOOLEAN NOT NULL DEFAULT TRUE, enable_predictions BOOLEAN NOT NULL DEFAULT FALSE, approved_providers TEXT[] NOT NULL DEFAULT '{}', approved_knowledge_sources BOOLEAN NOT NULL DEFAULT FALSE, human_review_required BOOLEAN NOT NULL DEFAULT TRUE, role_permissions JSONB NOT NULL DEFAULT '{}'::JSONB, updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL UNIQUE REFERENCES hw_schools(id) ON DELETE CASCADE, enable_ai_tutor BOOLEAN NOT NULL DEFAULT TRUE, enable_content_generation BOOLEAN NOT NULL DEFAULT TRUE, enable_predictions BOOLEAN NOT NULL DEFAULT FALSE, approved_providers TEXT[] NOT NULL DEFAULT '{}', approved_knowledge_sources BOOLEAN NOT NULL DEFAULT FALSE, human_review_required BOOLEAN NOT NULL DEFAULT TRUE, daily_token_budget INTEGER NOT NULL DEFAULT 100000 CHECK (daily_token_budget > 0), role_permissions JSONB NOT NULL DEFAULT '{}'::JSONB, updated_by TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
+  await sql`ALTER TABLE hw_ai_settings ADD COLUMN IF NOT EXISTS daily_token_budget INTEGER NOT NULL DEFAULT 100000`;
+  await sql`ALTER TABLE hw_ai_settings DROP CONSTRAINT IF EXISTS hw_ai_settings_daily_token_budget_check`;
+  await sql`ALTER TABLE hw_ai_settings ADD CONSTRAINT hw_ai_settings_daily_token_budget_check CHECK (daily_token_budget > 0)`;
   await sql`
     CREATE TABLE IF NOT EXISTS hw_ai_learning_journeys (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), school_id TEXT NOT NULL REFERENCES hw_schools(id) ON DELETE CASCADE, student_id TEXT NOT NULL REFERENCES hw_students(id) ON DELETE CASCADE, subject TEXT NOT NULL,

@@ -20,7 +20,7 @@ import {
 import {
   EmailConfigurationRequiredError,
   EmailDeliveryError,
-  sendEmail,
+  sendEmailWithRetry,
 } from "@/lib/notifications/email";
 import { decryptTotpSecret, verifyTotpCode } from "@/lib/totp";
 
@@ -125,7 +125,7 @@ export const register = createServerFn({ method: "POST" })
 
       let emailDelivery: "sent" | "configuration_required" | "failed" = "sent";
       try {
-        await sendEmail({
+        await sendEmailWithRetry({
           to: email,
           subject: "Verify your SHWAI school account",
           text: `Verify your SHWAI account within 24 hours: ${appUrl("/verify-email", verificationToken)}`,
@@ -406,7 +406,7 @@ export const resendVerification = createServerFn({ method: "POST" })
         await tx`INSERT INTO hw_email_verification_tokens (user_id, token_hash, expires_at) VALUES (${user.user_id}, ${await hashIdentifier(token)}, NOW() + INTERVAL '24 hours')`;
       });
       try {
-        await sendEmail({
+        await sendEmailWithRetry({
           to: email,
           subject: "Verify your SHWAI school account",
           text: `Verify your SHWAI account within 24 hours: ${appUrl("/verify-email", token)}`,
@@ -482,7 +482,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       const rawToken = createRawToken();
       await sql`INSERT INTO hw_password_reset_tokens (user_id, token_hash, expires_at) VALUES (${users[0].user_id}, ${await hashIdentifier(rawToken)}, NOW() + INTERVAL '1 hour')`;
       try {
-        await sendEmail({
+        await sendEmailWithRetry({
           to: email,
           subject: "Reset your SHWAI password",
           text: `Reset your password within one hour: ${appUrl("/reset-password", rawToken)}`,

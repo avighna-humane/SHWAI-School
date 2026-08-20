@@ -48,6 +48,7 @@ if (!databaseUrl) {
         mfa: string | null;
         billing: string | null;
         webhooks: string | null;
+        storage: string | null;
       }[]
     >`
       SELECT
@@ -55,7 +56,8 @@ if (!databaseUrl) {
         to_regclass('public.hw_sessions') AS sessions,
         to_regclass('public.hw_user_mfa') AS mfa,
         to_regclass('public.hw_billing_subscriptions') AS billing,
-        to_regclass('public.hw_billing_webhook_events') AS webhooks`;
+        to_regclass('public.hw_billing_webhook_events') AS webhooks,
+        to_regclass('public.hw_storage_objects') AS storage`;
     const schema = schemaRows[0];
     const missingTables = [
       ["hw_schools", schema?.schools],
@@ -63,6 +65,7 @@ if (!databaseUrl) {
       ["hw_user_mfa", schema?.mfa],
       ["hw_billing_subscriptions", schema?.billing],
       ["hw_billing_webhook_events", schema?.webhooks],
+      ["hw_storage_objects", schema?.storage],
     ]
       .filter(([, value]) => !value)
       .map(([name]) => name);
@@ -109,11 +112,21 @@ add(
     : "Production requires PUBLIC_APP_URL and SHWAI_TRUSTED_ORIGINS.",
 );
 add(
-  "cors",
+  "trusted_origins",
   configured("SHWAI_TRUSTED_ORIGINS") ? "READY" : "CONFIGURATION_REQUIRED",
   configured("SHWAI_TRUSTED_ORIGINS")
     ? "Trusted origins are explicitly configured."
     : "Set SHWAI_TRUSTED_ORIGINS before exposing authenticated browser requests.",
+);
+const httpsReady =
+  process.env.NODE_ENV !== "production" ||
+  /^https:\/\//i.test(process.env.PUBLIC_APP_URL?.trim() ?? "");
+add(
+  "https",
+  httpsReady ? "READY" : "BLOCKED",
+  httpsReady
+    ? "The current environment has an acceptable application URL boundary."
+    : "Production requires PUBLIC_APP_URL to use HTTPS.",
 );
 
 add(
@@ -161,20 +174,27 @@ for (const provider of providerChecks) {
       ? provider.variables.every(configured) ||
         (configured("OPENAI_API_BASE") && configured("OPENAI_API_KEY"))
       : provider.variables.every(configured);
+  const scannerReady =
+    provider.component !== "storage" ||
+    (configured("MALWARE_SCANNER_URL") && configured("MALWARE_SCANNER_API_KEY"));
   const state =
     provider.component === "billing" && ready
       ? "WARNING"
-      : ready
-        ? "READY"
-        : "CONFIGURATION_REQUIRED";
+      : provider.component === "storage" && ready && !scannerReady
+        ? "WARNING"
+        : ready
+          ? "READY"
+          : "CONFIGURATION_REQUIRED";
   add(
     provider.component,
     state,
     provider.component === "billing" && ready
       ? "Signed webhook variables are present; checkout, customer creation, and provider sandbox evidence are still required."
-      : ready
-        ? "Required provider variables are present."
-        : provider.detail,
+      : provider.component === "storage" && ready && !scannerReady
+        ? "Private storage is configured, but malware scanner credentials are still required before document downloads can be enabled."
+        : ready
+          ? "Required provider variables are present."
+          : provider.detail,
   );
 }
 
@@ -182,8 +202,8 @@ add(
   "background_jobs",
   databaseReady && configured("SHWAI_JOB_RUNNER_SECRET") ? "WARNING" : "CONFIGURATION_REQUIRED",
   databaseReady && configured("SHWAI_JOB_RUNNER_SECRET")
-    ? "The authenticated job endpoint is configured; a durable worker still requires deployment verification."
-    : "Set SHWAI_JOB_RUNNER_SECRET and deploy a durable worker for asynchronous workflows.",
+    ? "The authenticated runner endpoint and deployable worker process are configured; durable hosting and recovery evidence remain required."
+    : "Set SHWAI_JOB_RUNNER_SECRET and deploy the npm run worker process for asynchronous workflows.",
 );
 add(
   "monitoring",
@@ -194,15 +214,20 @@ add(
     ? "An error or telemetry destination is configured."
     : "Configure SENTRY_DSN or OTEL_EXPORTER_OTLP_ENDPOINT before production operations.",
 );
-add(
-  "backups",
-  "CONFIGURATION_REQUIRED",
-  "Backup/PITR policy and restore evidence must be supplied by the deployment provider.",
+const backupConfigured = ["BACKUP_PROVIDER", "BACKUP_BUCKET", "BACKUP_RETENTION_DAYS"].every(
+  configured,
 );
 add(
-  "security_headers",
+  "backups",
+  backupConfigured ? "WARNING" : "CONFIGURATION_REQUIRED",
+  backupConfigured
+    ? "Backup configuration names are present; automated backup success and restore evidence remain deployment requirements."
+    : "Configure BACKUP_PROVIDER, BACKUP_BUCKET, and BACKUP_RETENTION_DAYS and retain a restore drill record.",
+);
+add(
+  "security",
   "READY",
-  "Security headers and trusted-origin middleware are implemented in the application server.",
+  "Security headers, CSRF, secure-cookie, request-size, and trusted-origin middleware are implemented in the application server.",
 );
 
 const overall: ReadinessState = checks.some((check) => check.state === "BLOCKED")

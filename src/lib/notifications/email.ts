@@ -63,3 +63,17 @@ export async function sendEmail(message: EmailMessage) {
     clearTimeout(timeout);
   }
 }
+
+export async function sendEmailWithRetry(message: EmailMessage, attempts = 2) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= Math.max(1, Math.min(attempts, 3)); attempt += 1) {
+    try {
+      return await sendEmail(message);
+    } catch (error) {
+      lastError = error;
+      if (error instanceof EmailConfigurationRequiredError || attempt >= attempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** (attempt - 1)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new EmailDeliveryError();
+}

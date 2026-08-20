@@ -14,6 +14,7 @@ export const AI_MAX_INPUT_CHARS = 12_000;
 export const AI_MAX_OUTPUT_TOKENS = 2_400;
 export const AI_REQUESTS_PER_MINUTE = 8;
 export const AI_REQUESTS_PER_DAY_PER_SCHOOL = 2_000;
+export const AI_DEFAULT_DAILY_TOKEN_BUDGET = 100_000;
 
 export class AiPolicyError extends Error {
   code: string;
@@ -147,6 +148,21 @@ export async function enforceAiUsage(
     throw new AiPolicyError(
       "This school has reached its daily AI request limit.",
       "AI_DAILY_LIMIT",
+    );
+  const budgetRows = await sql<{ budget: number; used: number }[]>`
+    SELECT
+      COALESCE((SELECT daily_token_budget FROM hw_ai_settings WHERE school_id = ${context.schoolId}), ${AI_DEFAULT_DAILY_TOKEN_BUDGET})::int AS budget,
+      COALESCE(SUM(output_tokens), 0)::int AS used
+    FROM hw_ai_usage
+    WHERE school_id = ${context.schoolId} AND created_at > NOW() - INTERVAL '1 day' AND status = 'success'`;
+  const estimatedTokens = Math.ceil(inputChars / 4) + AI_MAX_OUTPUT_TOKENS;
+  if (
+    Number(budgetRows[0]?.used ?? 0) + estimatedTokens >
+    Number(budgetRows[0]?.budget ?? AI_DEFAULT_DAILY_TOKEN_BUDGET)
+  )
+    throw new AiPolicyError(
+      "This school has reached its daily AI token budget.",
+      "AI_BUDGET_EXCEEDED",
     );
   if (inputChars > AI_MAX_INPUT_CHARS)
     throw new AiPolicyError(

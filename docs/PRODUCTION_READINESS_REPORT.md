@@ -17,13 +17,15 @@ SHWAI has a materially stronger production foundation, but the evidence does not
 
 This pass applied focused production-engineering changes rather than redesigning the application. The global notification menu reads persisted, school- and recipient-scoped notifications through existing server actions. Read and mark-all-read operations use the authenticated server identity instead of local mock notification state.
 
-The application exposes both `/ready` and the backward-compatible `/readiness` endpoint through one shared fail-closed handler. A new `npm run readiness:check` command reports machine-readable `READY`, `WARNING`, `CONFIGURATION_REQUIRED`, and `BLOCKED` states for database, migrations, authentication, environment, trusted origins, email, storage, AI, billing, background jobs, monitoring, backups, and security headers.
+The application exposes both `/ready` and the backward-compatible `/readiness` endpoint through one shared fail-closed handler. The `npm run readiness:check` command reports machine-readable `READY`, `WARNING`, `CONFIGURATION_REQUIRED`, and `BLOCKED` states for database, migrations, authentication, MFA, HTTPS, trusted origins, email, private storage, malware scanning, AI, billing, background jobs, monitoring, backups, and security.
 
 Node-backed migration and seed commands load `.env` automatically when present. A development-only fictional seed remains available through `npm run db:seed:dev`; it never runs in non-development mode and never contains real school data.
 
 Authentication now includes a database-backed failed-login counter and temporary account lockout after repeated invalid attempts, TOTP enrollment with AES-GCM encrypted secrets and one-time recovery codes, generic MFA challenges at login, a two-hour idle timeout with an eight-hour absolute session expiry, password rotation with session revocation, per-session listing/revocation, and logout-all-session revocation. Email verification resend rotates old tokens, is rate limited, and returns enumeration-safe messaging.
 
 Billing now has durable customer, subscription, invoice, and webhook-event tables; HMAC-SHA256 signature verification; duplicate-event idempotency; provider-customer/subscription mapping; subscription/payment-failure/cancellation transitions; a seven-day past-due grace period; owner-only billing overview; and server-side plan-plus-status entitlement checks for AI generation and data portability. Checkout, provider customer creation, and provider sandbox evidence are still absent.
+
+This pass adds a provider-neutral private-storage boundary with tenant-prefixed S3-compatible signed PUT/GET/DELETE URLs, strict document validation, scan-status gating, expiry, deletion, and data-access logging. School exports now run through the background job ledger, private storage, expiring signed downloads, retries, and dead-letter state. `npm run worker` is a deployable continuous worker for cleanup, exports, and queued email deliveries. `npm run db:backup` and `npm run db:restore:test` provide repeatable custom-format backup and isolated restore verification commands; managed PITR and provider evidence remain external. Email delivery now retries transient provider failures, and AI generation checks a school-owned daily token budget before provider calls.
 
 The repository also includes deployment setup, billing, AI governance, administrator, teacher, parent, and student runbooks created from actual repository behavior. Existing import, export, privacy, invitation, onboarding, jobs, audit, provider-boundary, and V1–V6 documentation remains authoritative for those areas.
 
@@ -48,7 +50,7 @@ School registration, server-backed onboarding settings, academic prerequisites, 
 
 ## 5. Real data import/export
 
-Student CSV/JSON staging includes alias normalization, bounded input, validation, duplicate detection, preview/error rows, school authorization, and atomic commit. Bounded school-scoped CSV/JSON exports are audited, rate-limited, and now gated by server-derived plan and subscription status. XLSX parsing, teacher/parent/staff adapters, private export artifacts, large asynchronous exports, reusable mapping UI, and restore-tested import operations remain partial or configuration-required. XLSX is intentionally not enabled through a dependency that introduced high and critical audit findings during evaluation.
+Student CSV/JSON staging includes alias normalization, bounded input, validation, duplicate detection, preview/error rows, school authorization, and atomic commit. School-scoped CSV/JSON exports are audited, rate-limited, gated by server-derived plan and subscription status, queued through the worker, stored privately, and downloaded only through expiring signed URLs. XLSX parsing, teacher/parent/staff adapters, reusable mapping UI, and restore-tested import operations remain partial or configuration-required. XLSX is intentionally not enabled through a dependency that introduced high and critical audit findings during evaluation.
 
 ## 6. Roles and permissions
 
@@ -58,20 +60,20 @@ The current server permission matrix covers student, teacher, parent, staff, adm
 
 Implemented protections include HTTP-only sessions, production-secure cookies, PBKDF2 password hashing, one-time hashed verification/reset/invitation tokens, TOTP MFA with encrypted secrets and one-time recovery codes, two-hour idle timeout plus eight-hour absolute session expiry, password rotation, per-session revocation, trusted-origin checks, CSRF protection, security headers, constant-time comparisons, redacted error handling, request IDs, server-side tenant and role checks, rate limiting, safe attachment validation, security events, audit records, and failed-login lockout.
 
-RLS defense-in-depth, WAF/DDoS controls, private storage malware scanning, SIEM/error-monitoring delivery, secret rotation evidence, dependency exception review, live attacker testing, backup/restore testing, and legal/privacy review remain deployment or implementation requirements.
+RLS defense-in-depth, WAF/DDoS controls, malware-scanner provider delivery, SIEM/error-monitoring delivery, secret rotation evidence, dependency exception review, live attacker testing, managed backup/PITR evidence, restore drills, and legal/privacy review remain deployment or implementation requirements.
 
 ## 8. Integrations
 
-| Integration                           | Status                                   | Exact interpretation                                                                                                                       |
-| ------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| PostgreSQL                            | Configuration-required                   | Migration and persistence code exists; no database is available in this sandbox.                                                           |
-| Email                                 | Configuration-required                   | Server adapter exists for verification, recovery, invitations, and resend; delivery is unverified.                                         |
-| AI provider                           | Configuration-required                   | Server-only provider abstraction exists; credentials and provider tests are absent here.                                                   |
-| Private object storage                | Not implemented / configuration-required | Metadata and validation boundaries exist; private bucket, signed URLs, scanning, and expiry are not complete.                              |
-| SMS/WhatsApp/push                     | Not implemented                          | No verified production delivery adapter is present.                                                                                        |
-| Google/Microsoft/education connectors | Not implemented                          | OAuth, token storage, sync, conflict handling, and revocation are not present.                                                             |
-| Monitoring                            | Configuration-required                   | Redacted error/security hooks exist; a real destination must be configured and tested.                                                     |
-| Payment provider                      | Partial server boundary                  | Signed webhook processing and server-side reconciliation records exist; provider checkout, customer creation, and sandbox evidence do not. |
+| Integration                           | Status                                        | Exact interpretation                                                                                                                              |
+| ------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL                            | Configuration-required                        | Migration and persistence code exists; no database is available in this sandbox.                                                                  |
+| Email                                 | Configuration-required                        | Server adapter exists for verification, recovery, invitations, and resend; delivery is unverified.                                                |
+| AI provider                           | Configuration-required                        | Server-only provider abstraction exists; credentials and provider tests are absent here.                                                          |
+| Private object storage                | Implemented boundary / configuration-required | Tenant-prefixed signed access, expiry, deletion, and audit logging are implemented; private bucket credentials and scanner evidence are external. |
+| SMS/WhatsApp/push                     | Not implemented                               | No verified production delivery adapter is present.                                                                                               |
+| Google/Microsoft/education connectors | Not implemented                               | OAuth, token storage, sync, conflict handling, and revocation are not present.                                                                    |
+| Monitoring                            | Configuration-required                        | Redacted error/security hooks exist; a real destination must be configured and tested.                                                            |
+| Payment provider                      | Partial server boundary                       | Signed webhook processing and server-side reconciliation records exist; provider checkout, customer creation, and sandbox evidence do not.        |
 
 ## 9. Billing
 
@@ -79,7 +81,7 @@ Billing is **PARTIAL SERVER BOUNDARY — NOT READY FOR LIVE SALES**. The applica
 
 ## 10. AI
 
-AI is **PARTIAL / PROVIDER REQUIRED**. Server-only generation, safety policy, bounded requests, retries, request IDs, usage metadata, provenance, approval state, approved-source retrieval, human-review boundaries, and server-side professional-plan entitlement checks exist. Live provider credentials, per-school budget enforcement, embeddings, OCR, speech, independent red-team evidence, provider data-use review, and monitoring remain required. See [`AI_GOVERNANCE.md`](AI_GOVERNANCE.md).
+AI is **PARTIAL / PROVIDER REQUIRED**. Server-only generation, safety policy, bounded requests, retries, request IDs, usage metadata, provenance, approval state, approved-source retrieval, human-review boundaries, server-side professional-plan entitlement checks, and a school-owned daily token budget guard exist. Live provider credentials, budget-setting UI, embeddings, OCR, speech, independent red-team evidence, provider data-use review, and monitoring remain required. See [`AI_GOVERNANCE.md`](AI_GOVERNANCE.md).
 
 ## 11. Database
 
@@ -87,11 +89,11 @@ The PostgreSQL migration is deterministic and repeatable in code, with tables, i
 
 ## 12. Storage
 
-Attachment metadata and strict filename/type/size/base64 validation exist. Private object storage, signed upload/download URLs, malware scanning, retention, deletion, access logging, and restore evidence are not complete. The application must not claim that private document delivery is active without configured storage and end-to-end verification.
+Attachment metadata and strict filename/type/size/base64 validation exist. The private storage adapter now signs upload/download/delete requests, scopes keys to the school, records storage-object lifecycle, logs downloads, and blocks user documents until a malware scanner returns `clean`. Storage credentials, private bucket policy, scanner integration, retention enforcement, and restore evidence remain configuration/deployment requirements.
 
 ## 13. Background jobs
 
-A persistent job ledger with idempotency, bounded payloads, claims, completion, and failure state exists. Authenticated job and intelligence endpoints exist. A durable worker, retry/dead-letter operations, cancellation, monitoring, and deployment scheduling remain required.
+A persistent job ledger with idempotency, bounded payloads, `FOR UPDATE SKIP LOCKED` claims, five-minute leases, stale-lease recovery, cancellation flags, exponential backoff, completion, failure, and `dead_letter` state exists. `npm run worker` and the secret-protected `/api/jobs/run` endpoint process cleanup, exports, and queued email deliveries. Durable hosting, alerting, and crash/provider recovery evidence remain deployment requirements.
 
 ## 14. Monitoring
 
@@ -104,7 +106,7 @@ The final verification run for this implementation produced the results below:
 | Check             | Status                    | Limitation                                                                                                                                 |
 | ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | TypeScript        | PASS                      | `npm run check` exited 0.                                                                                                                  |
-| Vitest            | PASS: 12 files / 50 tests | `npm test -- --run` exited 0, including billing-signature, TOTP, and entitlement coverage.                                                 |
+| Vitest            | PASS: 13 files / 53 tests | `npm test -- --run` exited 0, including storage, billing-signature, TOTP, and entitlement coverage.                                        |
 | Focused lint      | PASS                      | Changed production files passed ESLint with `--max-warnings=0`.                                                                            |
 | Full lint         | BASELINE FAILURE          | `npm run lint` reports 715 findings across unrelated legacy formatting; no new changed-file lint findings were present.                    |
 | Build             | PASS                      | `npm run build` exited 0; existing non-fatal Vite externalization/chunk warnings remain.                                                   |
@@ -113,6 +115,7 @@ The final verification run for this implementation produced the results below:
 | E2E tests         | BLOCKED                   | Authenticated workflows require migrated PostgreSQL and seeded sessions.                                                                   |
 | Dependency audit  | PASS                      | `npm audit --omit=dev --audit-level=high` reported 0 vulnerabilities after the ExcelJS experiment was rolled back.                         |
 | Readiness checker | EXPECTED BLOCKED          | `npm run readiness:check` emitted non-sensitive JSON and exited 1 because the sandbox has no PostgreSQL/provider deployment configuration. |
+| Standalone worker | PASS (fail-closed)        | `npm run worker` exited 1 with `Database configuration required` when no database URL was present; it did not fabricate job success.                |
 
 ## 16. Browser verification
 
@@ -126,7 +129,7 @@ A real deployment requires Node.js 22, PostgreSQL with TLS and managed backups/P
 
 ## 18. Remaining blockers
 
-The main blockers are the absence of a live deployment database and staging environment; no authenticated browser evidence; incomplete private storage; missing XLSX and teacher/parent/staff import adapters; missing SMS/WhatsApp/push and education connectors; billing checkout/customer creation/reconciliation and provider sandbox evidence; no durable worker verification; no backup/PITR restore evidence; no WAF/SIEM/error-monitoring delivery evidence; incomplete role granularity; partial legacy mock-backed workspaces; and lack of legal/contractual approval for real student data. These are intentionally reported as blockers rather than hidden behind demo screens or fictional credentials.
+The main blockers are the absence of a live deployment database and staging environment; no authenticated browser evidence; private storage/scanner credentials and bucket-policy verification; missing XLSX and teacher/parent/staff import adapters; missing SMS/WhatsApp/push and education connectors; billing checkout/customer creation/reconciliation and provider sandbox evidence; durable worker hosting and failure-recovery evidence; managed backup/PITR and restore-drill evidence; no WAF/SIEM/error-monitoring delivery evidence; incomplete role granularity; partial legacy mock-backed workspaces; and lack of legal/contractual approval for real student data. These are intentionally reported as blockers rather than hidden behind demo screens or fictional credentials.
 
 ## 19. Git
 

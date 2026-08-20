@@ -41,6 +41,10 @@ jobs:
           npx eslint
           scripts/migrate.ts
           scripts/readiness.ts
+          scripts/backup.ts
+          scripts/restore-test.ts
+          scripts/verify-migration.ts
+          scripts/worker.ts
           src/actions/ai.ts
           src/actions/auth.ts
           src/actions/billing.ts
@@ -48,6 +52,7 @@ jobs:
           src/actions/imports.ts
           src/actions/mfa.ts
           src/actions/invitations.ts
+          src/actions/v1.ts
           src/actions/onboarding.ts
           src/app/providers/app-state.tsx
           src/components/auth/auth-card.tsx
@@ -56,8 +61,14 @@ jobs:
           src/lib/permissions.test.ts
           src/lib/totp.ts
           src/routes/api.billing.webhook.ts
+          src/routes/api.jobs.run.ts
           src/config/navigation.ts
           src/lib/jobs.ts
+          src/lib/ai/policy.ts
+          src/lib/security.ts
+          src/lib/storage.ts
+          src/lib/storage.test.ts
+          src/lib/worker.ts
           src/lib/permissions.ts
           src/lib/notifications/email.ts
           src/lib/readiness.ts
@@ -91,3 +102,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:migrate
+      - run: npm run db:verify

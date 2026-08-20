@@ -2,7 +2,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { requireDatabase } from "@/lib/db";
-import { validateSafeStorageKey } from "@/lib/security";
+import { consumeSecurityRateLimit, validateSafeStorageKey } from "@/lib/security";
+import {
+  createPrivateObjectKey,
+  deletePrivateObject,
+  maxStorageObjectBytes,
+  presignPrivateObject,
+  requireStorage,
+  scanPrivateObject,
+  storageProviderState,
+} from "@/lib/storage";
 
 const staffRoles = ["staff", "teacher", "principal", "admin", "owner"] as const;
 const leadershipRoles = ["principal", "admin", "owner"] as const;
@@ -31,6 +40,8 @@ export interface DocumentRow {
   audience: string[];
   created_by: string;
   created_at: string;
+  scan_status?: string | null;
+  original_name?: string | null;
 }
 
 export interface LeaveRow {
@@ -84,15 +95,15 @@ export const createCalendarEvent = createServerFn({ method: "POST" })
 export const listDocuments = createServerFn({ method: "GET" }).handler(async () => {
   const context = await requireAuth();
   const sql = requireDatabase();
-  if (leadershipRoles.includes(context.role as (typeof leadershipRoles)[number])) {
-    return sql<DocumentRow[]>`
-      SELECT * FROM hw_documents WHERE school_id = ${context.schoolId} ORDER BY created_at DESC LIMIT 500`;
-  }
+  const audienceFilter = leadershipRoles.includes(context.role as (typeof leadershipRoles)[number])
+    ? sql``
+    : sql`AND (d.audience && ARRAY['entire-school', ${context.role}]::TEXT[] OR d.created_by = ${context.userId})`;
   return sql<DocumentRow[]>`
-    SELECT * FROM hw_documents
-    WHERE school_id = ${context.schoolId}
-      AND (audience && ARRAY['entire-school', ${context.role}]::TEXT[] OR created_by = ${context.userId})
-    ORDER BY created_at DESC LIMIT 500`;
+    SELECT d.*, so.scan_status, so.original_name
+    FROM hw_documents d
+    LEFT JOIN hw_storage_objects so ON so.document_id = d.id AND so.status = 'active'
+    WHERE d.school_id = ${context.schoolId} ${audienceFilter}
+    ORDER BY d.created_at DESC LIMIT 500`;
 });
 
 export const createDocumentMetadata = createServerFn({ method: "POST" })
@@ -130,6 +141,172 @@ export const createDocumentMetadata = createServerFn({ method: "POST" })
         (${context.schoolId}, ${data.title}, ${data.category}, ${storageKey}, ${mimeType}, ${data.sizeBytes}, ${data.audience}, ${context.userId})
       RETURNING *`;
     return rows[0]!;
+  });
+
+const documentUploadSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  category: z.string().trim().min(2).max(50),
+  fileName: z.string().trim().min(1).max(180),
+  mimeType: z.string().trim().toLowerCase().max(120),
+  sizeBytes: z.number().int().min(1).max(50_000_000),
+  audience: z.array(z.string().min(1)).min(1).max(20),
+});
+
+const documentIdSchema = z.object({ id: z.string().uuid() });
+
+const allowedDocumentMimeTypes = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/png",
+  "image/jpeg",
+  "text/plain",
+]);
+
+export const createDocumentUpload = createServerFn({ method: "POST" })
+  .validator(documentUploadSchema)
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    requireRole(context, staffRoles);
+    if (!allowedDocumentMimeTypes.has(data.mimeType))
+      throw new Error("Document MIME type is not allowed");
+    if (data.fileName.includes("/") || data.fileName.includes("\\"))
+      throw new Error("Document filename is invalid");
+    if (data.sizeBytes > maxStorageObjectBytes())
+      throw new Error("Document exceeds the 50 MB limit");
+    requireStorage();
+    const sql = requireDatabase();
+    await consumeSecurityRateLimit(sql, {
+      scope: "document_upload",
+      subject: `${context.schoolId}:${context.userId}`,
+      limit: 20,
+      windowSeconds: 60 * 60,
+    });
+    const storageKey = createPrivateObjectKey(context.schoolId, data.fileName);
+    const documentRows = await sql<DocumentRow[]>`
+      INSERT INTO hw_documents
+        (school_id, title, category, storage_key, mime_type, size_bytes, audience, created_by)
+      VALUES
+        (${context.schoolId}, ${data.title}, ${data.category}, ${storageKey}, ${data.mimeType}, ${data.sizeBytes}, ${data.audience}, ${context.userId})
+      RETURNING *`;
+    const document = documentRows[0]!;
+    const objectRows = await sql<{ id: string }[]>`
+      INSERT INTO hw_storage_objects
+        (school_id, document_id, storage_key, original_name, mime_type, size_bytes, scan_status, status, created_by)
+      VALUES
+        (${context.schoolId}, ${document.id}, ${storageKey}, ${data.fileName}, ${data.mimeType}, ${data.sizeBytes}, 'pending', 'active', ${context.userId})
+      RETURNING id`;
+    const signed = presignPrivateObject({
+      operation: "PUT",
+      key: storageKey,
+      contentType: data.mimeType,
+    });
+    await sql`
+      INSERT INTO hw_audit_events (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail)
+      VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'document_upload_started', 'document', ${document.id}, 'Created a private signed upload; object remains unavailable until scanning passes')`;
+    return {
+      documentId: document.id,
+      storageObjectId: objectRows[0]!.id,
+      uploadUrl: signed.url,
+      expiresInSeconds: signed.expiresInSeconds,
+    };
+  });
+
+export const completeDocumentUpload = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      id: z.string().uuid(),
+      checksumSha256: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/i)
+        .optional(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    requireRole(context, staffRoles);
+    const sql = requireDatabase();
+    const rows = await sql<{ id: string; storage_key: string; scan_status: string }[]>`
+      SELECT o.id, o.storage_key, o.scan_status
+      FROM hw_storage_objects o
+      JOIN hw_documents d ON d.id = o.document_id AND d.school_id = o.school_id
+      WHERE o.id = ${data.id} AND o.school_id = ${context.schoolId} AND o.status = 'active'`;
+    const object = rows[0];
+    if (!object) throw new Error("Storage object not found");
+    const scanStatus = await scanPrivateObject({
+      key: object.storage_key,
+      checksumSha256: data.checksumSha256 ?? "",
+    });
+    await sql`UPDATE hw_storage_objects SET checksum_sha256 = ${data.checksumSha256 ?? ""}, scan_status = ${scanStatus} WHERE id = ${object.id} AND school_id = ${context.schoolId}`;
+    return { storageObjectId: object.id, scanStatus, downloadable: scanStatus === "clean" };
+  });
+
+export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
+  .validator(documentIdSchema)
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    const sql = requireDatabase();
+    const audienceFilter = leadershipRoles.includes(
+      context.role as (typeof leadershipRoles)[number],
+    )
+      ? sql``
+      : sql`AND (d.audience && ARRAY['entire-school', ${context.role}]::TEXT[] OR d.created_by = ${context.userId})`;
+    const rows = await sql<
+      {
+        id: string;
+        storage_key: string;
+        original_name: string;
+        scan_status: string;
+        status: string;
+      }[]
+    >`
+      SELECT d.id, o.storage_key, o.original_name, o.scan_status, o.status
+      FROM hw_documents d
+      JOIN hw_storage_objects o ON o.document_id = d.id AND o.school_id = d.school_id
+      WHERE d.id = ${data.id} AND d.school_id = ${context.schoolId} AND o.status = 'active' ${audienceFilter}`;
+    const document = rows[0];
+    if (!document) throw new Error("Document not found or not authorized");
+    if (document.scan_status !== "clean")
+      throw new Error("Document is unavailable until malware scanning passes");
+    if (storageProviderState().status !== "configured")
+      throw new Error("Private storage is not configured");
+    await consumeSecurityRateLimit(sql, {
+      scope: "document_download",
+      subject: `${context.schoolId}:${context.userId}`,
+      limit: 60,
+      windowSeconds: 60 * 60,
+    });
+    const signed = presignPrivateObject({ operation: "GET", key: document.storage_key });
+    await sql`
+      INSERT INTO hw_data_access_logs (school_id, actor_id, actor_role, action, entity, entity_id, fields, reason)
+      VALUES (${context.schoolId}, ${context.userId}, ${context.role}, 'download', 'document', ${document.id}, ARRAY['private_object'], 'Audience-authorized signed document download')`;
+    return {
+      url: signed.url,
+      fileName: document.original_name,
+      expiresInSeconds: signed.expiresInSeconds,
+    };
+  });
+
+export const deleteDocument = createServerFn({ method: "POST" })
+  .validator(documentIdSchema)
+  .handler(async ({ data }) => {
+    const context = await requireAuth();
+    requireRole(context, staffRoles);
+    const sql = requireDatabase();
+    const rows = await sql<{ id: string; storage_key: string }[]>`
+      SELECT o.id, o.storage_key FROM hw_storage_objects o
+      JOIN hw_documents d ON d.id = o.document_id AND d.school_id = o.school_id
+      WHERE d.id = ${data.id} AND d.school_id = ${context.schoolId} AND o.status = 'active'`;
+    const object = rows[0];
+    if (!object) throw new Error("Document not found or already deleted");
+    requireStorage();
+    await deletePrivateObject(object.storage_key);
+    await sql`UPDATE hw_storage_objects SET status = 'deleted', deleted_at = NOW() WHERE id = ${object.id} AND school_id = ${context.schoolId}`;
+    await sql`UPDATE hw_documents SET storage_key = NULL, mime_type = NULL, size_bytes = 0 WHERE id = ${data.id} AND school_id = ${context.schoolId}`;
+    await sql`
+      INSERT INTO hw_audit_events (school_id, actor_id, actor_name, actor_role, action, entity, entity_id, detail)
+      VALUES (${context.schoolId}, ${context.userId}, ${context.name}, ${context.role}, 'document_deleted', 'document', ${data.id}, 'Deleted private object and retained metadata audit boundary')`;
+    return { ok: true as const };
   });
 
 const leaveInput = z.object({

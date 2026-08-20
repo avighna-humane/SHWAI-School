@@ -133,14 +133,15 @@ The main blockers are the absence of a live deployment database and staging envi
 
 ## 19. Git
 
-| Field                 | Value                                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Repository            | `avighna-humane/SHWAI-School`                                                                                             |
-| Branch                | `main`                                                                                                                    |
-| Current work          | Private storage, durable worker, queued exports, document lifecycle, backup/restore, email retry, and AI budget hardening |
-| Implementation commit | `62091b0`                                                                                                                 |
-| Push status           | Implementation commit `62091b0` is pushed to `origin/main`; this report update is pending its final evidence commit.      |
-| Working tree          | Clean before the final report-evidence commit.                                                                            |
+| Field                  | Value                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Repository             | `avighna-humane/SHWAI-School`                                                                                             |
+| Branch                 | `main`                                                                                                                    |
+| Current work           | Private storage, durable worker, queued exports, document lifecycle, backup/restore, email retry, and AI budget hardening |
+| Implementation commit  | `62091b0`                                                                                                                 |
+| Report-evidence commit | `7dc3446`                                                                                                                 |
+| Push status            | Implementation commit `62091b0` and report-evidence commit `7dc3446` are pushed to `origin/main`; remote tip verified.    |
+| Working tree           | Clean after remote verification.                                                                                          |
 
 ## References
 

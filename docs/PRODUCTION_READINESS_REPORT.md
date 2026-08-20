@@ -115,7 +115,7 @@ The final verification run for this implementation produced the results below:
 | E2E tests         | BLOCKED                   | Authenticated workflows require migrated PostgreSQL and seeded sessions.                                                                   |
 | Dependency audit  | PASS                      | `npm audit --omit=dev --audit-level=high` reported 0 vulnerabilities after the ExcelJS experiment was rolled back.                         |
 | Readiness checker | EXPECTED BLOCKED          | `npm run readiness:check` emitted non-sensitive JSON and exited 1 because the sandbox has no PostgreSQL/provider deployment configuration. |
-| Standalone worker | PASS (fail-closed)        | `npm run worker` exited 1 with `Database configuration required` when no database URL was present; it did not fabricate job success.                |
+| Standalone worker | PASS (fail-closed)        | `npm run worker` exited 1 with `Database configuration required` when no database URL was present; it did not fabricate job success.       |
 
 ## 16. Browser verification
 
@@ -133,14 +133,14 @@ The main blockers are the absence of a live deployment database and staging envi
 
 ## 19. Git
 
-| Field                 | Value                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------ |
-| Repository            | `avighna-humane/SHWAI-School`                                                                    |
-| Branch                | `main`                                                                                           |
-| Current work          | Commercial-launch hardening implementation verified locally                                      |
-| Implementation commit | `2fcc2f1`                                                                                        |
-| Push status           | Implementation commit `2fcc2f1` and report-evidence commit `1d1bd02` are pushed to `origin/main` |
-| Working tree          | Clean after remote verification                                                                  |
+| Field                 | Value                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Repository            | `avighna-humane/SHWAI-School`                                                                                             |
+| Branch                | `main`                                                                                                                    |
+| Current work          | Private storage, durable worker, queued exports, document lifecycle, backup/restore, email retry, and AI budget hardening |
+| Implementation commit | `62091b0`                                                                                                                 |
+| Push status           | Implementation commit `62091b0` is pushed to `origin/main`; this report update is pending its final evidence commit.      |
+| Working tree          | Clean before the final report-evidence commit.                                                                            |
 
 ## References
 
